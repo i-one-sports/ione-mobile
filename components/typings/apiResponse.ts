@@ -1,6 +1,5 @@
 import { Team } from ".";
 
-
 export interface Profile {
   id: number;
   jobTitle: null | string;
@@ -29,10 +28,10 @@ export interface Profile {
 }
 
 export enum Role {
-  ADMIN = 1,
-  MANAGER = 2,
-  STAFF = 3,
-  CLIENT = 4,
+  ADMIN = "admin", //changed 1 to admin because of authentication
+  //   MANAGER = 2,
+  //   STAFF = 3,
+  USER = "user", //changed 4 to user because of authentication
 }
 
 export interface RegisterResponse {
@@ -43,32 +42,32 @@ export interface RegisterResponse {
   last_name: string;
   nickname?: string;
   email: string;
-  role?: Role[]
+  role?: Role;
   is_active: boolean;
   profile_completed: boolean;
   created_at: string;
   updated_at: string;
-  token?: string
+  token?: string;
   isAdmin?: boolean;
 }
 
 export interface userResponse {
-    _id: string
-    email: string,
-    password: string,
-    firstName: string,
-    lastName: string,
-    nickname?: string,
-    address: string,
-    phoneNumber: string,
-    position?: string,
-    isCaptain: boolean,
-    isOwner: boolean,
-    otpVerified: false,
-    location: {
-        type: string,
-        coordinates: [number, number]
-    },
+  _id: string;
+  email: string;
+  password: string;
+  firstName: string;
+  lastName: string;
+  nickname?: string;
+  address: string;
+  phoneNumber: string;
+  position?: string;
+  isCaptain: boolean;
+  isOwner: boolean;
+  otpVerified: false;
+  location: {
+    type: string;
+    coordinates: [number, number];
+  };
 }
 
 export interface LoginResponse {
@@ -82,7 +81,7 @@ export interface LoginResponse {
   phone_verified: boolean;
   profile: object;
   user: {
-    id: string,
+    id: string;
     firstName: string;
     lastName: string;
     email: string;
@@ -101,24 +100,63 @@ export interface logoutResponse {
 }
 
 export interface MatchSession {
-  _id: string
-  session: string
-  teamOne?: Team
-  teamTwo?: Team
-  teamOneScore: number
-  teamTwoScore: number
-  initials?: string
-  matchType: string
-  isStarted: boolean
-  __v: number
+  _id: string;
+  session: string;
+  teamOne?: Team;
+  teamTwo?: Team;
+  teamOneScore: number;
+  teamTwoScore: number;
+  initials?: string;
+  matchType: string;
+  isStarted: boolean;
+  __v: number;
 }
 
 export interface AllSessionsResponse {
   pagination: {
-    limit: number
-    page: number
-    total: number
-    totalPages: number
-  }
-  sessions: MatchSession[]
+    limit: number;
+    page: number;
+    total: number;
+    totalPages: number;
+  };
+  sessions: MatchSession[];
+}
+
+export interface Wallet {
+  _id: string;
+  userId: string;
+  balance: number;
+  ledgerBalance: number;
+  status: "ACTIVE" | "SUSPENDED" | "CLOSED";
+  currency: string; // 'NGN'
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface WalletResponse {
+  wallet: Wallet;
+  //   dva: Dva;
+}
+
+export interface DashboardSummary {
+  pitchCondition: string;
+  pitchPhoto: string;
+  address: string;
+  openingHour: string;
+  closingHour: string;
+}
+
+export interface LocationResponse {
+  _id: string;
+  name: string;
+  address: string;
+  booked: boolean;
+  pitchPhoto?: string;
+  location: { type: "Point"; coordinates: [number, number] };
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface VisitorResponse {
+  visitorCount: number;
 }

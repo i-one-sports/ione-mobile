@@ -1,16 +1,15 @@
-
 import { Role } from "./apiResponse";
 
 export interface Appointment {
-  id: number
-  status: AppointmentStatus
-  salon:string
-  service: string
-  price: number
-  startTime: Date
-  clientName: string
-  clientImage: string
-  address: string
+  id: number;
+  status: AppointmentStatus;
+  salon: string;
+  service: string;
+  price: number;
+  startTime: Date;
+  clientName: string;
+  clientImage: string;
+  address: string;
 }
 
 export enum AppointmentStatus {
@@ -23,7 +22,7 @@ export enum AppointmentStatus {
   checked_in = "CHECKED_IN",
   checked_out = "CHECKED_OUT",
   in_service = "IN_SERVICE",
-  paid = "PAID"
+  paid = "PAID",
 }
 
 export interface Notification {
@@ -35,28 +34,28 @@ export interface Notification {
 }
 
 export interface Schedule {
-  id: number
-  stylist: string
-  schedule_date: Date
-  start_time: string
-  closing_time: string
-  isAvailable: boolean
-  forHomeService: boolean
-  breaks: null | Break[]
+  id: number;
+  stylist: string;
+  schedule_date: Date;
+  start_time: string;
+  closing_time: string;
+  isAvailable: boolean;
+  forHomeService: boolean;
+  breaks: null | Break[];
 }
 
 export interface Break {
-  id: number
+  id: number;
   break_date: string;
   start_time: string;
   closing_time: string;
-  isAvailable: boolean
-  forHomeService: boolean
+  isAvailable: boolean;
+  forHomeService: boolean;
 }
 
 export enum ScheduleStatus {
   open = "open",
-  closed = "closed"
+  closed = "closed",
 }
 
 export interface PickerData {
@@ -78,57 +77,55 @@ export interface Team {
   updatedAt?: string;
   initials?: string;
 }
-export type Service = 'home_service' | 'walk_in'
+export type Service = "home_service" | "walk_in";
 
 export interface User {
-  id?: string
-  _id?: string
-  outletId?: number
-  businessName?: string | null
-  firstName?: string
-  lastName?: string
+  id?: string;
+  _id?: string;
+  outletId?: number;
+  businessName?: string | null;
+  firstName?: string;
+  lastName?: string;
   nickname?: string;
-  position?: string
-  email?: string
-  password?: string
-  phoneNumber?: string
+  position?: string;
+  email?: string;
+  password?: string;
+  phoneNumber?: string;
   about?: string;
-  website?: string
-  streetAddress1?: string
-  streetAddress2?: null | string
-  city?: string
-  countryId?: number
-  zipCode?: string
-  hasVerifiedEmail?: boolean
-  profilePhotoUrl?: string
-  state?: null | string
+  website?: string;
+  streetAddress1?: string;
+  streetAddress2?: null | string;
+  city?: string;
+  countryId?: number;
+  zipCode?: string;
+  hasVerifiedEmail?: boolean;
+  profilePhotoUrl?: string;
+  state?: null | string;
   user?: {
-    firstName?: string
-    lastName?: string
-    fullName?: string
-    email?: string
-    token?: string
-    hasRegisteredProduct: boolean
-  }
-  doesHomeService?: boolean
-  outlet?: Outlet
-  role?: Role[]
+    firstName?: string;
+    lastName?: string;
+    fullName?: string;
+    email?: string;
+    token?: string;
+    hasRegisteredProduct: boolean;
+  };
+  doesHomeService?: boolean;
+  outlet?: Outlet;
+  role?: Role; //changed from Role[] to role because of auth
   token?: string;
   isAdmin?: boolean;
-  locationInfo? : {
-   
-    address?:string
-
-  },
-   location?:{
-      type: string;
-      coordinates: [number, number];
-    },
-  dateOfBirth?: string
+  locationInfo?: {
+    address?: string;
+  };
+  location?: {
+    type: string;
+    coordinates: [number, number];
+  };
+  dateOfBirth?: string;
   height?: number;
-  placeOfBirth?: string
-  address?:string;
-  isCaptain?: boolean
+  placeOfBirth?: string;
+  address?: string;
+  isCaptain?: boolean;
   avatar?: string;
 }
 
@@ -149,14 +146,13 @@ export interface FormData {
   companyName?: string;
   product?: string;
   capacity?: string;
-  price?:string;
-  location?:string;
+  price?: string;
+  location?: string;
   image?: string;
   address?: string;
   position: string;
-  nickName: string
+  nickName: string;
 }
-
 
 export type Outlet = {
   id: number;
@@ -168,21 +164,21 @@ export type Outlet = {
   bankName: string | null;
   bankRoutingNumber: string | null;
   bankAccountNumber: string | null;
-  bankAccountName: string | null
-}
+  bankAccountName: string | null;
+};
 
 export interface Earning {
   id: number;
-  status: AppointmentStatus
+  status: AppointmentStatus;
   createdAt: Date;
   service: string;
   price: number;
-  clientName: string
+  clientName: string;
 }
 
 export enum AccountType {
   new = "new_account",
-  existing = "existing_account"
+  existing = "existing_account",
 }
 
 export type Account = {
@@ -190,22 +186,22 @@ export type Account = {
   bankName: string;
   accountNumber: string;
   routingNumber: string;
-  accountName: string
-}
+  accountName: string;
+};
 
-export type UpdateState = 'checking' | 'available' | 'downloading' | 'reload'
+export type UpdateState = "checking" | "available" | "downloading" | "reload";
 
 export type Bank = {
   id: number;
   name: string;
-}
+};
 
 export type BrandImage = {
   id: number;
   name: string;
   url: string;
   createdAt: string;
-}
+};
 
 export type Player = {
   id: number;
@@ -222,18 +218,18 @@ export type LineupData = {
 };
 
 export type Fixture = {
-   id: string;
-    time: string;
-    teamA: string;
-    teamAName: string;
-    teamB: string;
-    teamBName: string;
-    type: string;
+  id: string;
+  time: string;
+  teamA: string;
+  teamAName: string;
+  teamB: string;
+  teamBName: string;
+  type: string;
 };
 
-export interface  TermsCheckboxProps {
+export interface TermsCheckboxProps {
   checked: boolean;
   onToggle: () => void;
   label: string;
   required?: boolean;
-};
+}

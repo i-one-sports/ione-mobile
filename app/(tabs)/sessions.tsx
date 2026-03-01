@@ -102,7 +102,7 @@ export default function Schedule() {
   const { all, loadingAll, errorAll } = useAppSelector(
     (state) => state.sessions,
   );
-  // console.log(all)
+  //   console.log(all);
   // Fetch all sessions on mount
   useEffect(() => {
     if (!user?.location?.coordinates) return;
@@ -116,6 +116,8 @@ export default function Schedule() {
 
     dispatch(allSessions(payload));
   }, [dispatch, user]);
+
+  //   console.log("all sessions:", all);
 
   // Format sessions from API response
   const formattedMatches = useMemo(() => {

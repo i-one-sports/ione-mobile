@@ -1,5 +1,6 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import { getUser } from "@/api/authThunks";
+import { Role } from "@/components/typings/apiResponse";
 import "@/globals.css";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import store, {
@@ -34,11 +35,14 @@ function AppNavigator() {
   const { isAuthenticated, user, isRegistered, isVerified } = useAppSelector(
     (state) => state.auth,
   );
-  console.log("user", user.location?.coordinates);
+  console.log("user", user.location?.coordinates, user._id);
+
   useEffect(() => {
-    if (isAuthenticated && user) {
-      //   router.replace('/(tabs)');
+    if (!user) return;
+    if (isAuthenticated && user.role === Role.ADMIN) {
       router.replace("/admin/(tabs)");
+    } else if (isAuthenticated && user.role === Role.USER) {
+      router.replace("/(tabs)");
     } else if (isRegistered && !isVerified) {
       router.replace("/(onboarding)/verify");
     } else if (isVerified && !isAuthenticated) {
@@ -47,6 +51,12 @@ function AppNavigator() {
       router.replace("/(onboarding)");
     }
   }, [isAuthenticated, user, isRegistered, isVerified]);
+
+  console.log("check", user.role === Role.USER);
+  console.log("AUTH STATE:", {
+    isAuthenticated,
+    user,
+  });
 
   useEffect(() => {
     console.log("Token exists, fetching user data...");
