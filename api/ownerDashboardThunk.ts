@@ -3,6 +3,7 @@ import {
   DashboardSummary,
   LocationResponse,
   VisitorResponse,
+  LastMatch,
 } from "@/components/typings/apiResponse";
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import apiCall from "./apiCall";
@@ -39,7 +40,7 @@ export const getSummary = createAsyncThunk<
 });
 
 export const getLastMatches = createAsyncThunk<
-  DashboardSummary,
+  LastMatch[],
   string,
   AsyncThunkConfig
 >("location/getLastMatches", async (locationId, thunkAPI) => {
@@ -56,6 +57,19 @@ export const getVisitorsCount = createAsyncThunk<
 >("location/getVisitorsCount", async (locationId, thunkAPI) => {
   return apiCall(
     axiosInstance.get(`/i-one/location/${locationId}/dashboard/visitors`),
+    thunkAPI,
+  );
+});
+
+export const getUpcomingSessions = createAsyncThunk<
+  VisitorResponse,
+  string,
+  AsyncThunkConfig
+>("location/getUpcomingSessions", async (locationId, thunkAPI) => {
+  return apiCall(
+    axiosInstance.get(
+      `/i-one/location/${locationId}/dashboard/upcoming-sessions`,
+    ),
     thunkAPI,
   );
 });

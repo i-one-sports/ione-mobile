@@ -26,7 +26,6 @@ export default function AdminSettingsScreen() {
     }
   }, [dispatch]);
 
-  console.log("dashboardSummary in AdminHomeScreen:", dashboardSummary);
   const handleLogout = async () => {
     Alert.alert(
       "Logout",

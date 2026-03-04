@@ -160,3 +160,28 @@ export interface LocationResponse {
 export interface VisitorResponse {
   visitorCount: number;
 }
+
+export interface UpcomingSession {}
+
+export interface Player {
+  _id: string;
+  name: string;
+}
+export interface Teamm {
+  _id: string;
+  name: string;
+  session: string;
+  createdAt: string;
+  updatedAt: string;
+  players: Player[];
+}
+export interface LastMatch {
+  _id: string;
+  createdAt: string;
+  isStarted: boolean;
+  session: string;
+  teamOne: Teamm;
+  teamOneScore: number;
+  teamTwo: Teamm;
+  teamTwoScore: number;
+}

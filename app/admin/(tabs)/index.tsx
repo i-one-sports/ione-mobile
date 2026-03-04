@@ -2,6 +2,7 @@ import {
   getLastMatches,
   getLocation,
   getSummary,
+  getUpcomingSessions,
 } from "@/api/ownerDashboardThunk";
 import LocationIcon from "@/assets/svg/LocationIcon";
 import SettingsIcon from "@/assets/svg/SettingsIcon";
@@ -16,52 +17,21 @@ import React, { useEffect, useState } from "react";
 import { Modal, ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-const matches = [
-  {
-    id: 1,
-    date: "2/7/25",
-    type: "Friendly Match",
-    home: "TN",
-    homeName: "Team Name",
-    away: "TN",
-    awayName: "Team Name",
-    homeScore: 1,
-    awayScore: 4,
-  },
-  {
-    id: 2,
-    date: "15/3/25",
-    type: "Kings League",
-    home: "TN",
-    homeName: "Team Name",
-    away: "TN",
-    awayName: "Team Name",
-    homeScore: 1,
-    awayScore: 4,
-  },
-  {
-    id: 3,
-    date: "2/7/25",
-    type: "Friendly Match",
-    home: "TN",
-    homeName: "Team Name",
-    away: "TN",
-    awayName: "Team Name",
-    homeScore: 1,
-    awayScore: 4,
-  },
-];
-
 export default function AdminHomeScreen() {
   const dispatch = useAppDispatch();
   const [modalVisible, setModalVisible] = useState<boolean>(false);
   const {
     dashboardSummary,
+    loadingSummmary,
     location,
-    recentData,
+    upcomingSessions,
+    lastMatches,
+    loadingLocation,
+    loadingLastMatches,
     errorLastMatches,
     errorLocation,
     errorSummary,
+    errorUpcomingSessions,
   } = useAppSelector((state) => state.ownerDashboard);
 
   useEffect(() => {
@@ -69,13 +39,17 @@ export default function AdminHomeScreen() {
     if (location?._id) {
       dispatch(getSummary(location._id));
       dispatch(getLastMatches(location?._id));
+      dispatch(getUpcomingSessions(location._id));
     }
   }, [dispatch, location?._id]);
 
   //   console.log("dashboardSummary in AdminHomeScreen:", dashboardSummary);
   //   console.log("getLocation error in AdminHomeScreen:", errorLocation);
   //   console.log("getLocation response in AdminHomeScreen:", location);
-  //   console.log("getLastMatches response in AdminHomeScreen:", recentData);
+  console.log(
+    "getUpcomingSessions response in AdminHomeScreen:",
+    upcomingSessions,
+  );
 
   return (
     <View className="flex-1">
@@ -94,7 +68,10 @@ export default function AdminHomeScreen() {
                 style={{ fontFamily: "Poppins_600SemiBold" }}
                 className="text-white text-xs bg-[#FFFFFF33] rounded-[10px] p-[10px]"
               >
-                Pitch Condition: {dashboardSummary?.pitchCondition}
+                Pitch Condition:{" "}
+                {loadingSummmary
+                  ? "loading.."
+                  : dashboardSummary?.pitchCondition}
               </Text>
               <View className="flex flex-row items-center gap-2">
                 <TouchableOpacity className="bg-[#FFFFFF33] py-2 px-2 rounded-[10px]">
@@ -115,17 +92,15 @@ export default function AdminHomeScreen() {
             <View className="mt-[105px]">
               <View className="flex flex-row items-center gap-2 bg-[#FFFFFF33] self-start rounded-[10px] px-2 py-[10px]">
                 <LocationIcon />
-                <Text>
-                  {dashboardSummary?.address ? (
-                    <Text
-                      style={{ fontFamily: "Poppins_600SemiBold" }}
-                      className="text-white text-xs "
-                    >
-                      {dashboardSummary?.address}
-                    </Text>
-                  ) : (
-                    "location not found"
-                  )}
+                <Text
+                  style={{ fontFamily: "Poppins_600SemiBold" }}
+                  className="text-white text-xs"
+                >
+                  {loadingSummmary
+                    ? "loading..."
+                    : dashboardSummary?.address
+                      ? dashboardSummary?.address
+                      : "location not found"}
                 </Text>
               </View>
               <TouchableOpacity onPress={() => setModalVisible(true)}>
@@ -134,7 +109,11 @@ export default function AdminHomeScreen() {
                   style={{ fontFamily: "PlayfairDisplay_700Bold" }}
                   className="text-white text-[50px] text-center uppercase"
                 >
-                  {location?.name}
+                  {loadingLocation
+                    ? "loading..."
+                    : location?.name
+                      ? location.name
+                      : "location error"}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -152,22 +131,29 @@ export default function AdminHomeScreen() {
           >
             Recents
           </ThemedText>
-
-          <View className="gap-4">
-            {matches.map((match) => (
-              <Recent
-                key={match.id}
-                date={match.date}
-                type={match.type}
-                homeTeam={match.home}
-                awayTeam={match.away}
-                awayTeamName={match.awayName}
-                homeTeamName={match.homeName}
-                homeScore={match.homeScore}
-                awayScore={match.awayScore}
-              />
-            ))}
-          </View>
+          {loadingLastMatches ? (
+            <Text className="text-3xl text-black text-center">loading...</Text>
+          ) : lastMatches.length == 0 ? (
+            <Text className="text-black text-center">
+              {errorLastMatches ? errorLastMatches : "no recent match"}
+            </Text>
+          ) : (
+            <View className="gap-4">
+              {lastMatches.map((match) => (
+                <Recent
+                  key={match._id}
+                  date={match.createdAt}
+                  //   type={match.session}
+                  homeTeamInitial={match.teamOne.name}
+                  awayTeamInitial={match.teamTwo.name}
+                  awayTeamName={match.teamTwo?.name}
+                  homeTeamName={match.teamOne?.name}
+                  homeScore={match.teamOneScore}
+                  awayScore={match.teamTwoScore}
+                />
+              ))}
+            </View>
+          )}
         </ScrollView>
         <Modal
           visible={modalVisible}
@@ -180,7 +166,11 @@ export default function AdminHomeScreen() {
                 style={{ fontFamily: "PlayfairDisplay_700Bold" }}
                 className="text-white text-[50px] text-center uppercase"
               >
-                {location?.name}
+                {loadingLocation
+                  ? "loading..."
+                  : location?.name
+                    ? location.name
+                    : "location error"}
               </Text>
               <TouchableOpacity
                 onPress={() => setModalVisible(false)}
