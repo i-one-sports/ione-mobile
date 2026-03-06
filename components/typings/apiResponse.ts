@@ -161,7 +161,15 @@ export interface VisitorResponse {
   visitorCount: number;
 }
 
-export interface UpcomingSession {}
+export interface UpcomingSession {
+  _id: string;
+  captain: string;
+  createdAt: string;
+  maxNumber: number;
+  members: [];
+  startTime: string;
+  timeDuration: number;
+}
 
 export interface Player {
   _id: string;
@@ -184,4 +192,26 @@ export interface LastMatch {
   teamOneScore: number;
   teamTwo: Teamm;
   teamTwoScore: number;
+}
+
+export interface ChartData {
+  month: number;
+  year: number;
+  count: number;
+}
+
+export interface UsersChart {
+  total: number;
+  data: ChartData[];
+}
+
+export interface Stats {
+  total: number;
+  count: number;
+}
+
+export interface RevenueStats {
+  this_week: Stats;
+  this_month: Stats;
+  this_year: Stats;
 }

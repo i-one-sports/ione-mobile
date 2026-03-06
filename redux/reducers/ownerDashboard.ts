@@ -3,14 +3,18 @@ import {
   getLocation,
   getSummary,
   getUpcomingSessions,
+  getUsersChart,
   getVisitorsCount,
+  getRevenue,
 } from "@/api/ownerDashboardThunk";
 import {
   DashboardSummary,
-  LocationResponse,
-  VisitorResponse,
   LastMatch,
+  LocationResponse,
   UpcomingSession,
+  UsersChart,
+  VisitorResponse,
+  RevenueStats,
 } from "@/components/typings/apiResponse";
 import { createSlice } from "@reduxjs/toolkit";
 
@@ -19,19 +23,25 @@ interface State {
   location: LocationResponse | null;
   visitorsCount: VisitorResponse | null;
   lastMatches: LastMatch[];
-  upcomingSessions: VisitorResponse | null;
+  upcomingSessions: UpcomingSession[];
+  revenueStats: RevenueStats | null;
+  usersChart: UsersChart | null;
 
   loadingLocation: boolean;
   loadingVisitorCount: boolean;
   loadingSummmary: boolean;
   loadingLastMatches: boolean;
   loadingUpcomingSession: boolean;
+  loadingRevenueStats: boolean;
+  loadingUsersChart: boolean;
 
   errorLocation: string | null;
   errorVisitorCount: string | null;
   errorSummary: string | null;
   errorLastMatches: string | null;
   errorUpcomingSessions: string | null;
+  errorRevenueStats: string | null;
+  errorUsersChart: string | null;
 }
 
 const initialState: State = {
@@ -39,19 +49,25 @@ const initialState: State = {
   lastMatches: [],
   visitorsCount: null,
   location: null,
-  upcomingSessions: null,
+  upcomingSessions: [],
+  revenueStats: null,
+  usersChart: null,
 
   loadingLocation: false,
   loadingVisitorCount: false,
   loadingSummmary: false,
   loadingLastMatches: false,
   loadingUpcomingSession: false,
+  loadingRevenueStats: false,
+  loadingUsersChart: false,
 
   errorLocation: null,
   errorVisitorCount: null,
   errorSummary: null,
   errorLastMatches: null,
   errorUpcomingSessions: null,
+  errorRevenueStats: null,
+  errorUsersChart: null,
 };
 
 export const ownerDashboardSlice = createSlice({
@@ -130,7 +146,37 @@ export const ownerDashboardSlice = createSlice({
     builder.addCase(getUpcomingSessions.rejected, (state, action) => {
       state.loadingUpcomingSession = false;
       state.errorUpcomingSessions =
-        action.error.message || "Failed to fetch visitors count";
+        action.error.message || "Failed to fetch upcoming session";
+    });
+
+    // revenue stats
+    builder.addCase(getRevenue.pending, (state) => {
+      state.loadingRevenueStats = true;
+      state.errorRevenueStats = null;
+    });
+    builder.addCase(getRevenue.fulfilled, (state, { payload }) => {
+      state.revenueStats = payload;
+      state.loadingRevenueStats = false;
+    });
+    builder.addCase(getRevenue.rejected, (state, action) => {
+      state.loadingRevenueStats = false;
+      state.errorRevenueStats =
+        action.error.message || "Failed to fetch users chart";
+    });
+
+    // users chart
+    builder.addCase(getUsersChart.pending, (state) => {
+      state.loadingUsersChart = true;
+      state.errorUsersChart = null;
+    });
+    builder.addCase(getUsersChart.fulfilled, (state, { payload }) => {
+      state.usersChart = payload;
+      state.loadingUsersChart = false;
+    });
+    builder.addCase(getUsersChart.rejected, (state, action) => {
+      state.loadingUsersChart = false;
+      state.errorUsersChart =
+        action.error.message || "Failed to fetch users chart";
     });
   },
 });

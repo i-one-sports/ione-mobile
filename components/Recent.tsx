@@ -28,7 +28,7 @@ const getInitials = (name: string) => {
 };
 
 const formateDate = (date: string) => {
-  return new Date(date).toLocaleDateString("en-GB", {
+  return new Date(date).toLocaleDateString("en-US", {
     day: "numeric",
     month: "numeric",
     year: "2-digit",
@@ -50,7 +50,7 @@ export default function Recent({
       <View className="flex flex-row justify-between items-center">
         <ThemedText className="text-xs">{formateDate(date)}</ThemedText>
         <ThemedText className="text-xs text-gray-600 dark:text-gray-400">
-          {type}
+          {type || "friendly"}
         </ThemedText>
         <RightArrow />
       </View>

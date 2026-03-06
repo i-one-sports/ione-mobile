@@ -1,28 +1,89 @@
-import OpenIcon from "@/assets/svg/OpenIcon";
+import {
+  getLocation,
+  getRevenue,
+  getUsersChart,
+} from "@/api/ownerDashboardThunk";
 import SettingsIcon from "@/assets/svg/SettingsIcon";
 import SafeAreaScreen from "@/components/SafeAreaScreen";
 import { ThemedText } from "@/components/ThemedText";
+import { useAppDispatch, useAppSelector } from "@/redux/store";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import React from "react";
-import { ScrollView, Text, TouchableOpacity, View } from "react-native";
+import React, { useEffect, useMemo, useState } from "react";
+import {
+  Pressable,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { BarChart } from "react-native-gifted-charts";
 
-type BarDataProps = {
-  value: number;
-  label: string;
-  frontColor?: string;
-};
-
 export default function AdminStatisticsScreen() {
-  const barData: BarDataProps[] = [
-    { value: 20, label: "Jan", frontColor: "#7987FF" },
-    { value: 60, label: "Feb", frontColor: "#7987FF" },
-    { value: 20, label: "Mar", frontColor: "#7987FF" },
-    { value: 20, label: "Apr", frontColor: "#7987FF" },
-    { value: 10, label: "May", frontColor: "#7987FF" },
-    { value: 22, label: "June", frontColor: "#7987FF" },
-  ];
+  const [period, setPeriod] = useState<
+    "this_week" | "this_month" | "this_year"
+  >("this_month");
+  const [openDropdown, setOpenDropdown] = useState(false);
+  const [hidePassword, setHidePassword] = useState(true);
+  const dispatch = useAppDispatch();
+  const {
+    location,
+    usersChart,
+    revenueStats,
+    loadingUsersChart,
+    loadingRevenueStats,
+    errorLocation,
+    errorUsersChart,
+  } = useAppSelector((state) => state.ownerDashboard);
+
+  useEffect(() => {
+    dispatch(getLocation());
+    if (location?._id) {
+      dispatch(getUsersChart(location._id));
+      dispatch(getRevenue(location._id));
+    }
+  }, [dispatch, location?._id]);
+
+  console.log("getUsers response in StatScreen:", revenueStats);
+  const handlePasswordVisibility = () => {
+    setHidePassword((prevState) => !prevState);
+  };
+
+  const periodLabels = {
+    this_week: "This Week",
+    this_month: "This Month",
+    this_year: "This Year",
+  };
+
+  const barData = useMemo(() => {
+    if (!usersChart?.data) return [];
+
+    const months = [
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "May",
+      "June",
+      "July",
+      "Aug",
+      "Sep",
+      "Oct",
+      "Nov",
+      "Dec",
+    ];
+
+    return usersChart.data.map((item) => ({
+      value: item.count,
+      label: months[item.month - 1],
+      frontColor: "#7987FF",
+    }));
+  }, [usersChart]);
+
+  const revenue = hidePassword
+    ? "****"
+    : (revenueStats?.[period]?.total ?? 0).toLocaleString();
+
   return (
     <SafeAreaScreen className="flex-1">
       <ScrollView
@@ -40,14 +101,45 @@ export default function AdminStatisticsScreen() {
           >
             <View className="px-[18px] pt-6 pb-9">
               <View className="flex flex-row items-center justify-between">
-                <View className="flex-row items-center gap-[3px] text-xs bg-[#FFFFFF33] rounded-[10px] p-[10px]">
-                  <Text
-                    style={{ fontFamily: "Poppins_600SemiBold" }}
-                    className="text-white"
+                <View>
+                  <TouchableOpacity
+                    onPress={() => setOpenDropdown(!openDropdown)}
+                    className="flex-row items-center gap-[3px] bg-[#FFFFFF33] rounded-[10px] p-[10px]"
                   >
-                    This Month
-                  </Text>
-                  <OpenIcon stroke="#fff" />
+                    <Text
+                      style={{ fontFamily: "Poppins_600SemiBold" }}
+                      className="text-white"
+                    >
+                      {periodLabels[period]}
+                    </Text>
+
+                    <Ionicons
+                      size={14}
+                      color="#fff"
+                      name={
+                        openDropdown
+                          ? "chevron-up-outline"
+                          : "chevron-down-outline"
+                      }
+                    />
+                  </TouchableOpacity>
+
+                  {openDropdown && (
+                    <View className="absolute top-12 z-10 bg-white rounded-lg p-2 shadow-md">
+                      {Object.entries(periodLabels).map(([key, label]) => (
+                        <TouchableOpacity
+                          key={key}
+                          onPress={() => {
+                            setPeriod(key as typeof period);
+                            setOpenDropdown(false);
+                          }}
+                          className="py-2 px-3"
+                        >
+                          <Text>{label}</Text>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                  )}
                 </View>
                 <TouchableOpacity className="bg-[#FFFFFF33]  py-2 px-2 rounded-[10px]">
                   <SettingsIcon width={14} height={14} color="#2D264B" />
@@ -64,13 +156,22 @@ export default function AdminStatisticsScreen() {
                 <View className="flex flex-row items-center justify-between">
                   <Text
                     style={{ fontFamily: "PlayfairDisplay_700Bold" }}
-                    className="text-[40px] text-white"
+                    className="text-[40px] items-center text-white"
                   >
-                    $200
+                    ₦{revenue}
                   </Text>
-                  <TouchableOpacity className="bg-[#FFFFFF33] py-[9px] px-2 rounded-full">
-                    <Ionicons name="eye-off" size={16} color="#2D264B" />
-                  </TouchableOpacity>
+
+                  <Pressable
+                    className="bg-[#FFFFFF33] py-[9px] px-2 rounded-full"
+                    hitSlop={20}
+                    onPress={handlePasswordVisibility}
+                  >
+                    <Ionicons
+                      name={!hidePassword ? "eye" : "eye-off"}
+                      size={16}
+                      color="#2D264B"
+                    />
+                  </Pressable>
                 </View>
               </View>
             </View>
@@ -78,7 +179,7 @@ export default function AdminStatisticsScreen() {
         </View>
 
         <View className="mt-7 px-[14px] flex flex-row gap-[10px]">
-          <View className="border border-[#F1F1F1] rounded pt-4 pb-8 px-6">
+          <View className="border w-full border-[#F1F1F1] rounded pt-4 pb-8 px-6">
             <View className="flex flex-row justify-between bg-white p-2">
               <Text
                 style={{ fontFamily: "Poppins_400Regular" }}
@@ -91,16 +192,18 @@ export default function AdminStatisticsScreen() {
                   style={{ fontFamily: "Poppins_500Medium" }}
                   className="text-black text-base"
                 >
-                  This Week
+                  This Year
                 </Text>
-                <OpenIcon color="white" />
+                {/* <Ionicons size={14} color="#000" name="chevron-down-outline" /> */}
               </View>
             </View>
 
-            <Text className="mt-3 font-normal text-[32px] text-[#165BAA]">
-              25000
-            </Text>
-            <View className="mt-10">
+            <View>
+              <Text className="mt-3 font-normal text-[32px] text-[#165BAA]">
+                {loadingUsersChart ? "loading..." : usersChart?.total}
+              </Text>
+            </View>
+            <View className="mt-10 w-full">
               <BarChart
                 barWidth={22}
                 noOfSections={3}
@@ -113,7 +216,12 @@ export default function AdminStatisticsScreen() {
             </View>
             <View className="flex flex-row gap-[5px] pl-4 items-center pt-6 pb-2">
               <View className="w-2 h-2 bg-[#7987FF] rounded-full" />
-              <Text>Users</Text>
+              <Text
+                style={{ fontFamily: "Poppins_500Medium" }}
+                className="text-black text-xs"
+              >
+                Users
+              </Text>
             </View>
           </View>
         </View>

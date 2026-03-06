@@ -4,6 +4,9 @@ import {
   LocationResponse,
   VisitorResponse,
   LastMatch,
+  UpcomingSession,
+  UsersChart,
+  RevenueStats,
 } from "@/components/typings/apiResponse";
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import apiCall from "./apiCall";
@@ -15,17 +18,6 @@ export const getLocation = createAsyncThunk<
   AsyncThunkConfig
 >("location/getLocation", async (_, thunkAPI) => {
   return apiCall(axiosInstance.get(`/i-one/location`), thunkAPI);
-});
-
-export const getRecentData = createAsyncThunk<
-  DashboardSummary,
-  string,
-  AsyncThunkConfig
->("location/getRecentData", async (locationId, thunkAPI) => {
-  return apiCall(
-    axiosInstance.get(`/i-one/location/${locationId}/dashboard`),
-    thunkAPI,
-  );
 });
 
 export const getSummary = createAsyncThunk<
@@ -62,7 +54,7 @@ export const getVisitorsCount = createAsyncThunk<
 });
 
 export const getUpcomingSessions = createAsyncThunk<
-  VisitorResponse,
+  UpcomingSession[],
   string,
   AsyncThunkConfig
 >("location/getUpcomingSessions", async (locationId, thunkAPI) => {
@@ -70,6 +62,28 @@ export const getUpcomingSessions = createAsyncThunk<
     axiosInstance.get(
       `/i-one/location/${locationId}/dashboard/upcoming-sessions`,
     ),
+    thunkAPI,
+  );
+});
+
+export const getRevenue = createAsyncThunk<
+  RevenueStats,
+  string,
+  AsyncThunkConfig
+>("location/getRevenue", async (locationId, thunkAPI) => {
+  return apiCall(
+    axiosInstance.get(`/i-one/location/${locationId}/dashboard/revenue`),
+    thunkAPI,
+  );
+});
+
+export const getUsersChart = createAsyncThunk<
+  UsersChart,
+  string,
+  AsyncThunkConfig
+>("location/getUsersChart", async (locationId, thunkAPI) => {
+  return apiCall(
+    axiosInstance.get(`/i-one/location/${locationId}/dashboard/users-chart`),
     thunkAPI,
   );
 });

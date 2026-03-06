@@ -117,7 +117,7 @@ export default function Schedule() {
     dispatch(allSessions(payload));
   }, [dispatch, user]);
 
-  //   console.log("all sessions:", all);
+  console.log("all sessions:", all);
 
   // Format sessions from API response
   const formattedMatches = useMemo(() => {

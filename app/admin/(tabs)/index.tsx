@@ -45,11 +45,7 @@ export default function AdminHomeScreen() {
 
   //   console.log("dashboardSummary in AdminHomeScreen:", dashboardSummary);
   //   console.log("getLocation error in AdminHomeScreen:", errorLocation);
-  //   console.log("getLocation response in AdminHomeScreen:", location);
-  console.log(
-    "getUpcomingSessions response in AdminHomeScreen:",
-    upcomingSessions,
-  );
+  //   console.log("getLocation response in AdminHomeScreen:", lastMatches);
 
   return (
     <View className="flex-1">
@@ -135,7 +131,7 @@ export default function AdminHomeScreen() {
             <Text className="text-3xl text-black text-center">loading...</Text>
           ) : lastMatches.length == 0 ? (
             <Text className="text-black text-center">
-              {errorLastMatches ? errorLastMatches : "no recent match"}
+              {errorLastMatches ? errorLastMatches : "no recent match 😕"}
             </Text>
           ) : (
             <View className="gap-4">
