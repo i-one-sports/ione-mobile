@@ -24,7 +24,9 @@ export default function AdminStatisticsScreen() {
     "this_week" | "this_month" | "this_year"
   >("this_month");
   const [openDropdown, setOpenDropdown] = useState(false);
+  const [openUserDropdown, setOpenUserDropdown] = useState(false);
   const [hidePassword, setHidePassword] = useState(true);
+  const [selectedMonth, setSelectedMonth] = useState<number | null>(null);
   const dispatch = useAppDispatch();
   const {
     location,
@@ -44,7 +46,7 @@ export default function AdminStatisticsScreen() {
     }
   }, [dispatch, location?._id]);
 
-  console.log("getUsers response in StatScreen:", revenueStats);
+  console.log("getUsers response in StatScreen:", usersChart);
   const handlePasswordVisibility = () => {
     setHidePassword((prevState) => !prevState);
   };
@@ -55,23 +57,23 @@ export default function AdminStatisticsScreen() {
     this_year: "This Year",
   };
 
+  const months = [
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "June",
+    "July",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec",
+  ];
+
   const barData = useMemo(() => {
     if (!usersChart?.data) return [];
-
-    const months = [
-      "Jan",
-      "Feb",
-      "Mar",
-      "Apr",
-      "May",
-      "June",
-      "July",
-      "Aug",
-      "Sep",
-      "Oct",
-      "Nov",
-      "Dec",
-    ];
 
     return usersChart.data.map((item) => ({
       value: item.count,
@@ -79,6 +81,12 @@ export default function AdminStatisticsScreen() {
       frontColor: "#7987FF",
     }));
   }, [usersChart]);
+
+  const selectedMonthData = useMemo(() => {
+    if (!usersChart?.data || selectedMonth === null) return null;
+
+    return usersChart.data.find((item) => item.month === selectedMonth);
+  }, [usersChart, selectedMonth]);
 
   const revenue = hidePassword
     ? "****"
@@ -187,20 +195,48 @@ export default function AdminStatisticsScreen() {
               >
                 Number of Users
               </Text>
-              <View className="flex-row items-center gap-2">
+              <TouchableOpacity
+                onPress={() => setOpenUserDropdown(!openUserDropdown)}
+                className="flex-row items-center gap-2"
+              >
                 <Text
                   style={{ fontFamily: "Poppins_500Medium" }}
                   className="text-black text-base"
                 >
-                  This Year
+                  {selectedMonth ? months[selectedMonth - 1] : "Select Month"}
                 </Text>
-                {/* <Ionicons size={14} color="#000" name="chevron-down-outline" /> */}
-              </View>
+
+                <Ionicons
+                  size={14}
+                  color="#000"
+                  name={
+                    openUserDropdown
+                      ? "chevron-up-outline"
+                      : "chevron-down-outline"
+                  }
+                />
+              </TouchableOpacity>
             </View>
+            {openUserDropdown && (
+              <View className="mt-2 bg-white rounded-md shadow">
+                {usersChart?.data.map((item) => (
+                  <TouchableOpacity
+                    key={item.month}
+                    onPress={() => {
+                      setSelectedMonth(item.month);
+                      setOpenUserDropdown(false);
+                    }}
+                    className="p-2"
+                  >
+                    <Text>{months[item.month - 1]}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
 
             <View>
               <Text className="mt-3 font-normal text-[32px] text-[#165BAA]">
-                {loadingUsersChart ? "loading..." : usersChart?.total}
+                {selectedMonthData?.count ?? 0}
               </Text>
             </View>
             <View className="mt-10 w-full">
@@ -218,9 +254,10 @@ export default function AdminStatisticsScreen() {
               <View className="w-2 h-2 bg-[#7987FF] rounded-full" />
               <Text
                 style={{ fontFamily: "Poppins_500Medium" }}
-                className="text-black text-xs"
+                className="text-black text-base"
               >
-                Users
+                Total number of Users:{" "}
+                {loadingUsersChart ? "loading..." : usersChart?.total}
               </Text>
             </View>
           </View>
