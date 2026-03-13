@@ -11,7 +11,10 @@ export default function AdminChangePasswordScreen() {
       <View className="py-6 px-[35px] flex-1">
         <View>
           <View className="flex flex-row items-center justify-between">
-            <ThemedText className="text-black text-xl font-semibold">
+            <ThemedText
+              style={{ fontFamily: "Poppins_600SemiBold" }}
+              className="text-black text-xl"
+            >
               Change Password
             </ThemedText>
             <TouchableOpacity className="bg-[#00FF943B] rounded-[10px] w-[30px] h-[32px] items-center justify-center">
@@ -32,7 +35,10 @@ export default function AdminChangePasswordScreen() {
 
         <View className="mt-auto mb-[42px]">
           <TouchableOpacity>
-            <ThemedText className="text-[#000000] text-center py-5 font-medium text-[15px] bg-[#00FF94]">
+            <ThemedText
+              style={{ fontFamily: "Poppins_500Medium" }}
+              className="text-[#000000] text-center py-5 text-[15px] bg-[#00FF94]"
+            >
               Confirm Password
             </ThemedText>
           </TouchableOpacity>

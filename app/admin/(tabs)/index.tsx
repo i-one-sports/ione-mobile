@@ -4,6 +4,7 @@ import {
   getSummary,
   getUpcomingSessions,
 } from "@/api/ownerDashboardThunk";
+import { getTeamDetails } from "@/api/teamThunks";
 import LocationIcon from "@/assets/svg/LocationIcon";
 import SettingsIcon from "@/assets/svg/SettingsIcon";
 import Recent from "@/components/Recent";
@@ -24,14 +25,12 @@ export default function AdminHomeScreen() {
     dashboardSummary,
     loadingSummmary,
     location,
-    upcomingSessions,
     lastMatches,
     loadingLocation,
     loadingLastMatches,
     errorLastMatches,
     errorLocation,
     errorSummary,
-    errorUpcomingSessions,
   } = useAppSelector((state) => state.ownerDashboard);
 
   useEffect(() => {
@@ -45,16 +44,18 @@ export default function AdminHomeScreen() {
 
   //   console.log("dashboardSummary in AdminHomeScreen:", dashboardSummary);
   //   console.log("getLocation error in AdminHomeScreen:", errorLocation);
-  //   console.log("getLocation response in AdminHomeScreen:", lastMatches);
+  //   console.log("getLastMatches response in AdminHomeScreen:", lastMatches);
 
   return (
     <View className="flex-1">
       <ImageBackground
         source={
-          location?.pitchPhoto
-            ? { uri: location.pitchPhoto }
-            : require("@/assets/images/adminHeader.png")
+          //   location?.pitchPhoto
+          //     ? { uri: location.pitchPhoto }
+          //     : require("../../../assets/images/adminHeader.png")
+          require("../../../assets/images/adminHeader.png")
         }
+        //
       >
         <SafeAreaView edges={["top"]}>
           <StatusBar style="auto" />
@@ -141,6 +142,8 @@ export default function AdminHomeScreen() {
                   date={match.createdAt}
                   //   type={match.session}
                   homeTeamInitial={match.teamOne.name}
+                  homeTeamId={match.teamOne._id}
+                  awayTeamId={match.teamTwo._id}
                   awayTeamInitial={match.teamTwo.name}
                   awayTeamName={match.teamTwo?.name}
                   homeTeamName={match.teamOne?.name}

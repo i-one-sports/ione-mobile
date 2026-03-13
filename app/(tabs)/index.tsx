@@ -1,25 +1,21 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 
-import React, { useEffect } from "react";
+import { nearBy, nearByLocation } from "@/api/sessions";
+import FilterSvg from "@/assets/svg/FilterSvg";
+import NotificationIcon from "@/assets/svg/NotificationIcon";
+import FixtureList from "@/components/FixtureList";
+import PitchCarousel from "@/components/PitchCarousel";
 import SafeAreaScreen from "@/components/SafeAreaScreen";
+import ShimmerCarousel from "@/components/ShimmerCarousel";
 import { ThemedText } from "@/components/ThemedText";
-import { ThemedView } from "@/components/ThemedView";
+import { useAppDispatch, useAppSelector } from "@/redux/store";
+import React, { useEffect } from "react";
 import {
-  FlatList,
-  ScrollView,
+  TextInput,
   TouchableOpacity,
   View,
   useColorScheme,
-  TextInput,
 } from "react-native";
-import NotificationIcon from "@/assets/svg/NotificationIcon";
-import PitchCarousel from "@/components/PitchCarousel";
-import FilterSvg from "@/assets/svg/FilterSvg";
-import FixtureList from "@/components/FixtureList";
-import { useAppDispatch, useAppSelector } from "@/redux/store";
-import { allSessions, nearBy, nearByLocation } from "@/api/sessions";
-import ShimmerCarousel from "@/components/ShimmerCarousel";
-import { getUser } from "@/api/authThunks";
 
 export default function HomeScreen() {
   const colorScheme = useColorScheme();

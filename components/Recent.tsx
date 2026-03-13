@@ -1,4 +1,5 @@
 import RightArrow from "@/assets/svg/RightArrow";
+import { router } from "expo-router";
 import React from "react";
 import { TouchableOpacity, View } from "react-native";
 import Polygon from "./Polygon";
@@ -8,6 +9,8 @@ type RecentProps = {
   date: string;
   type?: string;
   homeTeamInitial: string;
+  homeTeamId: string;
+  awayTeamId: string;
   awayTeamInitial: string;
   homeTeamName: string;
   awayTeamName: string;
@@ -15,19 +18,17 @@ type RecentProps = {
   awayScore: number;
 };
 
-const getInitials = (name: string) => {
-  return (
-    name
-      .trim()
-      .split(" ")
-      // .filter(Boolean)
-      .slice(0, 2)
-      .map((word) => word[0].toUpperCase())
-      .join("")
-  );
+export const getInitials = (name: string) => {
+  if (!name) return "";
+  return name
+    .trim()
+    .split(" ")
+    .slice(0, 2)
+    .map((word) => word[0].toUpperCase())
+    .join("");
 };
 
-const formateDate = (date: string) => {
+export const formateDate = (date: string) => {
   return new Date(date).toLocaleDateString("en-US", {
     day: "numeric",
     month: "numeric",
@@ -44,9 +45,26 @@ export default function Recent({
   awayTeamName,
   homeScore,
   awayScore,
+  homeTeamId,
+  awayTeamId,
 }: RecentProps) {
+  const handleMatchDetails = () => {
+    router.push({
+      pathname: "/admin/recentdetails",
+      params: {
+        homeTeamId,
+        awayTeamId,
+        homeScore,
+        awayScore,
+        date,
+      },
+    });
+  };
   return (
-    <TouchableOpacity className="dark:bg-gray-800 rounded-[5px] py-[10px] px-[25px] flex-col justify-between gap-[7px] bg-[#EDFFF8]">
+    <TouchableOpacity
+      onPress={() => handleMatchDetails()}
+      className="dark:bg-gray-800 rounded-[5px] py-[10px] px-[25px] flex-col justify-between gap-[7px] bg-[#EDFFF8]"
+    >
       <View className="flex flex-row justify-between items-center">
         <ThemedText className="text-xs">{formateDate(date)}</ThemedText>
         <ThemedText className="text-xs text-gray-600 dark:text-gray-400">

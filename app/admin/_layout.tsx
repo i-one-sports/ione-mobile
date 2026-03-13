@@ -36,6 +36,32 @@ function AdminAppNavigator() {
           contentStyle: { backgroundColor: "#FFFFFF" },
         }}
       />
+      <Stack.Screen
+        name="recentdetails"
+        options={{
+          title: "Recent Details",
+          headerShown: false,
+          contentStyle: { backgroundColor: "#FFFFFF" },
+        }}
+      />
+
+      <Stack.Screen
+        name="pricingoption"
+        options={{
+          title: "Pricing Option",
+          headerShown: false,
+          contentStyle: { backgroundColor: "#FFFFFF" },
+        }}
+      />
+
+      <Stack.Screen
+        name="pitchcondition"
+        options={{
+          title: "Pitch Condition",
+          headerShown: false,
+          contentStyle: { backgroundColor: "#FFFFFF" },
+        }}
+      />
     </Stack>
   );
 }

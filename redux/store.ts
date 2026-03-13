@@ -17,6 +17,7 @@ import languageReducer from "./reducers/language";
 import ownerDashboardReducer from "./reducers/ownerDashboard";
 import sessionReducer from "./reducers/sessions";
 import walletReducer from "./reducers/wallet";
+import teamReducer from "./reducers/team";
 
 const asyncPersistConfig = {
   key: "main",
@@ -35,6 +36,7 @@ const reducers = combineReducers({
   sessions: sessionReducer,
   wallet: walletReducer,
   ownerDashboard: ownerDashboardReducer,
+  team: teamReducer,
 });
 
 const store = configureStore({

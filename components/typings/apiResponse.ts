@@ -215,3 +215,18 @@ export interface RevenueStats {
   this_month: Stats;
   this_year: Stats;
 }
+
+export interface Player {
+  _id: string;
+  firstName: string;
+  lastName: string;
+  nickname: string;
+  avatar: string;
+  position: string;
+}
+export interface TeamDetails {
+  _id: string;
+  session: string;
+  name: string;
+  players: Player[];
+}

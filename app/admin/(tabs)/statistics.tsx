@@ -46,7 +46,6 @@ export default function AdminStatisticsScreen() {
     }
   }, [dispatch, location?._id]);
 
-  console.log("getUsers response in StatScreen:", usersChart);
   const handlePasswordVisibility = () => {
     setHidePassword((prevState) => !prevState);
   };
@@ -133,7 +132,7 @@ export default function AdminStatisticsScreen() {
                   </TouchableOpacity>
 
                   {openDropdown && (
-                    <View className="absolute top-12 z-10 bg-white rounded-lg p-2 shadow-md">
+                    <View className="absolute top-12 z-10 bg-white shrink-0 rounded-lg p-1 shadow-md">
                       {Object.entries(periodLabels).map(([key, label]) => (
                         <TouchableOpacity
                           key={key}
@@ -283,7 +282,7 @@ export default function AdminStatisticsScreen() {
               style={{ fontFamily: "Poppins_400Regular" }}
               className="text-black text-xs"
             >
-              Tournaments Hosted
+              Number of matches played
             </ThemedText>
             <ThemedText
               style={{ fontFamily: "PlayfairDisplay_700Bold" }}
