@@ -77,6 +77,32 @@ export default function AdminPricingOptionScreen() {
             </View>
           </TouchableOpacity>
 
+          <TouchableOpacity
+            onPress={() => setOpenDropdown(!openDropdown)}
+            className="mt-12 relative"
+          >
+            <View
+              style={{ borderColor: "#B2B2B2", borderRadius: 5 }}
+              className="flex-row px-[10px] border h-14 items-center justify-between"
+            >
+              <Text>
+                {loadingSummmary
+                  ? "loading.."
+                  : dashboardSummary?.pitchCondition}
+              </Text>
+
+              <View className="bg-[#00000033] rounded-[10px] p-[5px]">
+                <Ionicons
+                  size={14}
+                  color="#00000033"
+                  name={
+                    openDropdown ? "chevron-up-outline" : "chevron-down-outline"
+                  }
+                />
+              </View>
+            </View>
+          </TouchableOpacity>
+
           {openDropdown && (
             <View className="mt-2 bg-white rounded-md shadow">
               {pricingOption?.map((item) => (

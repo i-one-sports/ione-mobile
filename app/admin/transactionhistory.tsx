@@ -1,57 +1,31 @@
-import {
-  getLocation,
-  getSummary,
-  updatePitchCondition,
-} from "@/api/ownerDashboardThunk";
+import { getLocation, getSummary } from "@/api/ownerDashboardThunk";
 import AdminNotificationIcon from "@/assets/svg/AdminNotificationIcon";
 import SafeAreaScreen from "@/components/SafeAreaScreen";
 import { ThemedText } from "@/components/ThemedText";
-import { PitchConditionType } from "@/components/typings/apiResponse";
 import { useAppDispatch, useAppSelector } from "@/redux/store";
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import { Text, TouchableOpacity, View } from "react-native";
-import { Toast } from "toastify-react-native";
 
-export default function AdminPitchConditionScreen() {
-  const pitchState = [
+export default function AdminPricingOptionScreen() {
+  const pricingOption = [
     {
       id: 1,
-      label: "Excellent",
-      value: "excellent",
+      state: "Good",
     },
     {
       id: 2,
-      label: "Good",
-      value: "good",
+      state: "Maintenance",
     },
     {
       id: 3,
-      label: "Fair",
-      value: "fair",
+      state: "Bad",
     },
-    {
-      id: 4,
-      label: "Poor",
-      value: "poor",
-    },
-    {
-      id: 5,
-      label: "Wet",
-      value: "wet",
-    },
-    {
-      id: 6,
-      label: "Under_Maintenance",
-      value: "under_maintenance",
-    },
-  ] as const;
-  const dispatch = useAppDispatch();
-  const router = useRouter();
+  ];
   const [openDropdown, setOpenDropdown] = useState<boolean>(false);
-  const [pitchCondition, setPitchCondition] = useState<PitchConditionType>();
-  const { dashboardSummary, location, loadingPitchCondition } = useAppSelector(
+  const [pitchCondition, setPitchCondition] = useState<string>("");
+  const dispatch = useAppDispatch();
+  const { dashboardSummary, loadingSummmary, location } = useAppSelector(
     (state) => state.ownerDashboard,
   );
 
@@ -61,33 +35,6 @@ export default function AdminPitchConditionScreen() {
       dispatch(getSummary(location._id));
     }
   }, [dispatch, location?._id]);
-
-  const handleUpdatePitch = async () => {
-    if (!location?._id || !pitchCondition) return;
-
-    try {
-      const res = await dispatch(
-        updatePitchCondition({
-          locationId: location._id,
-          pitchCondition,
-        }),
-      ).unwrap();
-
-      Toast.show({
-        type: "success",
-        text1: "Success",
-        text2: res.message,
-      });
-      router.replace("/admin/(tabs)");
-    } catch (err: any) {
-      Toast.show({
-        type: "error",
-        text1: "Error",
-        text2: err?.message || "Failed to update pitch condition",
-      });
-    }
-  };
-
   return (
     <SafeAreaScreen className="flex-1">
       <View className="py-6 px-[35px] flex-1">
@@ -97,12 +44,19 @@ export default function AdminPitchConditionScreen() {
               style={{ fontFamily: "Poppins_600SemiBold" }}
               className="text-black text-xl"
             >
-              Pitch Condition
+              Transaction History
             </ThemedText>
             <TouchableOpacity className="bg-[#00FF943B] rounded-[10px] w-[30px] h-[32px] items-center justify-center">
               <AdminNotificationIcon />
             </TouchableOpacity>
           </View>
+
+          <Text
+            style={{ fontFamily: "Poppins_500Medium" }}
+            className="text-black mt-5 text-lg"
+          >
+            Recent Activity
+          </Text>
 
           <TouchableOpacity
             onPress={() => setOpenDropdown(!openDropdown)}
@@ -113,11 +67,9 @@ export default function AdminPitchConditionScreen() {
               className="flex-row px-[10px] border h-14 items-center justify-between"
             >
               <Text>
-                <Text>
-                  {pitchCondition ||
-                    dashboardSummary?.pitchCondition ||
-                    "Select condition"}
-                </Text>
+                {loadingSummmary
+                  ? "loading.."
+                  : dashboardSummary?.pitchCondition}
               </Text>
 
               <View className="bg-[#00000033] rounded-[10px] p-[5px]">
@@ -134,16 +86,16 @@ export default function AdminPitchConditionScreen() {
 
           {openDropdown && (
             <View className="mt-2 bg-white rounded-md shadow">
-              {pitchState?.map((item) => (
+              {pricingOption?.map((item) => (
                 <TouchableOpacity
                   key={item.id}
                   onPress={() => {
                     setOpenDropdown(false);
-                    setPitchCondition(item.value);
+                    setPitchCondition(item.state);
                   }}
                   className="p-2"
                 >
-                  <Text>{item.label}</Text>
+                  <Text>{item.state}</Text>
                 </TouchableOpacity>
               ))}
             </View>
@@ -151,12 +103,12 @@ export default function AdminPitchConditionScreen() {
         </View>
 
         <View className="mt-auto mb-[42px]">
-          <TouchableOpacity onPress={handleUpdatePitch}>
+          <TouchableOpacity>
             <ThemedText
               style={{ fontFamily: "Poppins_500Medium" }}
               className="text-[#000000] text-center py-5 text-[15px] bg-[#00FF94]"
             >
-              {loadingPitchCondition ? "Updating...." : "Update"}
+              Update
             </ThemedText>
           </TouchableOpacity>
         </View>

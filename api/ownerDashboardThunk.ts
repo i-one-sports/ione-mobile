@@ -7,6 +7,10 @@ import {
   UpcomingSession,
   UsersChart,
   RevenueStats,
+  UpdatePitchConditionResponse,
+  PitchConditionType,
+  ChangePasswordResponse,
+  ChangePasswordPayload,
 } from "@/components/typings/apiResponse";
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import apiCall from "./apiCall";
@@ -84,6 +88,33 @@ export const getUsersChart = createAsyncThunk<
 >("location/getUsersChart", async (locationId, thunkAPI) => {
   return apiCall(
     axiosInstance.get(`/i-one/location/${locationId}/dashboard/users-chart`),
+    thunkAPI,
+  );
+});
+
+export const updatePitchCondition = createAsyncThunk<
+  UpdatePitchConditionResponse,
+  { locationId: string; pitchCondition: PitchConditionType },
+  AsyncThunkConfig
+>(
+  "/location/pitch-condition",
+  async ({ locationId, pitchCondition }, thunkAPI) => {
+    return apiCall(
+      axiosInstance.patch(`/i-one/location/${locationId}/pitch-condition`, {
+        pitchCondition,
+      }),
+      thunkAPI,
+    );
+  },
+);
+
+export const changePassword = createAsyncThunk<
+  ChangePasswordResponse,
+  ChangePasswordPayload,
+  AsyncThunkConfig
+>("/user/change-password", async (payload, thunkAPI) => {
+  return apiCall(
+    axiosInstance.patch(`/i-one/user/change-password`, payload),
     thunkAPI,
   );
 });

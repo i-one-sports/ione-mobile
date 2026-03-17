@@ -224,9 +224,57 @@ export interface Player {
   avatar: string;
   position: string;
 }
-export interface TeamDetails {
+
+export interface RecentTeam {
   _id: string;
-  session: string;
   name: string;
   players: Player[];
+}
+
+export interface GoalScorer {
+  player: {
+    _id: string;
+    firstName: string;
+    nickname: string;
+  };
+  team: "teamOne" | "teamTwo";
+}
+export interface MatchDetails {
+  _id: string;
+  teamOne: RecentTeam;
+  teamTwo: RecentTeam;
+  teamOneScore: number;
+  teamTwoScore: number;
+  isStarted: boolean;
+  matchType: string;
+  goalScorers: GoalScorer[];
+}
+
+export type PitchConditionType =
+  | "excellent"
+  | "good"
+  | "fair"
+  | "poor"
+  | "wet"
+  | "under_maintenance";
+
+export interface Location {
+  _id: string;
+  name: string;
+  pitchCondition: PitchConditionType;
+}
+
+export interface UpdatePitchConditionResponse {
+  message: string;
+  location: Location;
+}
+
+export type ChangePasswordPayload = {
+  oldPassword: string;
+  newPassword: string;
+  confirmNewPassword: string;
+};
+
+export interface ChangePasswordResponse {
+  message: string;
 }

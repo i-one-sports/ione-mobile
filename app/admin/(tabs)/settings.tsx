@@ -168,6 +168,20 @@ export default function AdminSettingsScreen() {
               <ChevronRight />
             </View>
           </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => router.push("/admin/transactionhistory")}
+            className="flex flex-row mt-4 py-5 items-center justify-between"
+          >
+            <ThemedText
+              style={{ fontFamily: "Poppins_500Medium" }}
+              className="text-black text-[15px]"
+            >
+              Transaction History
+            </ThemedText>
+            <View className="bg-[#00000033] rounded-[10px] p-[5px]">
+              <ChevronRight />
+            </View>
+          </TouchableOpacity>
         </View>
 
         <View className="flex-col gap-6">

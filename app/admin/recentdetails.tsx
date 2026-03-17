@@ -1,4 +1,4 @@
-import { getTeamDetails } from "@/api/teamThunks";
+import { getMatchDetails } from "@/api/matchDetailsThunk";
 import BookMarkIcon from "@/assets/svg/BookMarkIcon";
 import FieldSvg from "@/assets/svg/FieldSvg";
 import PitchIcon from "@/assets/svg/PitchSvg";
@@ -8,39 +8,31 @@ import SafeAreaScreen from "@/components/SafeAreaScreen";
 import { ThemedText } from "@/components/ThemedText";
 import { useAppDispatch, useAppSelector } from "@/redux/store";
 import { router, useLocalSearchParams } from "expo-router";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { ScrollView, TouchableOpacity, View } from "react-native";
 
 export default function recentDetails() {
   const dispatch = useAppDispatch();
-  const { homeTeamId, awayTeamId, homeScore, awayScore, date } =
-    useLocalSearchParams<{
-      homeTeamId: string;
-      awayTeamId: string;
-      homeScore: string;
-      awayScore: string;
-      date: string;
-    }>();
+  const { matchId, date } = useLocalSearchParams<{
+    date: string;
+    matchId: string;
+  }>();
   const [activeTab, setActiveTab] = useState<"lineups" | "substitutes">(
     "lineups",
   );
   const [activeTeam, setActiveTeam] = useState<"T1" | "T2">("T1");
-  const { teamDetails } = useAppSelector((state) => state.team);
+  const { matchDetails } = useAppSelector((state) => state.matchDetails);
+
+  const match = matchDetails[matchId];
 
   useEffect(() => {
-    if (homeTeamId) {
-      dispatch(getTeamDetails(homeTeamId));
+    if (matchId) {
+      dispatch(getMatchDetails(matchId));
     }
-    if (awayTeamId) {
-      dispatch(getTeamDetails(awayTeamId));
-    }
-  }, [dispatch, homeTeamId, awayTeamId]);
+  }, [dispatch, matchId]);
 
-  const homeTeam = teamDetails[homeTeamId];
-  const awayTeam = teamDetails[awayTeamId];
-
-  console.log("home team", homeTeam);
-  console.log("away team", awayTeam);
+  const homeTeam = match?.teamOne;
+  const awayTeam = match?.teamTwo;
 
   const homePlayers = homeTeam?.players || [];
   const awayPlayers = awayTeam?.players || [];
@@ -58,6 +50,20 @@ export default function recentDetails() {
     midfielders: awayPlayers.filter((p) => p.position === "MF"),
     forwards: awayPlayers.filter((p) => p.position === "FW"),
   };
+
+  const [teamOneScorers, teamTwoScorers] = useMemo(() => {
+    if (!match?.goalScorers) return [[], []];
+
+    const teamOne = match.goalScorers
+      .filter((g) => g.team === "teamOne")
+      .map((g) => g.player.firstName);
+
+    const teamTwo = match.goalScorers
+      .filter((g) => g.team === "teamTwo")
+      .map((g) => g.player.firstName);
+
+    return [teamOne, teamTwo];
+  }, [match]);
 
   const renderPlayer = (player: any) => (
     <View
@@ -102,30 +108,54 @@ export default function recentDetails() {
         <BookMarkIcon />
       </View>
 
-      <View className="flex-row items-center justify-center mb-9 gap-8">
-        <View className="items-center">
-          <Polygon teamCode={getInitials(homeTeam?.name)} />
-          <ThemedText className="text-xs mt-2 font-semibold">
-            {homeTeam?.name}
+      <View className="flex-row items-center justify-between mb-9 px-4">
+        {/* Team One */}
+        <View className="items-center flex-1">
+          <Polygon teamCode={getInitials(match?.teamOne.name)} />
+
+          <ThemedText className="text-xs mt-2 font-semibold text-center">
+            {match?.teamOne.name}
           </ThemedText>
+
+          {teamOneScorers.length > 0 && (
+            <ThemedText className="text-[10px] text-gray-600 mt-1 text-center">
+              ⚽ {teamOneScorers.join(", ")}
+            </ThemedText>
+          )}
         </View>
 
-        <View>
-          <View className="flex-row items-center justify-center gap-3">
-            <ThemedText className="text-base font-bold">{homeScore}</ThemedText>
-            <View className="px-2 w-4 h-[2px] bg-black dark:bg-gray-700" />
-            <ThemedText className="text-base font-bold">{awayScore}</ThemedText>
+        {/* Score Section */}
+        <View className="items-center mx-4">
+          <View className="flex-row items-center gap-3">
+            <ThemedText className="text-lg font-bold">
+              {match?.teamOneScore}
+            </ThemedText>
+
+            <View className="w-5 h-[2px] bg-black dark:bg-gray-700" />
+
+            <ThemedText className="text-lg font-bold">
+              {match?.teamTwoScore}
+            </ThemedText>
           </View>
-          <ThemedText className="text-base font-bold text-center">
+
+          <ThemedText className="text-xs text-gray-500 mt-1">
             Finished
           </ThemedText>
         </View>
 
-        <View className="items-center">
-          <Polygon teamCode={getInitials(awayTeam?.name)} />
-          <ThemedText className="text-xs mt-2 font-semibold">
-            {awayTeam?.name}
+        {/* Team Two */}
+        <View className="items-center flex-1">
+          <Polygon teamCode={getInitials(match?.teamTwo.name)} />
+
+          <ThemedText className="text-xs mt-2 font-semibold text-center">
+            {match?.teamTwo.name}
           </ThemedText>
+
+          {teamTwoScorers.length > 0 && (
+            <ThemedText className="text-[10px] text-gray-600 mt-1 text-center">
+              ⚽ {teamTwoScorers.join(", ")}
+            </ThemedText>
+          )}
         </View>
       </View>
 

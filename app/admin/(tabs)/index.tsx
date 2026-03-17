@@ -4,9 +4,8 @@ import {
   getSummary,
   getUpcomingSessions,
 } from "@/api/ownerDashboardThunk";
-import { getTeamDetails } from "@/api/teamThunks";
+import AdminNotificationIcon from "@/assets/svg/AdminNotificationIcon";
 import LocationIcon from "@/assets/svg/LocationIcon";
-import SettingsIcon from "@/assets/svg/SettingsIcon";
 import Recent from "@/components/Recent";
 import SafeAreaScreen from "@/components/SafeAreaScreen";
 import { ThemedText } from "@/components/ThemedText";
@@ -45,6 +44,26 @@ export default function AdminHomeScreen() {
   //   console.log("dashboardSummary in AdminHomeScreen:", dashboardSummary);
   //   console.log("getLocation error in AdminHomeScreen:", errorLocation);
   //   console.log("getLastMatches response in AdminHomeScreen:", lastMatches);
+  //   console.log("getMatchDetails response in AdminHomeScreen:", matchDetails);
+
+  const getPitchEmoji = (condition?: string) => {
+    switch (condition) {
+      case "excellent":
+        return "🌟";
+      case "good":
+        return "🌤️";
+      case "fair":
+        return "🌥️";
+      case "poor":
+        return "😬";
+      case "wet":
+        return "💧";
+      case "under_maintenance":
+        return "🚧";
+      default:
+        return "❓";
+    }
+  };
 
   return (
     <View className="flex-1">
@@ -71,18 +90,13 @@ export default function AdminHomeScreen() {
                   : dashboardSummary?.pitchCondition}
               </Text>
               <View className="flex flex-row items-center gap-2">
-                <TouchableOpacity className="bg-[#FFFFFF33] py-2 px-2 rounded-[10px]">
-                  <SettingsIcon width={16} height={16} color="#2D264B" />
+                <TouchableOpacity className="bg-[#FFFFFF33] px-[10px] py-[9px] rounded-[10px]">
+                  {/* <SettingsIcon width={16} height={16} color="#2D264B" /> */}
+                  <AdminNotificationIcon />
                 </TouchableOpacity>
 
                 <TouchableOpacity className="bg-[#FFFFFF33] py-2 px-2 rounded-[10px]">
-                  <Text>
-                    {dashboardSummary?.pitchCondition === "Good" ? (
-                      <Text>🌤️</Text>
-                    ) : (
-                      <Text>🌨️</Text>
-                    )}
-                  </Text>
+                  <Text>{getPitchEmoji(dashboardSummary?.pitchCondition)}</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -138,6 +152,7 @@ export default function AdminHomeScreen() {
             <View className="gap-4">
               {lastMatches.map((match) => (
                 <Recent
+                  matchId={match._id}
                   key={match._id}
                   date={match.createdAt}
                   //   type={match.session}

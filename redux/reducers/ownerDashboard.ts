@@ -1,20 +1,24 @@
 import {
   getLastMatches,
   getLocation,
+  getRevenue,
   getSummary,
   getUpcomingSessions,
   getUsersChart,
   getVisitorsCount,
-  getRevenue,
+  updatePitchCondition,
+  changePassword,
 } from "@/api/ownerDashboardThunk";
 import {
   DashboardSummary,
   LastMatch,
   LocationResponse,
+  RevenueStats,
   UpcomingSession,
+  UpdatePitchConditionResponse,
   UsersChart,
   VisitorResponse,
-  RevenueStats,
+  ChangePasswordResponse,
 } from "@/components/typings/apiResponse";
 import { createSlice } from "@reduxjs/toolkit";
 
@@ -26,6 +30,8 @@ interface State {
   upcomingSessions: UpcomingSession[];
   revenueStats: RevenueStats | null;
   usersChart: UsersChart | null;
+  pitchConditionData: UpdatePitchConditionResponse | null;
+  changePasswordData: ChangePasswordResponse | null;
 
   loadingLocation: boolean;
   loadingVisitorCount: boolean;
@@ -34,6 +40,8 @@ interface State {
   loadingUpcomingSession: boolean;
   loadingRevenueStats: boolean;
   loadingUsersChart: boolean;
+  loadingPitchCondition: boolean;
+  loadingChangePassword: boolean;
 
   errorLocation: string | null;
   errorVisitorCount: string | null;
@@ -42,6 +50,8 @@ interface State {
   errorUpcomingSessions: string | null;
   errorRevenueStats: string | null;
   errorUsersChart: string | null;
+  errorPitchCondition: string | null;
+  errorChangePassword: string | null;
 }
 
 const initialState: State = {
@@ -52,6 +62,8 @@ const initialState: State = {
   upcomingSessions: [],
   revenueStats: null,
   usersChart: null,
+  pitchConditionData: null,
+  changePasswordData: null,
 
   loadingLocation: false,
   loadingVisitorCount: false,
@@ -60,6 +72,8 @@ const initialState: State = {
   loadingUpcomingSession: false,
   loadingRevenueStats: false,
   loadingUsersChart: false,
+  loadingPitchCondition: false,
+  loadingChangePassword: false,
 
   errorLocation: null,
   errorVisitorCount: null,
@@ -68,6 +82,8 @@ const initialState: State = {
   errorUpcomingSessions: null,
   errorRevenueStats: null,
   errorUsersChart: null,
+  errorPitchCondition: null,
+  errorChangePassword: null,
 };
 
 export const ownerDashboardSlice = createSlice({
@@ -177,6 +193,36 @@ export const ownerDashboardSlice = createSlice({
       state.loadingUsersChart = false;
       state.errorUsersChart =
         action.error.message || "Failed to fetch users chart";
+    });
+
+    // update pitch condition
+    builder.addCase(updatePitchCondition.pending, (state) => {
+      state.loadingPitchCondition = true;
+      state.errorPitchCondition = null;
+    });
+    builder.addCase(updatePitchCondition.fulfilled, (state, { payload }) => {
+      state.pitchConditionData = payload;
+      state.loadingPitchCondition = false;
+    });
+    builder.addCase(updatePitchCondition.rejected, (state, action) => {
+      state.loadingPitchCondition = false;
+      state.errorPitchCondition =
+        action.error.message || "Failed to update pitch condition";
+    });
+
+    // update owner password
+    builder.addCase(changePassword.pending, (state) => {
+      state.loadingChangePassword = true;
+      state.errorChangePassword = null;
+    });
+    builder.addCase(changePassword.fulfilled, (state, { payload }) => {
+      state.changePasswordData = payload;
+      state.loadingChangePassword = false;
+    });
+    builder.addCase(changePassword.rejected, (state, action) => {
+      state.loadingChangePassword = false;
+      state.errorChangePassword =
+        action.error.message || "Failed to change password";
     });
   },
 });

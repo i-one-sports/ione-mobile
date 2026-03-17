@@ -50,7 +50,6 @@ function AdminAppNavigator() {
         options={{
           title: "Pricing Option",
           headerShown: false,
-          contentStyle: { backgroundColor: "#FFFFFF" },
         }}
       />
 
@@ -59,7 +58,14 @@ function AdminAppNavigator() {
         options={{
           title: "Pitch Condition",
           headerShown: false,
-          contentStyle: { backgroundColor: "#FFFFFF" },
+        }}
+      />
+
+      <Stack.Screen
+        name="transactionhistory"
+        options={{
+          title: "Transaction History",
+          headerShown: false,
         }}
       />
     </Stack>

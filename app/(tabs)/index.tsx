@@ -49,7 +49,6 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaScreen className="flex-1">
-      {" "}
       {/* Add flex-1 here */}
       <View className="py-6 px-[35px]">
         <View className="flex flex-col gap-6">
@@ -101,7 +100,6 @@ export default function HomeScreen() {
         </View>
       </View>
       <View className="flex-1 px-[35px] mb-[70px]">
-        {" "}
         {/* Add flex-1 and padding */}
         <ThemedText className="text-lg font-semibold mb-4">
           Upcoming Fixtures

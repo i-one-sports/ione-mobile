@@ -6,6 +6,7 @@ import Polygon from "./Polygon";
 import { ThemedText } from "./ThemedText";
 
 type RecentProps = {
+  matchId: string;
   date: string;
   type?: string;
   homeTeamInitial: string;
@@ -37,6 +38,7 @@ export const formateDate = (date: string) => {
 };
 
 export default function Recent({
+  matchId,
   date,
   type,
   homeTeamInitial,
@@ -45,17 +47,12 @@ export default function Recent({
   awayTeamName,
   homeScore,
   awayScore,
-  homeTeamId,
-  awayTeamId,
 }: RecentProps) {
   const handleMatchDetails = () => {
     router.push({
       pathname: "/admin/recentdetails",
       params: {
-        homeTeamId,
-        awayTeamId,
-        homeScore,
-        awayScore,
+        matchId,
         date,
       },
     });
