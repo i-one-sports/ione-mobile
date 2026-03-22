@@ -9,17 +9,22 @@ import LocationIcon from "@/assets/svg/LocationIcon";
 import Recent from "@/components/Recent";
 import SafeAreaScreen from "@/components/SafeAreaScreen";
 import { ThemedText } from "@/components/ThemedText";
+import { setNotification } from "@/redux/reducers/ownerDashboard";
 import { useAppDispatch, useAppSelector } from "@/redux/store";
 import { Ionicons } from "@expo/vector-icons";
 import { ImageBackground } from "expo-image";
+import * as SecureStore from "expo-secure-store";
 import { StatusBar } from "expo-status-bar";
 import React, { useEffect, useState } from "react";
 import { Modal, ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import EventSource from "react-native-sse";
 
 export default function AdminHomeScreen() {
   const dispatch = useAppDispatch();
   const [modalVisible, setModalVisible] = useState<boolean>(false);
+  const [modalNotificationVisible, setModalNotificationVisible] =
+    useState<boolean>(false);
   const {
     dashboardSummary,
     loadingSummmary,
@@ -31,6 +36,9 @@ export default function AdminHomeScreen() {
     errorLocation,
     errorSummary,
   } = useAppSelector((state) => state.ownerDashboard);
+  const latestNotification = useAppSelector(
+    (state) => state.ownerDashboard.latestNotification,
+  );
 
   useEffect(() => {
     dispatch(getLocation());
@@ -40,6 +48,47 @@ export default function AdminHomeScreen() {
       dispatch(getUpcomingSessions(location._id));
     }
   }, [dispatch, location?._id]);
+
+  useEffect(() => {
+    let es: EventSource;
+
+    const initSSE = async () => {
+      const token = await SecureStore.getItemAsync("i-one");
+      if (!token) return;
+
+      es = new EventSource(
+        `${process.env.EXPO_PUBLIC_API_URL}/notifications/stream`,
+        {
+          headers: {
+            Accept: "text/event-stream",
+            "Cache-Control": "no-cache",
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
+
+      es.addEventListener("message", (event) => {
+        try {
+          if (!event.data) return;
+          const data = JSON.parse(event.data);
+          dispatch(setNotification(data));
+        } catch (err) {
+          console.log("SSE parse error", err);
+        }
+      });
+
+      es.addEventListener("error", (err) => {
+        console.log("SSE error", err);
+      });
+    };
+
+    initSSE();
+
+    // Cleanup on unmount
+    return () => {
+      es?.close();
+    };
+  }, []);
 
   //   console.log("dashboardSummary in AdminHomeScreen:", dashboardSummary);
   //   console.log("getLocation error in AdminHomeScreen:", errorLocation);
@@ -90,8 +139,10 @@ export default function AdminHomeScreen() {
                   : dashboardSummary?.pitchCondition}
               </Text>
               <View className="flex flex-row items-center gap-2">
-                <TouchableOpacity className="bg-[#FFFFFF33] px-[10px] py-[9px] rounded-[10px]">
-                  {/* <SettingsIcon width={16} height={16} color="#2D264B" /> */}
+                <TouchableOpacity
+                  onPress={() => setModalNotificationVisible(true)}
+                  className="bg-[#FFFFFF33] px-[10px] py-[9px] rounded-[10px]"
+                >
                   <AdminNotificationIcon />
                 </TouchableOpacity>
 
@@ -188,6 +239,32 @@ export default function AdminHomeScreen() {
               </Text>
               <TouchableOpacity
                 onPress={() => setModalVisible(false)}
+                className="absolute right-4 top-4"
+              >
+                <Ionicons name="close" size={25} color="#333" />
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
+        <Modal
+          visible={modalNotificationVisible}
+          transparent
+          onRequestClose={() => setModalNotificationVisible(false)}
+        >
+          <View className="flex-1 items-center justify-center px-2 bg-black/30">
+            <View className="p-6 rounded-lg ">
+              <Text
+                style={{ fontFamily: "PlayfairDisplay_700Bold" }}
+                className="text-white text-[50px] text-center uppercase"
+              >
+                {latestNotification
+                  ? latestNotification?.body || "New Notification"
+                  : "No notification"}
+              </Text>
+              <TouchableOpacity
+                onPress={() =>
+                  setModalNotificationVisible(!modalNotificationVisible)
+                }
                 className="absolute right-4 top-4"
               >
                 <Ionicons name="close" size={25} color="#333" />

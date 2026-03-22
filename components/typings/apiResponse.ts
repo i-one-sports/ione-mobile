@@ -278,3 +278,47 @@ export type ChangePasswordPayload = {
 export interface ChangePasswordResponse {
   message: string;
 }
+
+export interface NotificationPayload {
+  sessionId?: string;
+  locationId?: string;
+}
+
+export interface Notification {
+  targetUserId: string;
+  type: string;
+  title: string;
+  body: string;
+  payload?: NotificationPayload;
+  timestamp: number;
+}
+
+export interface TransactionEntry {
+  teamName: string;
+  sessionId: string;
+  setId: string;
+  sessionStartTime: string;
+  pricingOption: "hourly" | "weekly";
+  paymentAmount: number;
+  teamSize: number;
+  membersPaid: number;
+  totalPaid: number;
+  expectedTotal: number;
+  paymentStatus: "COMPLETE" | "PARTIAL" | "PENDING";
+  paidAt: string;
+}
+
+export interface TransactionGroup {
+  date: string;
+  entries: TransactionEntry[];
+}
+
+export interface TransactionHistoryResponse {
+  data: TransactionGroup[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}

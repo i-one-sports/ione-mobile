@@ -11,6 +11,7 @@ import {
   PitchConditionType,
   ChangePasswordResponse,
   ChangePasswordPayload,
+  TransactionHistoryResponse,
 } from "@/components/typings/apiResponse";
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import apiCall from "./apiCall";
@@ -115,6 +116,20 @@ export const changePassword = createAsyncThunk<
 >("/user/change-password", async (payload, thunkAPI) => {
   return apiCall(
     axiosInstance.patch(`/i-one/user/change-password`, payload),
+    thunkAPI,
+  );
+});
+
+export const getTransactionHistory = createAsyncThunk<
+  TransactionHistoryResponse,
+  string,
+  AsyncThunkConfig
+>("/location/transactions", async (locationId, thunkAPI) => {
+  return apiCall(
+    axiosInstance.get(
+      `/i-one/billing/location/${locationId}/transactions`,
+      thunkAPI,
+    ),
     thunkAPI,
   );
 });

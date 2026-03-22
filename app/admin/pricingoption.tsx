@@ -8,21 +8,32 @@ import React, { useEffect, useState } from "react";
 import { Text, TouchableOpacity, View } from "react-native";
 
 export default function AdminPricingOptionScreen() {
-  const pricingOption = [
+  const tier = [
     {
       id: 1,
-      state: "Good",
+      state: "Free",
     },
     {
       id: 2,
-      state: "Maintenance",
+      state: "Paid",
+    },
+  ];
+  const pricingOption = [
+    {
+      id: 1,
+      state: "Monthly",
+    },
+    {
+      id: 2,
+      state: "Weekly",
     },
     {
       id: 3,
-      state: "Bad",
+      state: "Daily",
     },
   ];
   const [openDropdown, setOpenDropdown] = useState<boolean>(false);
+  const [openTierDropdown, setOpenTierDropdown] = useState<boolean>(false);
   const [pitchCondition, setPitchCondition] = useState<string>("");
   const dispatch = useAppDispatch();
   const { dashboardSummary, loadingSummmary, location } = useAppSelector(
@@ -52,30 +63,45 @@ export default function AdminPricingOptionScreen() {
           </View>
 
           <TouchableOpacity
-            onPress={() => setOpenDropdown(!openDropdown)}
+            onPress={() => setOpenTierDropdown(!openTierDropdown)}
             className="mt-12 relative"
           >
             <View
               style={{ borderColor: "#B2B2B2", borderRadius: 5 }}
               className="flex-row px-[10px] border h-14 items-center justify-between"
             >
-              <Text>
-                {loadingSummmary
-                  ? "loading.."
-                  : dashboardSummary?.pitchCondition}
-              </Text>
+              <Text>Tier</Text>
 
               <View className="bg-[#00000033] rounded-[10px] p-[5px]">
                 <Ionicons
                   size={14}
                   color="#00000033"
                   name={
-                    openDropdown ? "chevron-up-outline" : "chevron-down-outline"
+                    openTierDropdown
+                      ? "chevron-up-outline"
+                      : "chevron-down-outline"
                   }
                 />
               </View>
             </View>
           </TouchableOpacity>
+
+          {openTierDropdown && (
+            <View className="mt-2 bg-white rounded-md shadow">
+              {tier?.map((item) => (
+                <TouchableOpacity
+                  key={item.id}
+                  onPress={() => {
+                    setOpenTierDropdown(false);
+                    setPitchCondition(item.state);
+                  }}
+                  className="p-2"
+                >
+                  <Text>{item.state}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          )}
 
           <TouchableOpacity
             onPress={() => setOpenDropdown(!openDropdown)}
@@ -85,11 +111,7 @@ export default function AdminPricingOptionScreen() {
               style={{ borderColor: "#B2B2B2", borderRadius: 5 }}
               className="flex-row px-[10px] border h-14 items-center justify-between"
             >
-              <Text>
-                {loadingSummmary
-                  ? "loading.."
-                  : dashboardSummary?.pitchCondition}
-              </Text>
+              <Text>Pricing Options</Text>
 
               <View className="bg-[#00000033] rounded-[10px] p-[5px]">
                 <Ionicons

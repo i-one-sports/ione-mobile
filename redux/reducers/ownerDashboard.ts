@@ -8,6 +8,7 @@ import {
   getVisitorsCount,
   updatePitchCondition,
   changePassword,
+  getTransactionHistory,
 } from "@/api/ownerDashboardThunk";
 import {
   DashboardSummary,
@@ -19,6 +20,9 @@ import {
   UsersChart,
   VisitorResponse,
   ChangePasswordResponse,
+  Notification,
+  TransactionHistoryResponse,
+  TransactionGroup,
 } from "@/components/typings/apiResponse";
 import { createSlice } from "@reduxjs/toolkit";
 
@@ -32,6 +36,8 @@ interface State {
   usersChart: UsersChart | null;
   pitchConditionData: UpdatePitchConditionResponse | null;
   changePasswordData: ChangePasswordResponse | null;
+  latestNotification: Notification | null;
+  transactionHistory: TransactionGroup[];
 
   loadingLocation: boolean;
   loadingVisitorCount: boolean;
@@ -42,6 +48,7 @@ interface State {
   loadingUsersChart: boolean;
   loadingPitchCondition: boolean;
   loadingChangePassword: boolean;
+  loadingTransactionHistory: boolean;
 
   errorLocation: string | null;
   errorVisitorCount: string | null;
@@ -52,6 +59,7 @@ interface State {
   errorUsersChart: string | null;
   errorPitchCondition: string | null;
   errorChangePassword: string | null;
+  errorTransactionHistory: string | null;
 }
 
 const initialState: State = {
@@ -64,6 +72,8 @@ const initialState: State = {
   usersChart: null,
   pitchConditionData: null,
   changePasswordData: null,
+  latestNotification: null,
+  transactionHistory: [],
 
   loadingLocation: false,
   loadingVisitorCount: false,
@@ -74,6 +84,7 @@ const initialState: State = {
   loadingUsersChart: false,
   loadingPitchCondition: false,
   loadingChangePassword: false,
+  loadingTransactionHistory: false,
 
   errorLocation: null,
   errorVisitorCount: null,
@@ -84,12 +95,17 @@ const initialState: State = {
   errorUsersChart: null,
   errorPitchCondition: null,
   errorChangePassword: null,
+  errorTransactionHistory: null,
 };
 
 export const ownerDashboardSlice = createSlice({
   name: "ownerDashboard",
   initialState,
-  reducers: {},
+  reducers: {
+    setNotification: (state, action: { payload: Notification }) => {
+      state.latestNotification = action.payload;
+    },
+  },
   extraReducers(builder) {
     // get location so i can get the location ID
     builder.addCase(getLocation.pending, (state) => {
@@ -224,7 +240,23 @@ export const ownerDashboardSlice = createSlice({
       state.errorChangePassword =
         action.error.message || "Failed to change password";
     });
+
+    // get transaction history
+    builder.addCase(getTransactionHistory.pending, (state) => {
+      state.loadingTransactionHistory = true;
+      state.errorTransactionHistory = null;
+    });
+    builder.addCase(getTransactionHistory.fulfilled, (state, { payload }) => {
+      state.transactionHistory = payload.data;
+      state.loadingTransactionHistory = false;
+    });
+    builder.addCase(getTransactionHistory.rejected, (state, action) => {
+      state.loadingTransactionHistory = false;
+      state.errorTransactionHistory =
+        action.error.message || "Failed to get transaction history";
+    });
   },
 });
 
+export const { setNotification } = ownerDashboardSlice.actions;
 export default ownerDashboardSlice.reducer;
