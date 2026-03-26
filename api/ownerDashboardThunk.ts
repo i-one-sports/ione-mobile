@@ -1,17 +1,18 @@
 import { AsyncThunkConfig } from "@/components/typings/api";
 import {
-  DashboardSummary,
-  LocationResponse,
-  VisitorResponse,
-  LastMatch,
-  UpcomingSession,
-  UsersChart,
-  RevenueStats,
-  UpdatePitchConditionResponse,
-  PitchConditionType,
-  ChangePasswordResponse,
   ChangePasswordPayload,
+  ChangePasswordResponse,
+  DashboardSummary,
+  LastMatch,
+  LocationResponse,
+  PitchConditionType,
+  RevenueStats,
   TransactionHistoryResponse,
+  UpcomingSession,
+  UpdatePitchConditionResponse,
+  UpdatePricingOptionsResponse,
+  UsersChart,
+  VisitorResponse,
 } from "@/components/typings/apiResponse";
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import apiCall from "./apiCall";
@@ -129,6 +130,20 @@ export const getTransactionHistory = createAsyncThunk<
     axiosInstance.get(
       `/i-one/billing/location/${locationId}/transactions`,
       thunkAPI,
+    ),
+    thunkAPI,
+  );
+});
+
+export const updatePricingOptions = createAsyncThunk<
+  UpdatePricingOptionsResponse,
+  { locationId: string },
+  AsyncThunkConfig
+>("/location/pricing-options", async ({ locationId, ...payload }, thunkAPI) => {
+  return apiCall(
+    axiosInstance.patch(
+      `/i-one/location/${locationId}/pricing-options`,
+      payload,
     ),
     thunkAPI,
   );

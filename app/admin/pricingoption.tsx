@@ -1,11 +1,17 @@
-import { getLocation, getSummary } from "@/api/ownerDashboardThunk";
+import { getLocation, updatePricingOptions } from "@/api/ownerDashboardThunk";
 import AdminNotificationIcon from "@/assets/svg/AdminNotificationIcon";
 import SafeAreaScreen from "@/components/SafeAreaScreen";
 import { ThemedText } from "@/components/ThemedText";
+import {
+  PricingOptionType,
+  PricingTier,
+} from "@/components/typings/apiResponse";
 import { useAppDispatch, useAppSelector } from "@/redux/store";
 import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
-import { Text, TouchableOpacity, View } from "react-native";
+import { Text, TextInput, TouchableOpacity, View } from "react-native";
+import { Toast } from "toastify-react-native";
 
 export default function AdminPricingOptionScreen() {
   const tier = [
@@ -25,27 +31,85 @@ export default function AdminPricingOptionScreen() {
     },
     {
       id: 2,
-      state: "Weekly",
-    },
-    {
-      id: 3,
-      state: "Daily",
+      state: "Hourly",
     },
   ];
+  const router = useRouter();
   const [openDropdown, setOpenDropdown] = useState<boolean>(false);
   const [openTierDropdown, setOpenTierDropdown] = useState<boolean>(false);
-  const [pitchCondition, setPitchCondition] = useState<string>("");
+  const [tierValue, setTierValue] = useState<PricingTier | null>(null);
+  const [pricingOptionValue, setPricingOptionValue] =
+    useState<PricingOptionType | null>(null);
+  const [amount, setAmount] = useState<string>("");
   const dispatch = useAppDispatch();
-  const { dashboardSummary, loadingSummmary, location } = useAppSelector(
+  const { location, loadingPricingOptionData } = useAppSelector(
     (state) => state.ownerDashboard,
   );
 
   useEffect(() => {
     dispatch(getLocation());
-    if (location?._id) {
-      dispatch(getSummary(location._id));
+    if (location) {
+      setTierValue(location.tier || null);
+      setPricingOptionValue(location.pricingOption || null);
     }
   }, [dispatch, location?._id]);
+
+  const handleUpdatePricingOptions = async () => {
+    if (!location?._id || !tierValue) return;
+
+    let payload;
+
+    if (tierValue === "free") {
+      payload = { tier: "free" };
+    } else {
+      if (!pricingOptionValue) {
+        Toast.show({
+          type: "error",
+          text1: "Error",
+          text2: "Select pricing option and enter amount",
+        });
+        return;
+      }
+
+      if (pricingOptionValue === "hourly") {
+        payload = {
+          tier: "paid",
+          pricingOption: "hourly",
+          paymentPerPersonHourly: Number(amount),
+        };
+      } else {
+        payload = {
+          tier: "paid",
+          pricingOption: "monthly",
+          paymentPerPersonMonthly: Number(amount),
+        };
+      }
+    }
+
+    try {
+      const res = await dispatch(
+        updatePricingOptions({
+          locationId: location._id,
+          ...payload,
+        }),
+      ).unwrap();
+
+      Toast.show({
+        type: "success",
+        text1: "Success",
+        text2: res.message || "Updated successfully",
+      });
+
+      router.replace("/admin/(tabs)");
+    } catch (err: any) {
+      Toast.show({
+        type: "error",
+        text1: "Error",
+        text2: err?.message || "Failed to update pricing",
+      });
+    }
+  };
+
   return (
     <SafeAreaScreen className="flex-1">
       <View className="py-6 px-[35px] flex-1">
@@ -70,7 +134,7 @@ export default function AdminPricingOptionScreen() {
               style={{ borderColor: "#B2B2B2", borderRadius: 5 }}
               className="flex-row px-[10px] border h-14 items-center justify-between"
             >
-              <Text>Tier</Text>
+              <Text>{tierValue || "Tier"}</Text>
 
               <View className="bg-[#00000033] rounded-[10px] p-[5px]">
                 <Ionicons
@@ -93,7 +157,7 @@ export default function AdminPricingOptionScreen() {
                   key={item.id}
                   onPress={() => {
                     setOpenTierDropdown(false);
-                    setPitchCondition(item.state);
+                    setTierValue(item.state.toLocaleLowerCase() as PricingTier);
                   }}
                   className="p-2"
                 >
@@ -104,14 +168,20 @@ export default function AdminPricingOptionScreen() {
           )}
 
           <TouchableOpacity
-            onPress={() => setOpenDropdown(!openDropdown)}
+            onPress={() => {
+              if (tierValue === "free") return;
+              setOpenDropdown(!openDropdown);
+            }}
+            style={{
+              opacity: tierValue === "free" ? 0.5 : 1,
+            }}
             className="mt-12 relative"
           >
             <View
               style={{ borderColor: "#B2B2B2", borderRadius: 5 }}
               className="flex-row px-[10px] border h-14 items-center justify-between"
             >
-              <Text>Pricing Options</Text>
+              <Text>{pricingOptionValue || "Pricing Options"}</Text>
 
               <View className="bg-[#00000033] rounded-[10px] p-[5px]">
                 <Ionicons
@@ -132,7 +202,9 @@ export default function AdminPricingOptionScreen() {
                   key={item.id}
                   onPress={() => {
                     setOpenDropdown(false);
-                    setPitchCondition(item.state);
+                    setPricingOptionValue(
+                      item.state.toLocaleLowerCase() as PricingOptionType,
+                    );
                   }}
                   className="p-2"
                 >
@@ -141,15 +213,32 @@ export default function AdminPricingOptionScreen() {
               ))}
             </View>
           )}
+
+          <TextInput
+            editable={tierValue !== "free"}
+            style={{
+              borderColor: "#B2B2B2",
+              borderRadius: 5,
+              opacity: tierValue === "free" ? 0.5 : 1,
+            }}
+            className="mt-12 px-[10px] rounded-md border h-14 bg-transparent"
+            onChangeText={setAmount}
+            value={amount}
+            placeholder="Enter Amount"
+            keyboardType="numeric"
+          />
         </View>
 
         <View className="mt-auto mb-[42px]">
-          <TouchableOpacity>
+          <TouchableOpacity
+            disabled={loadingPricingOptionData}
+            onPress={handleUpdatePricingOptions}
+          >
             <ThemedText
               style={{ fontFamily: "Poppins_500Medium" }}
               className="text-[#000000] text-center py-5 text-[15px] bg-[#00FF94]"
             >
-              Update
+              {loadingPricingOptionData ? "Updating...." : "Update"}
             </ThemedText>
           </TouchableOpacity>
         </View>

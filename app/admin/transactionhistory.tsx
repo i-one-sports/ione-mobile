@@ -101,24 +101,6 @@ export default function AdminTransactionHistoryScreen() {
       return "Yesterday";
     return dayjs(date).format("ddd D MMM");
   };
-
-  //   const grouped = recentActivity.reduce(
-  //     (
-  //       acc: Record<string, { label: string; activities: typeof recentActivity }>,
-  //       item,
-  //     ) => {
-  //       const dateKey = dayjs(item.date).format("YYYY-MM-DD");
-  //       if (!acc[dateKey]) {
-  //         acc[dateKey] = {
-  //           label: getLabel(dateKey),
-  //           activities: [],
-  //         };
-  //       }
-  //       acc[dateKey].activities.push(item);
-  //       return acc;
-  //     },
-  //     {},
-  //   );
   const dispatch = useAppDispatch();
   const { location, transactionHistory } = useAppSelector(
     (state) => state.ownerDashboard,
@@ -204,6 +186,9 @@ export default function AdminTransactionHistoryScreen() {
           ))}
         </ScrollView> */}
         <ScrollView showsVerticalScrollIndicator={false}>
+          {transactionHistory.length === 0 && (
+            <Text className="text-center mt-10">No transactions yet</Text>
+          )}
           {transactionHistory.map((group) => (
             <View className="mt-3" key={group.date}>
               <Text className="text-[#7D7D7D]">{formatDate(group.date)}</Text>

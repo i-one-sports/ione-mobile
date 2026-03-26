@@ -150,8 +150,17 @@ export interface LocationResponse {
   _id: string;
   name: string;
   address: string;
-  booked: boolean;
   pitchPhoto?: string;
+  friendly: boolean;
+  tournament: boolean;
+  tournamentFee: number;
+  owner?: string;
+  tier: "free" | "paid";
+  pricingOption: "hourly" | "monthly";
+  paymentPerPersonHourly?: number;
+  paymentPerPersonMonthly?: number;
+  openingHour?: string;
+  closingHour?: string;
   location: { type: "Point"; coordinates: [number, number] };
   createdAt: string;
   updatedAt: string;
@@ -269,11 +278,11 @@ export interface UpdatePitchConditionResponse {
   location: Location;
 }
 
-export type ChangePasswordPayload = {
+export interface ChangePasswordPayload {
   oldPassword: string;
   newPassword: string;
   confirmNewPassword: string;
-};
+}
 
 export interface ChangePasswordResponse {
   message: string;
@@ -298,7 +307,7 @@ export interface TransactionEntry {
   sessionId: string;
   setId: string;
   sessionStartTime: string;
-  pricingOption: "hourly" | "weekly";
+  pricingOption: "hourly" | "monthly";
   paymentAmount: number;
   teamSize: number;
   membersPaid: number;
@@ -321,4 +330,28 @@ export interface TransactionHistoryResponse {
     total: number;
     totalPages: number;
   };
+}
+
+export type PricingTier = "free" | "paid";
+
+export type PricingOptionType = "hourly" | "monthly";
+
+export type PricingOptionPayload =
+  | {
+      tier: "free";
+    }
+  | {
+      tier: "paid";
+      pricingOption: "hourly";
+      paymentPerPersonHourly: number;
+    }
+  | {
+      tier: "paid";
+      pricingOption: "monthly";
+      paymentPerPersonMonthly: number;
+    };
+
+export interface UpdatePricingOptionsResponse {
+  message: string;
+  location: LocationResponse;
 }

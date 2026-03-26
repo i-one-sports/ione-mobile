@@ -1,28 +1,29 @@
 import {
+  changePassword,
   getLastMatches,
   getLocation,
   getRevenue,
   getSummary,
+  getTransactionHistory,
   getUpcomingSessions,
   getUsersChart,
   getVisitorsCount,
   updatePitchCondition,
-  changePassword,
-  getTransactionHistory,
+  updatePricingOptions,
 } from "@/api/ownerDashboardThunk";
 import {
+  ChangePasswordResponse,
   DashboardSummary,
   LastMatch,
   LocationResponse,
+  Notification,
   RevenueStats,
+  TransactionGroup,
   UpcomingSession,
   UpdatePitchConditionResponse,
+  UpdatePricingOptionsResponse,
   UsersChart,
   VisitorResponse,
-  ChangePasswordResponse,
-  Notification,
-  TransactionHistoryResponse,
-  TransactionGroup,
 } from "@/components/typings/apiResponse";
 import { createSlice } from "@reduxjs/toolkit";
 
@@ -38,6 +39,7 @@ interface State {
   changePasswordData: ChangePasswordResponse | null;
   latestNotification: Notification | null;
   transactionHistory: TransactionGroup[];
+  pricingOptionData: UpdatePricingOptionsResponse | null;
 
   loadingLocation: boolean;
   loadingVisitorCount: boolean;
@@ -49,6 +51,7 @@ interface State {
   loadingPitchCondition: boolean;
   loadingChangePassword: boolean;
   loadingTransactionHistory: boolean;
+  loadingPricingOptionData: boolean;
 
   errorLocation: string | null;
   errorVisitorCount: string | null;
@@ -60,6 +63,7 @@ interface State {
   errorPitchCondition: string | null;
   errorChangePassword: string | null;
   errorTransactionHistory: string | null;
+  errorPricingOptionData: string | null;
 }
 
 const initialState: State = {
@@ -74,6 +78,7 @@ const initialState: State = {
   changePasswordData: null,
   latestNotification: null,
   transactionHistory: [],
+  pricingOptionData: null,
 
   loadingLocation: false,
   loadingVisitorCount: false,
@@ -85,6 +90,7 @@ const initialState: State = {
   loadingPitchCondition: false,
   loadingChangePassword: false,
   loadingTransactionHistory: false,
+  loadingPricingOptionData: false,
 
   errorLocation: null,
   errorVisitorCount: null,
@@ -96,6 +102,7 @@ const initialState: State = {
   errorPitchCondition: null,
   errorChangePassword: null,
   errorTransactionHistory: null,
+  errorPricingOptionData: null,
 };
 
 export const ownerDashboardSlice = createSlice({
@@ -254,6 +261,21 @@ export const ownerDashboardSlice = createSlice({
       state.loadingTransactionHistory = false;
       state.errorTransactionHistory =
         action.error.message || "Failed to get transaction history";
+    });
+
+    // update pricing options
+    builder.addCase(updatePricingOptions.pending, (state) => {
+      state.loadingPricingOptionData = true;
+      state.errorPricingOptionData = null;
+    });
+    builder.addCase(updatePricingOptions.fulfilled, (state, { payload }) => {
+      state.pricingOptionData = payload;
+      state.loadingPricingOptionData = false;
+    });
+    builder.addCase(updatePricingOptions.rejected, (state, action) => {
+      state.loadingPricingOptionData = false;
+      state.errorPricingOptionData =
+        action.error.message || "Failed to update pricing options";
     });
   },
 });

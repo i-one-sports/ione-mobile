@@ -113,11 +113,9 @@ export default function AdminPitchConditionScreen() {
               className="flex-row px-[10px] border h-14 items-center justify-between"
             >
               <Text>
-                <Text>
-                  {pitchCondition ||
-                    dashboardSummary?.pitchCondition ||
-                    "Select condition"}
-                </Text>
+                {pitchCondition ||
+                  dashboardSummary?.pitchCondition ||
+                  "Select condition"}
               </Text>
 
               <View className="bg-[#00000033] rounded-[10px] p-[5px]">
@@ -148,6 +146,8 @@ export default function AdminPitchConditionScreen() {
               ))}
             </View>
           )}
+
+         
         </View>
 
         <View className="mt-auto mb-[42px]">
