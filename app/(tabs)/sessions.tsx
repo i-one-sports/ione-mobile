@@ -426,10 +426,9 @@ export default function Schedule() {
               onPress={handleJoinSession}
               className="absolute bg-[#00FF94] px-[5px] rounded-[5px] font-[400] py-[20px] right-[5px] "
             >
-              {" "}
               <Text className="origin-center flex  items-center justify-center text-center rotate-[-90deg] text-sm font-medium">
                 join
-              </Text>{" "}
+              </Text>
             </TouchableOpacity>
           ) : (
             ""

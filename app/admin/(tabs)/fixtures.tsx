@@ -6,6 +6,7 @@ import PlusIcon from "@/assets/svg/PlusIcon";
 import SafeAreaScreen from "@/components/SafeAreaScreen";
 import { ThemedText } from "@/components/ThemedText";
 import { Colors } from "@/constants/Colors";
+import CustomDatePicker from "@/components/modals/CustomDatePicker";
 import { useAppDispatch, useAppSelector } from "@/redux/store";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -102,7 +103,10 @@ export default function Schedule() {
   const { all, loadingAll, errorAll } = useAppSelector(
     (state) => state.sessions,
   );
-  //   console.log(all);
+
+  const [date, setDate] = useState(new Date());
+  const [isPickerVisible, setPickerVisible] = useState(false);
+
   // Fetch all sessions on mount
   useEffect(() => {
     if (!user?.location?.coordinates) return;
@@ -334,7 +338,7 @@ export default function Schedule() {
       if (sessionData) {
         // Pass the full session data to the join session screen
         router.push({
-          pathname: "/joinsession",
+          pathname: "/admin/joinsession",
           params: {
             session: JSON.stringify(sessionData),
           },
@@ -467,7 +471,15 @@ export default function Schedule() {
                 >
                   Match schedule
                 </ThemedText>
-                <CalendarIcon />
+                <TouchableOpacity onPress={() => setPickerVisible(true)}>
+                  <CalendarIcon />
+                </TouchableOpacity>
+                <CustomDatePicker
+                  date={date}
+                  isVisible={isPickerVisible}
+                  onClose={() => setPickerVisible(false)}
+                  onChange={(newDate) => setDate(newDate)}
+                />
               </View>
 
               <ScrollView

@@ -51,7 +51,7 @@ export interface RegisterResponse {
   isAdmin?: boolean;
 }
 
-export interface userResponse {
+export interface UserResponse {
   _id: string;
   email: string;
   password: string;
