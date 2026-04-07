@@ -13,6 +13,7 @@ import { setNotification } from "@/redux/reducers/ownerDashboard";
 import { useAppDispatch, useAppSelector } from "@/redux/store";
 import { Ionicons } from "@expo/vector-icons";
 import { ImageBackground } from "expo-image";
+import { useRouter } from "expo-router";
 import * as SecureStore from "expo-secure-store";
 import { StatusBar } from "expo-status-bar";
 import React, { useEffect, useState } from "react";
@@ -22,6 +23,7 @@ import EventSource from "react-native-sse";
 
 export default function AdminHomeScreen() {
   const dispatch = useAppDispatch();
+  const router = useRouter();
   const [modalVisible, setModalVisible] = useState<boolean>(false);
   const [modalNotificationVisible, setModalNotificationVisible] =
     useState<boolean>(false);
@@ -146,7 +148,10 @@ export default function AdminHomeScreen() {
                   <AdminNotificationIcon />
                 </TouchableOpacity>
 
-                <TouchableOpacity className="bg-[#FFFFFF33] py-2 px-2 rounded-[10px]">
+                <TouchableOpacity
+                  onPress={() => router.push("/admin/pitchcondition")}
+                  className="bg-[#FFFFFF33] py-2 px-2 rounded-[10px]"
+                >
                   <Text>{getPitchEmoji(dashboardSummary?.pitchCondition)}</Text>
                 </TouchableOpacity>
               </View>

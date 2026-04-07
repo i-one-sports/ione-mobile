@@ -1,111 +1,112 @@
 // auth.ts
-import { createAsyncThunk } from '@reduxjs/toolkit'
+import { createAsyncThunk } from "@reduxjs/toolkit";
 
-import apiCall from './apiCall'
+import apiCall from "./apiCall";
 import {
   AsyncThunkConfig,
   forgotPasswordPayload,
   LoginPayload,
   RegisterPayload,
   verifyOtpPayload,
-} from '@/components/typings/api'
+} from "@/components/typings/api";
 import {
   forgotPasswordResponse,
   LoginResponse,
   logoutResponse,
   RegisterResponse,
-  userResponse,
-} from '@/components/typings/apiResponse'
-import axiosInstance from './axios'
-
+  UserResponse,
+} from "@/components/typings/apiResponse";
+import axiosInstance from "./axios";
 
 export const uploadAvatar = createAsyncThunk<
   { avatar: string },
   { file: { uri: string; type: string; name: string } },
   AsyncThunkConfig
->('user/uploadAvatar', async ({ file }, thunkAPI) => {
+>("user/uploadAvatar", async ({ file }, thunkAPI) => {
   const formData = new FormData();
-  formData.append('file', {
+  formData.append("file", {
     uri: file.uri,
     type: file.type,
     name: file.name,
   } as any);
 
   return apiCall(
-    axiosInstance.post('/i-one/user/avatar', formData, {
+    axiosInstance.post("/i-one/user/avatar", formData, {
       headers: {
-        'Content-Type': 'multipart/form-data',
+        "Content-Type": "multipart/form-data",
       },
     }),
-    thunkAPI
+    thunkAPI,
   );
 });
-
 
 export const register = createAsyncThunk<
   RegisterResponse,
   RegisterPayload,
   AsyncThunkConfig
->('user/register', async (payload, thunkAPI) => {
+>("user/register", async (payload, thunkAPI) => {
   return apiCall(
-    axiosInstance.post('/i-one/user/register', payload),
+    axiosInstance.post("/i-one/user/register", payload),
     thunkAPI,
-    'auth'
-  )
-})
+    "auth",
+  );
+});
 
-export const getUser = createAsyncThunk<userResponse, void, AsyncThunkConfig>(
-  'user/getUser',
+export const getUser = createAsyncThunk<UserResponse, void, AsyncThunkConfig>(
+  "user/getUser",
   async (_, thunkAPI) => {
-    return apiCall(axiosInstance.get('/i-one/user/profile'), thunkAPI, 'auth')
-  }
-)
+    return apiCall(axiosInstance.get("/i-one/user/profile"), thunkAPI, "auth");
+  },
+);
 
 export const login = createAsyncThunk<
   LoginResponse,
   LoginPayload,
   AsyncThunkConfig
->('user/login', async (payload, thunkAPI) => {
+>("user/login", async (payload, thunkAPI) => {
   return apiCall(
-    axiosInstance.post('/i-one/auth/user/login', payload),
+    axiosInstance.post("/i-one/auth/user/login", payload),
     thunkAPI,
-    'auth'
-  )
-})
+    "auth",
+  );
+});
 
 export const forgotPassword = createAsyncThunk<
   forgotPasswordResponse,
   forgotPasswordPayload,
   AsyncThunkConfig
->('/users/forgot-password', async (payload, thunkAPI) => {
+>("/users/forgot-password", async (payload, thunkAPI) => {
   return apiCall(
-    axiosInstance.post('/i-one/user/forgotPassword', payload),
-    thunkAPI
-  )
-})
+    axiosInstance.post("/i-one/user/forgotPassword", payload),
+    thunkAPI,
+  );
+});
 
 export const verifyOtp = createAsyncThunk<
   forgotPasswordResponse,
   verifyOtpPayload,
   AsyncThunkConfig
->('/users/verify-otp', async (payload, thunkAPI) => {
-  return apiCall(axiosInstance.post('/i-one/user/verifyOtp', payload), thunkAPI)
-})
+>("/users/verify-otp", async (payload, thunkAPI) => {
+  return apiCall(
+    axiosInstance.post("/i-one/user/verifyOtp", payload),
+    thunkAPI,
+  );
+});
 
 export const reset = createAsyncThunk<
   forgotPasswordResponse,
   verifyOtpPayload,
   AsyncThunkConfig
->('/users/reset-password', async (payload, thunkAPI) => {
+>("/users/reset-password", async (payload, thunkAPI) => {
   return apiCall(
-    axiosInstance.post('/i-one/user/resetPassword', payload),
-    thunkAPI
-  )
-})
+    axiosInstance.post("/i-one/user/resetPassword", payload),
+    thunkAPI,
+  );
+});
 
 export const logOut = createAsyncThunk<logoutResponse, void, AsyncThunkConfig>(
-  '/users/logout',
+  "/users/logout",
   async (_, thunkAPI) => {
-    return apiCall(axiosInstance.get('/i-one/auth/user/logout'), thunkAPI)
-  }
-)
+    return apiCall(axiosInstance.get("/i-one/auth/user/logout"), thunkAPI);
+  },
+);

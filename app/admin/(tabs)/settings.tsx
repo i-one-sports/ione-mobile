@@ -129,17 +129,6 @@ export default function AdminSettingsScreen() {
               <ChevronRight />
             </View>
           </TouchableOpacity>
-          <View className="flex flex-row mt-4 py-5 items-center justify-between">
-            <ThemedText
-              style={{ fontFamily: "Poppins_500Medium" }}
-              className="text-black text-[15px]"
-            >
-              Change Account Details
-            </ThemedText>
-            <TouchableOpacity className="bg-[#00000033] rounded-[10px] p-[5px]">
-              <ChevronRight />
-            </TouchableOpacity>
-          </View>
           <TouchableOpacity
             onPress={() => router.push("/admin/pitchcondition")}
             className="flex flex-row mt-4 py-5 items-center justify-between"
