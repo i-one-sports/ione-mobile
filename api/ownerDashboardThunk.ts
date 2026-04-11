@@ -1,6 +1,8 @@
-import { AsyncThunkConfig } from "@/components/typings/api";
+import { AsyncThunkConfig, sessionPayload } from "@/components/typings/api";
 import {
+  SessionByDateResponse,
   ChangePasswordPayload,
+  SessionByDatePayload,
   ChangePasswordResponse,
   DashboardSummary,
   LastMatch,
@@ -55,6 +57,19 @@ export const getVisitorsCount = createAsyncThunk<
 >("location/getVisitorsCount", async (locationId, thunkAPI) => {
   return apiCall(
     axiosInstance.get(`/i-one/location/${locationId}/dashboard/visitors`),
+    thunkAPI,
+  );
+});
+
+export const getSessionByDate = createAsyncThunk<
+  SessionByDateResponse[],
+  SessionByDatePayload,
+  AsyncThunkConfig
+>("/sessionbydate", async ({ locationId, date }, thunkAPI) => {
+  return apiCall(
+    axiosInstance.get(`/i-one/sessions/by-location/${locationId}`, {
+      params: { date },
+    }),
     thunkAPI,
   );
 });

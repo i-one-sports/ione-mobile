@@ -355,3 +355,32 @@ export interface UpdatePricingOptionsResponse {
   message: string;
   location: LocationResponse;
 }
+
+export interface SessionByDatePayload {
+  locationId: string;
+  date: string;
+}
+
+export type location = {
+  _id: string;
+  name: string;
+  address: string;
+};
+
+export type captain = {
+  _id: string;
+  firstName: string;
+  nickname: string;
+};
+
+export interface SessionByDateResponse {
+  _id: string;
+  location: location;
+  captain: captain;
+  members: [];
+  startTime: string;
+  stopTime: string;
+  matchType: string;
+  isFull: boolean;
+  finished: boolean;
+}

@@ -1,12 +1,12 @@
-import { allSessions } from "@/api/sessions";
+import { getLocation, getSessionByDate } from "@/api/ownerDashboardThunk";
 import CalendarIcon from "@/assets/svg/CalendarIcon";
 import CloseIcon from "@/assets/svg/CloseIcon";
 import OpenIcon from "@/assets/svg/OpenIcon";
 import PlusIcon from "@/assets/svg/PlusIcon";
+import CustomDatePicker from "@/components/modals/CustomDatePicker";
 import SafeAreaScreen from "@/components/SafeAreaScreen";
 import { ThemedText } from "@/components/ThemedText";
 import { Colors } from "@/constants/Colors";
-import CustomDatePicker from "@/components/modals/CustomDatePicker";
 import { useAppDispatch, useAppSelector } from "@/redux/store";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -100,6 +100,8 @@ export default function Schedule() {
 
   const dispatch = useAppDispatch();
   const { user } = useAppSelector((state) => state.auth);
+  const { location, sessionByDate, loadingSessionByDate, errorSessionByDate } =
+    useAppSelector((state) => state.ownerDashboard);
   const { all, loadingAll, errorAll } = useAppSelector(
     (state) => state.sessions,
   );
@@ -107,27 +109,31 @@ export default function Schedule() {
   const [date, setDate] = useState(new Date());
   const [isPickerVisible, setPickerVisible] = useState(false);
 
+  const formattedDate = date.toISOString().split("T")[0];
+
   // Fetch all sessions on mount
   useEffect(() => {
-    if (!user?.location?.coordinates) return;
+    dispatch(getLocation());
+  }, [dispatch]);
 
-    const [lat, lng] = user.location.coordinates;
+  useEffect(() => {
+    if (location?._id) {
+      dispatch(
+        getSessionByDate({
+          locationId: location._id,
+          date: formattedDate,
+        }),
+      );
+    }
+  }, [dispatch, location?._id, formattedDate]);
 
-    const payload = {
-      lat,
-      lng,
-    };
-
-    dispatch(allSessions(payload));
-  }, [dispatch, user]);
-
-  console.log("all sessions:", all);
+  console.log("sessions by date:", sessionByDate);
 
   // Format sessions from API response
   const formattedMatches = useMemo(() => {
-    if (!all || all.length === 0) return [];
+    if (!sessionByDate || sessionByDate.length === 0) return [];
 
-    return all.map((session: any) => {
+    return sessionByDate.map((session: any) => {
       // Extract captain info
       const captainName =
         session.captain?.firstName || session.captain?.username || "Unknown";
@@ -185,7 +191,7 @@ export default function Schedule() {
         sessionData: session, // 👈 Store the full session data
       };
     });
-  }, [all, user]);
+  }, [sessionByDate, user]);
 
   useEffect(() => {
     const today = new Date();
@@ -553,7 +559,7 @@ export default function Schedule() {
 
             <View className="mt-[33px] flex-1">
               {/* Loading State */}
-              {loadingAll && (
+              {loadingSessionByDate && (
                 <View className="items-center py-10">
                   <Text className="text-gray-400 text-sm">
                     Loading sessions...
@@ -562,24 +568,28 @@ export default function Schedule() {
               )}
 
               {/* Error State */}
-              {errorAll && !loadingAll && (
+              {errorSessionByDate && !loadingSessionByDate && (
                 <View className="items-center py-10">
-                  <Text className="text-red-500 text-sm">{errorAll}</Text>
-                </View>
-              )}
-
-              {/* Empty State */}
-              {!loadingAll && !errorAll && formattedMatches.length === 0 && (
-                <View className="items-center py-10">
-                  <Text className="text-gray-400 text-sm">
-                    No sessions available 😕
+                  <Text className="text-red-500 text-sm">
+                    {errorSessionByDate}
                   </Text>
                 </View>
               )}
 
+              {/* Empty State */}
+              {!loadingSessionByDate &&
+                !errorSessionByDate &&
+                formattedMatches.length === 0 && (
+                  <View className="items-center py-10">
+                    <Text className="text-gray-400 text-sm">
+                      No sessions available 😕
+                    </Text>
+                  </View>
+                )}
+
               {/* All Tab */}
-              {!loadingAll &&
-                !errorAll &&
+              {!loadingSessionByDate &&
+                !errorSessionByDate &&
                 activeTab === "all" &&
                 formattedMatches.length > 0 && (
                   <View className="gap-4">
@@ -628,177 +638,183 @@ export default function Schedule() {
                 )}
 
               {/* Tournaments Tab */}
-              {!loadingAll && !errorAll && activeTab === "tournaments" && (
-                <View className="gap-4">
-                  {groupedMatchesTournaments[0].matches.length === 0 ? (
-                    <View className="items-center py-10">
-                      <Text className="text-gray-400 text-sm">
-                        No tournament sessions available 😕
-                      </Text>
-                    </View>
-                  ) : (
-                    groupedMatchesTournaments.map((teamSchedule) => (
-                      <View
-                        key={teamSchedule.teamName}
-                        className="overflow-hidden rounded-md bg-[#ECFFF8]"
-                      >
-                        <Pressable
-                          className={`relative flex-row items-center justify-between border-b-2 px-[21px] py-[23px] ${expandedTournaments[teamSchedule.teamName] ? "border-[#DFDFDF]" : "rounded-b-md border-[#00FF94]"}`}
-                          onPress={() =>
-                            toggleTournaments(teamSchedule.teamName)
-                          }
+              {!loadingSessionByDate &&
+                !errorSessionByDate &&
+                activeTab === "tournaments" && (
+                  <View className="gap-4">
+                    {groupedMatchesTournaments[0].matches.length === 0 ? (
+                      <View className="items-center py-10">
+                        <Text className="text-gray-400 text-sm">
+                          No tournament sessions available 😕
+                        </Text>
+                      </View>
+                    ) : (
+                      groupedMatchesTournaments.map((teamSchedule) => (
+                        <View
+                          key={teamSchedule.teamName}
+                          className="overflow-hidden rounded-md bg-[#ECFFF8]"
                         >
-                          <View className="flex-row items-center gap-3">
-                            <View className="h-6 w-6 items-center justify-center rounded-full bg-[#00FF94]">
-                              <Text className="text-xs font-bold text-white">
-                                {teamSchedule.teamInitials}
+                          <Pressable
+                            className={`relative flex-row items-center justify-between border-b-2 px-[21px] py-[23px] ${expandedTournaments[teamSchedule.teamName] ? "border-[#DFDFDF]" : "rounded-b-md border-[#00FF94]"}`}
+                            onPress={() =>
+                              toggleTournaments(teamSchedule.teamName)
+                            }
+                          >
+                            <View className="flex-row items-center gap-3">
+                              <View className="h-6 w-6 items-center justify-center rounded-full bg-[#00FF94]">
+                                <Text className="text-xs font-bold text-white">
+                                  {teamSchedule.teamInitials}
+                                </Text>
+                              </View>
+                              <Text className="text-lg font-semibold">
+                                {teamSchedule.teamName}
                               </Text>
                             </View>
-                            <Text className="text-lg font-semibold">
-                              {teamSchedule.teamName}
-                            </Text>
-                          </View>
 
-                          <View className="relative justify-center self-stretch pl-[21px]">
-                            <View className="absolute bottom-[-23px] left-0 top-[-23px] border-l-[1px] border-[#DFDFDF]" />
-                            <DropdownIcon
-                              isExpanded={
-                                expandedTournaments[teamSchedule.teamName]
-                              }
-                            />
-                          </View>
-                        </Pressable>
-
-                        {expandedTournaments[teamSchedule.teamName] && (
-                          <View className="border-b-2 border-b-[#00FF94]">
-                            {teamSchedule.matches.map((match, idx) => (
-                              <ScheduleMatchCard
-                                key={idx}
-                                match={match}
-                                sessionData={match.sessionData}
+                            <View className="relative justify-center self-stretch pl-[21px]">
+                              <View className="absolute bottom-[-23px] left-0 top-[-23px] border-l-[1px] border-[#DFDFDF]" />
+                              <DropdownIcon
+                                isExpanded={
+                                  expandedTournaments[teamSchedule.teamName]
+                                }
                               />
-                            ))}
-                          </View>
-                        )}
-                      </View>
-                    ))
-                  )}
-                </View>
-              )}
+                            </View>
+                          </Pressable>
+
+                          {expandedTournaments[teamSchedule.teamName] && (
+                            <View className="border-b-2 border-b-[#00FF94]">
+                              {teamSchedule.matches.map((match, idx) => (
+                                <ScheduleMatchCard
+                                  key={idx}
+                                  match={match}
+                                  sessionData={match.sessionData}
+                                />
+                              ))}
+                            </View>
+                          )}
+                        </View>
+                      ))
+                    )}
+                  </View>
+                )}
 
               {/* Friendlies Tab */}
-              {!loadingAll && !errorAll && activeTab === "friendlies" && (
-                <View className="gap-4">
-                  {groupedMatchesFriendlies[0].matches.length === 0 ? (
-                    <View className="items-center py-10">
-                      <Text className="text-gray-400 text-sm">
-                        No friendly sessions available 😕
-                      </Text>
-                    </View>
-                  ) : (
-                    groupedMatchesFriendlies.map((teamSchedule) => (
-                      <View
-                        key={teamSchedule.teamName}
-                        className="overflow-hidden rounded-md bg-[#ECFFF8]"
-                      >
-                        <Pressable
-                          className={`relative flex-row items-center justify-between border-b-2 px-[21px] py-[23px] ${expandedFriendlies[teamSchedule.teamName] ? "border-[#DFDFDF]" : "rounded-b-md border-[#00FF94]"}`}
-                          onPress={() =>
-                            toggleFriendlies(teamSchedule.teamName)
-                          }
+              {!loadingSessionByDate &&
+                !errorSessionByDate &&
+                activeTab === "friendlies" && (
+                  <View className="gap-4">
+                    {groupedMatchesFriendlies[0].matches.length === 0 ? (
+                      <View className="items-center py-10">
+                        <Text className="text-gray-400 text-sm">
+                          No friendly sessions available 😕
+                        </Text>
+                      </View>
+                    ) : (
+                      groupedMatchesFriendlies.map((teamSchedule) => (
+                        <View
+                          key={teamSchedule.teamName}
+                          className="overflow-hidden rounded-md bg-[#ECFFF8]"
                         >
-                          <View className="flex-row items-center gap-3">
-                            <View className="h-6 w-6 items-center justify-center rounded-full bg-[#00FF94]">
-                              <Text className="text-xs font-bold text-white">
-                                {teamSchedule.teamInitials}
+                          <Pressable
+                            className={`relative flex-row items-center justify-between border-b-2 px-[21px] py-[23px] ${expandedFriendlies[teamSchedule.teamName] ? "border-[#DFDFDF]" : "rounded-b-md border-[#00FF94]"}`}
+                            onPress={() =>
+                              toggleFriendlies(teamSchedule.teamName)
+                            }
+                          >
+                            <View className="flex-row items-center gap-3">
+                              <View className="h-6 w-6 items-center justify-center rounded-full bg-[#00FF94]">
+                                <Text className="text-xs font-bold text-white">
+                                  {teamSchedule.teamInitials}
+                                </Text>
+                              </View>
+                              <Text className="text-lg font-semibold">
+                                {teamSchedule.teamName}
                               </Text>
                             </View>
-                            <Text className="text-lg font-semibold">
-                              {teamSchedule.teamName}
-                            </Text>
-                          </View>
 
-                          <View className="relative justify-center self-stretch pl-[21px]">
-                            <View className="absolute bottom-[-23px] left-0 top-[-23px] border-l-[1px] border-[#DFDFDF]" />
-                            <DropdownIcon
-                              isExpanded={
-                                expandedFriendlies[teamSchedule.teamName]
-                              }
-                            />
-                          </View>
-                        </Pressable>
-
-                        {expandedFriendlies[teamSchedule.teamName] && (
-                          <View className="border-b-2 border-b-[#00FF94]">
-                            {teamSchedule.matches.map((match, idx) => (
-                              <ScheduleMatchCard
-                                key={idx}
-                                match={match}
-                                sessionData={match.sessionData}
+                            <View className="relative justify-center self-stretch pl-[21px]">
+                              <View className="absolute bottom-[-23px] left-0 top-[-23px] border-l-[1px] border-[#DFDFDF]" />
+                              <DropdownIcon
+                                isExpanded={
+                                  expandedFriendlies[teamSchedule.teamName]
+                                }
                               />
-                            ))}
-                          </View>
-                        )}
-                      </View>
-                    ))
-                  )}
-                </View>
-              )}
+                            </View>
+                          </Pressable>
+
+                          {expandedFriendlies[teamSchedule.teamName] && (
+                            <View className="border-b-2 border-b-[#00FF94]">
+                              {teamSchedule.matches.map((match, idx) => (
+                                <ScheduleMatchCard
+                                  key={idx}
+                                  match={match}
+                                  sessionData={match.sessionData}
+                                />
+                              ))}
+                            </View>
+                          )}
+                        </View>
+                      ))
+                    )}
+                  </View>
+                )}
 
               {/* Sets Tab */}
-              {!loadingAll && !errorAll && activeTab === "sets" && (
-                <View className="gap-4">
-                  {groupedMatchesSets[0].matches.length === 0 ? (
-                    <View className="items-center py-10">
-                      <Text className="text-gray-400 text-sm">
-                        No set games available 😕
-                      </Text>
-                    </View>
-                  ) : (
-                    groupedMatchesSets.map((teamSchedule) => (
-                      <View
-                        key={teamSchedule.teamName}
-                        className="overflow-hidden rounded-md bg-[#ECFFF8]"
-                      >
-                        <Pressable
-                          className={`relative flex-row items-center justify-between border-b-2 px-[21px] py-[23px] ${expandedSets[teamSchedule.teamName] ? "border-[#DFDFDF]" : "rounded-b-md border-[#00FF94]"}`}
-                          onPress={() => toggleSets(teamSchedule.teamName)}
+              {!loadingSessionByDate &&
+                !errorSessionByDate &&
+                activeTab === "sets" && (
+                  <View className="gap-4">
+                    {groupedMatchesSets[0].matches.length === 0 ? (
+                      <View className="items-center py-10">
+                        <Text className="text-gray-400 text-sm">
+                          No set games available 😕
+                        </Text>
+                      </View>
+                    ) : (
+                      groupedMatchesSets.map((teamSchedule) => (
+                        <View
+                          key={teamSchedule.teamName}
+                          className="overflow-hidden rounded-md bg-[#ECFFF8]"
                         >
-                          <View className="flex-row items-center gap-3">
-                            <View className="h-6 w-6 items-center justify-center rounded-full bg-[#00FF94]">
-                              <Text className="text-xs font-bold text-white">
-                                {teamSchedule.teamInitials}
+                          <Pressable
+                            className={`relative flex-row items-center justify-between border-b-2 px-[21px] py-[23px] ${expandedSets[teamSchedule.teamName] ? "border-[#DFDFDF]" : "rounded-b-md border-[#00FF94]"}`}
+                            onPress={() => toggleSets(teamSchedule.teamName)}
+                          >
+                            <View className="flex-row items-center gap-3">
+                              <View className="h-6 w-6 items-center justify-center rounded-full bg-[#00FF94]">
+                                <Text className="text-xs font-bold text-white">
+                                  {teamSchedule.teamInitials}
+                                </Text>
+                              </View>
+                              <Text className="text-lg font-semibold">
+                                {teamSchedule.teamName}
                               </Text>
                             </View>
-                            <Text className="text-lg font-semibold">
-                              {teamSchedule.teamName}
-                            </Text>
-                          </View>
 
-                          <View className="relative justify-center self-stretch pl-[21px]">
-                            <View className="absolute bottom-[-23px] left-0 top-[-23px] border-l-[1px] border-[#DFDFDF]" />
-                            <DropdownIcon
-                              isExpanded={expandedSets[teamSchedule.teamName]}
-                            />
-                          </View>
-                        </Pressable>
-
-                        {expandedSets[teamSchedule.teamName] && (
-                          <View className="border-b-2 border-b-[#00FF94]">
-                            {teamSchedule.matches.map((match, idx) => (
-                              <ScheduleMatchCard
-                                key={idx}
-                                match={match}
-                                sessionData={match.sessionData}
+                            <View className="relative justify-center self-stretch pl-[21px]">
+                              <View className="absolute bottom-[-23px] left-0 top-[-23px] border-l-[1px] border-[#DFDFDF]" />
+                              <DropdownIcon
+                                isExpanded={expandedSets[teamSchedule.teamName]}
                               />
-                            ))}
-                          </View>
-                        )}
-                      </View>
-                    ))
-                  )}
-                </View>
-              )}
+                            </View>
+                          </Pressable>
+
+                          {expandedSets[teamSchedule.teamName] && (
+                            <View className="border-b-2 border-b-[#00FF94]">
+                              {teamSchedule.matches.map((match, idx) => (
+                                <ScheduleMatchCard
+                                  key={idx}
+                                  match={match}
+                                  sessionData={match.sessionData}
+                                />
+                              ))}
+                            </View>
+                          )}
+                        </View>
+                      ))
+                    )}
+                  </View>
+                )}
             </View>
           </View>
         </View>

@@ -10,6 +10,7 @@ import {
   getVisitorsCount,
   updatePitchCondition,
   updatePricingOptions,
+  getSessionByDate,
 } from "@/api/ownerDashboardThunk";
 import {
   ChangePasswordResponse,
@@ -24,6 +25,7 @@ import {
   UpdatePricingOptionsResponse,
   UsersChart,
   VisitorResponse,
+  SessionByDateResponse,
 } from "@/components/typings/apiResponse";
 import { createSlice } from "@reduxjs/toolkit";
 
@@ -40,6 +42,7 @@ interface State {
   latestNotification: Notification | null;
   transactionHistory: TransactionGroup[];
   pricingOptionData: UpdatePricingOptionsResponse | null;
+  sessionByDate: SessionByDateResponse[];
 
   loadingLocation: boolean;
   loadingVisitorCount: boolean;
@@ -52,6 +55,7 @@ interface State {
   loadingChangePassword: boolean;
   loadingTransactionHistory: boolean;
   loadingPricingOptionData: boolean;
+  loadingSessionByDate: boolean;
 
   errorLocation: string | null;
   errorVisitorCount: string | null;
@@ -64,6 +68,7 @@ interface State {
   errorChangePassword: string | null;
   errorTransactionHistory: string | null;
   errorPricingOptionData: string | null;
+  errorSessionByDate: string | null;
 }
 
 const initialState: State = {
@@ -79,6 +84,7 @@ const initialState: State = {
   latestNotification: null,
   transactionHistory: [],
   pricingOptionData: null,
+  sessionByDate: [],
 
   loadingLocation: false,
   loadingVisitorCount: false,
@@ -91,6 +97,7 @@ const initialState: State = {
   loadingChangePassword: false,
   loadingTransactionHistory: false,
   loadingPricingOptionData: false,
+  loadingSessionByDate: false,
 
   errorLocation: null,
   errorVisitorCount: null,
@@ -103,6 +110,7 @@ const initialState: State = {
   errorChangePassword: null,
   errorTransactionHistory: null,
   errorPricingOptionData: null,
+  errorSessionByDate: null,
 };
 
 export const ownerDashboardSlice = createSlice({
@@ -276,6 +284,21 @@ export const ownerDashboardSlice = createSlice({
       state.loadingPricingOptionData = false;
       state.errorPricingOptionData =
         action.error.message || "Failed to update pricing options";
+    });
+
+    // get sessions by date
+    builder.addCase(getSessionByDate.pending, (state) => {
+      state.loadingSessionByDate = true;
+      state.errorSessionByDate = null;
+    });
+    builder.addCase(getSessionByDate.fulfilled, (state, { payload }) => {
+      state.sessionByDate = payload;
+      state.loadingSessionByDate = false;
+    });
+    builder.addCase(getSessionByDate.rejected, (state, action) => {
+      state.loadingSessionByDate = false;
+      state.errorSessionByDate =
+        action.error.message || "Failed to get session by date";
     });
   },
 });

@@ -1,67 +1,70 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { createAsyncThunk } from "@reduxjs/toolkit"
-import apiCall from "./apiCall"
-import { AsyncThunkConfig, sessionPayload, StartSessionRequest } from "@/components/typings/api"
-import { MatchSession, pitchSessions } from "@/redux/reducers/sessions"
-import axiosInstance from "./axios"
-import { AllSessionsResponse } from "@/components/typings/apiResponse"
+import { createAsyncThunk } from "@reduxjs/toolkit";
+import apiCall from "./apiCall";
+import {
+  AsyncThunkConfig,
+  sessionPayload,
+  StartSessionRequest,
+} from "@/components/typings/api";
+import { MatchSession, pitchSessions } from "@/redux/reducers/sessions";
+import axiosInstance from "./axios";
+import { AllSessionsResponse } from "@/components/typings/apiResponse";
 
 export const nearBy = createAsyncThunk<
   MatchSession[],
   sessionPayload,
   AsyncThunkConfig
->('/nearby', async (payload, thunkAPI) => {
-  console.log('pay', payload)
+>("/nearby", async (payload, thunkAPI) => {
+  console.log("pay", payload);
 
   return apiCall(
-    axiosInstance.get('/i-one/sessions/nearby-sessions', {
-      params: payload, 
+    axiosInstance.get("/i-one/sessions/nearby-sessions", {
+      params: payload,
     }),
-    thunkAPI
-  )
-
-})
+    thunkAPI,
+  );
+});
 
 export const nearByLocation = createAsyncThunk<
   pitchSessions[],
   sessionPayload,
   AsyncThunkConfig
->('/nearbyLocation', async (payload, thunkAPI) => {
-  console.log('pay', payload)
+>("/nearbyLocation", async (payload, thunkAPI) => {
+  console.log("pay", payload);
 
   return apiCall(
-    axiosInstance.get('/i-one/location/nearby', {
-      params: payload, 
+    axiosInstance.get("/i-one/location/nearby", {
+      params: payload,
     }),
-    thunkAPI
-  )
-})
+    thunkAPI,
+  );
+});
 
 export const allSessions = createAsyncThunk<
- AllSessionsResponse,
+  AllSessionsResponse,
   sessionPayload,
   AsyncThunkConfig
->('/all', async (payload, thunkAPI) => {
-  console.log('pay', payload)
+>("/all", async (payload, thunkAPI) => {
+  console.log("pay", payload);
 
   return apiCall(
-    axiosInstance.get('/i-one/sessions/all', {
-      params: payload, 
+    axiosInstance.get("/i-one/sessions/all", {
+      params: payload,
     }),
-    thunkAPI
-  )
-})
+    thunkAPI,
+  );
+});
 
 export const startSession = createAsyncThunk<
   any, // Replace with your response type if available
   StartSessionRequest,
   AsyncThunkConfig
->('/startSession', async (payload, thunkAPI) => {
-  console.log('Starting session with payload:', payload);
+>("/startSession", async (payload, thunkAPI) => {
+  console.log("Starting session with payload:", payload);
 
   return apiCall(
-    axiosInstance.post('/i-one/sessions/start', payload),
-    thunkAPI
+    axiosInstance.post("/i-one/sessions/start", payload),
+    thunkAPI,
   );
 });
 
@@ -74,7 +77,7 @@ export const createSession = createAsyncThunk<
 
   return apiCall(
     axiosInstance.post(`/i-one/sessions/create/${sessionId}`, data),
-    thunkAPI
+    thunkAPI,
   );
 });
 
@@ -82,12 +85,12 @@ export const joinSession = createAsyncThunk<
   any, // Replace with your response type if available
   { sessionId: string },
   AsyncThunkConfig
->('/joinSession', async (payload, thunkAPI) => {
-  console.log('Joining session with ID:', payload.sessionId);
+>("/joinSession", async (payload, thunkAPI) => {
+  console.log("Joining session with ID:", payload.sessionId);
 
   return apiCall(
     axiosInstance.post(`/i-one/sessions/join/${payload.sessionId}`),
-    thunkAPI
+    thunkAPI,
   );
 });
 
@@ -95,13 +98,13 @@ export const createSets = createAsyncThunk<
   any[], // Array of created sets
   { sessionId: string },
   AsyncThunkConfig
->('/createSets', async (payload, thunkAPI) => {
+>("/createSets", async (payload, thunkAPI) => {
   const { sessionId } = payload;
-  console.log('Creating sets for session:', sessionId);
+  console.log("Creating sets for session:", sessionId);
 
   return apiCall(
     axiosInstance.post(`/i-one/sets/create/${sessionId}`),
-    thunkAPI
+    thunkAPI,
   );
 });
 
@@ -109,12 +112,9 @@ export const getSessionSets = createAsyncThunk<
   any[], // Array of sets
   { sessionId: string },
   AsyncThunkConfig
->('/getSessionSets', async (payload, thunkAPI) => {
+>("/getSessionSets", async (payload, thunkAPI) => {
   const { sessionId } = payload;
-  console.log('Fetching sets for session:', sessionId);
+  console.log("Fetching sets for session:", sessionId);
 
-  return apiCall(
-    axiosInstance.get(`/i-one/sets/${sessionId}`),
-    thunkAPI
-  );
+  return apiCall(axiosInstance.get(`/i-one/sets/${sessionId}`), thunkAPI);
 });
