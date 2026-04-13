@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "IOne",
+    "name": "iOne",
     "slug": "i-one",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -13,7 +13,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/adaptive-icon.png",
+        "foregroundImage": "./assets/images/icon.png",
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
@@ -21,12 +21,13 @@
         "android.permission.ACCESS_COARSE_LOCATION",
         "android.permission.ACCESS_FINE_LOCATION"
       ],
-      "package": "com.ify.ione"
+      "package": "com.ify.ione",
+      "versionCode": 2
     },
     "web": {
       "bundler": "metro",
       "output": "static",
-      "favicon": "./assets/images/favicon.png"
+      "favicon": "./assets/images/icon.png"
     },
     "plugins": [
       "expo-router",
