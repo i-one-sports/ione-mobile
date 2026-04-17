@@ -9,6 +9,7 @@ import { ThemedText } from "@/components/ThemedText";
 import { useAppDispatch, useAppSelector } from "@/redux/store";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
+import { useRouter } from "expo-router";
 import React, { useEffect, useMemo, useState } from "react";
 import {
   Pressable,
@@ -20,6 +21,7 @@ import {
 import { BarChart } from "react-native-gifted-charts";
 
 export default function AdminStatisticsScreen() {
+  const router = useRouter();
   const [period, setPeriod] = useState<
     "this_week" | "this_month" | "this_year"
   >("this_month");
@@ -148,7 +150,10 @@ export default function AdminStatisticsScreen() {
                     </View>
                   )}
                 </View>
-                <TouchableOpacity className="bg-[#FFFFFF33]  py-2 px-2 rounded-[10px]">
+                <TouchableOpacity
+                  onPress={() => router.push("/admin/settings")}
+                  className="bg-[#FFFFFF33]  py-2 px-2 rounded-[10px]"
+                >
                   <SettingsIcon width={14} height={14} color="#2D264B" />
                 </TouchableOpacity>
               </View>

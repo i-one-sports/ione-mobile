@@ -1,10 +1,14 @@
+import { getSessionById } from "@/api/ownerDashboardThunk";
 import BackIcon from "@/assets/svg/BackIcon";
 import CloseIcon from "@/assets/svg/CloseIcon";
 import DocumentIcon from "@/assets/svg/DocumentIcon";
 import OpenIcon from "@/assets/svg/OpenIcon";
+import { getInitials } from "@/components/Recent";
 import SafeAreaScreen from "@/components/SafeAreaScreen";
+import { Members } from "@/components/typings/apiResponse";
+import { useAppDispatch, useAppSelector } from "@/redux/store";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   ScrollView,
   Text,
@@ -14,36 +18,27 @@ import {
 } from "react-native";
 
 type Player = {
-  id: number;
+  id: string;
   name: string;
   number: number;
+  paymentStatus: string;
+  avatar: string;
 };
 
 export default function JoinSession() {
-  const players: Player[] = [
-    { id: 1, name: "Player Name", number: 7 },
-    { id: 2, name: "Player Name", number: 10 },
-    { id: 3, name: "Player Name", number: 4 },
-    { id: 4, name: "Player Name", number: 11 },
-    { id: 5, name: "Player Name", number: 9 },
-    { id: 6, name: "Player Name", number: 3 },
-    { id: 7, name: "Player Name", number: 6 },
-    { id: 8, name: "Player Name", number: 2 },
-  ];
-
+  const dispatch = useAppDispatch();
   const router = useRouter();
+  const { sessionById, loadingSessionById, errorSessionById } = useAppSelector(
+    (state) => state.ownerDashboard,
+  );
   const [activeTab, setActiveTab] = useState<"lineups" | "squad list">(
     "lineups",
   );
-
   const [toggle, setToggle] = useState<boolean>(false);
-  const { session } = useLocalSearchParams();
+  const { sessionId, sessionPreview } = useLocalSearchParams();
+  const preview = sessionPreview ? JSON.parse(sessionPreview as string) : null;
 
-  const parsedSession = session ? JSON.parse(session as string) : null;
-
-  console.log("Session ID:", parsedSession);
-
-  const formattedDate = new Date(parsedSession.startTime).toLocaleDateString(
+  const formattedDate = new Date(preview.startTime).toLocaleDateString(
     "en-US",
     {
       weekday: "short",
@@ -52,27 +47,56 @@ export default function JoinSession() {
     },
   );
 
+  useEffect(() => {
+    if (sessionId) {
+      dispatch(getSessionById(sessionId as string));
+    }
+  }, [sessionId]);
+
+  const players =
+    sessionById?.members?.map((member: Members, index: number) => ({
+      id: member._id,
+      name: `${member.firstName} ${member.lastName}`,
+      number: index + 1,
+      paymentStatus: member.paymentStatus,
+      avatar: member.avatar,
+    })) || [];
+
   const PlayerRow = ({ player }: { player: Player }) => {
     return (
-      <View className="flex-row items-center gap-2 py-4 border-b border-[#6BF8BD] bg-[#EDFFF8] pl-4">
-        <View className="flex-row items-center gap-4">
-          <Text
-            style={{ fontFamily: "Poppins_600SemiBold" }}
-            className="text-base text-black"
-          >
-            {player.number}
-          </Text>
-          <View className="h-[43px] w-[43px] rounded-full bg-black items-center justify-center">
-            <Text className="text-white text-lg">--</Text>
+      <View className="flex-row items-center justify-between py-4 border-b border-[#6BF8BD] bg-[#EDFFF8] px-4">
+        <View className="flex-row items-center gap-2">
+          <View className="flex-row items-center gap-4">
+            <Text
+              style={{ fontFamily: "Poppins_600SemiBold" }}
+              className="text-base text-black"
+            >
+              {player.number}
+            </Text>
+
+            <View className="h-[43px] w-[43px] rounded-full bg-black items-center justify-center">
+              <Text className="text-white text-base">
+                {player.avatar ?? getInitials(player.name)}
+              </Text>
+            </View>
+          </View>
+
+          <View>
+            <Text
+              style={{ fontFamily: "Poppins_400Regular" }}
+              className="text-sm text-black"
+            >
+              {player.name}
+            </Text>
           </View>
         </View>
 
-        <View>
+        <View className="bg-[#00FF94] px-[10px] py-2 rounded-[5px]">
           <Text
             style={{ fontFamily: "Poppins_400Regular" }}
-            className="text-sm text-black"
+            className="text-xs text-black"
           >
-            {player.name}
+            {player.paymentStatus}
           </Text>
         </View>
       </View>
@@ -91,7 +115,9 @@ export default function JoinSession() {
       >
         <View className="py-6 px-[35px]">
           <View className="flex flex-row items-center justify-between">
-            <TouchableOpacity onPress={() => router.push("/admin")}>
+            <TouchableOpacity
+              onPress={() => router.push("/admin/(tabs)/fixtures")}
+            >
               <BackIcon />
             </TouchableOpacity>
             <Text
@@ -109,7 +135,7 @@ export default function JoinSession() {
               style={{ fontFamily: "Poppins_400Regular" }}
               className="text-[#2A2A2A] text-xs"
             >
-              {parsedSession.location.name}, {parsedSession.location.address}
+              {preview?.location.name}, {preview?.location.address}
             </Text>
             <Text
               style={{ fontFamily: "Poppins_400Regular" }}
@@ -126,7 +152,7 @@ export default function JoinSession() {
                   Duration:
                 </Text>
                 <Text style={{ fontFamily: "Poppins_600SemiBold" }}>
-                  {parsedSession.timeDuration} mins
+                  {preview?.timeDuration} mins
                 </Text>
               </View>
               <View className="flex-row justify-between">
@@ -134,7 +160,7 @@ export default function JoinSession() {
                   Duration Per Match:
                 </Text>
                 <Text style={{ fontFamily: "Poppins_600SemiBold" }}>
-                  {parsedSession.minsPerSet} mins
+                  {preview?.minsPerSet} mins
                 </Text>
               </View>
               <View className="flex-row justify-between">
@@ -142,7 +168,7 @@ export default function JoinSession() {
                   Winning Decider:
                 </Text>
                 <Text style={{ fontFamily: "Poppins_600SemiBold" }}>
-                  {parsedSession.winningDecider}
+                  {preview?.winningDecider}
                 </Text>
               </View>
             </View>

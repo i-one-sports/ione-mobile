@@ -384,3 +384,18 @@ export interface SessionByDateResponse {
   isFull: boolean;
   finished: boolean;
 }
+
+export interface Members {
+  _id: string;
+  firstName: string;
+  lastName: string;
+  nickname: string;
+  avatar: string;
+  paymentStatus: "PAID" | "PENDING" | "FAILED" | "REFUNDED" | "NOT_REQUIRED";
+}
+
+export interface SessionByIdResponse {
+  _id: string;
+  paymentRequired: boolean;
+  members: Members[];
+}

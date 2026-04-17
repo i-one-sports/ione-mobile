@@ -15,6 +15,7 @@ import {
   UpdatePricingOptionsResponse,
   UsersChart,
   VisitorResponse,
+  SessionByIdResponse,
 } from "@/components/typings/apiResponse";
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import apiCall from "./apiCall";
@@ -72,6 +73,14 @@ export const getSessionByDate = createAsyncThunk<
     }),
     thunkAPI,
   );
+});
+
+export const getSessionById = createAsyncThunk<
+  SessionByIdResponse,
+  string,
+  AsyncThunkConfig
+>("/sessionbyid", async (sessionId, thunkAPI) => {
+  return apiCall(axiosInstance.get(`/i-one/sessions/${sessionId}`), thunkAPI);
 });
 
 export const getUpcomingSessions = createAsyncThunk<

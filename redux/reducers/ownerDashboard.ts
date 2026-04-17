@@ -11,6 +11,7 @@ import {
   updatePitchCondition,
   updatePricingOptions,
   getSessionByDate,
+  getSessionById,
 } from "@/api/ownerDashboardThunk";
 import {
   ChangePasswordResponse,
@@ -26,6 +27,7 @@ import {
   UsersChart,
   VisitorResponse,
   SessionByDateResponse,
+  SessionByIdResponse,
 } from "@/components/typings/apiResponse";
 import { createSlice } from "@reduxjs/toolkit";
 
@@ -43,6 +45,7 @@ interface State {
   transactionHistory: TransactionGroup[];
   pricingOptionData: UpdatePricingOptionsResponse | null;
   sessionByDate: SessionByDateResponse[];
+  sessionById: SessionByIdResponse | null;
 
   loadingLocation: boolean;
   loadingVisitorCount: boolean;
@@ -56,6 +59,7 @@ interface State {
   loadingTransactionHistory: boolean;
   loadingPricingOptionData: boolean;
   loadingSessionByDate: boolean;
+  loadingSessionById: boolean;
 
   errorLocation: string | null;
   errorVisitorCount: string | null;
@@ -69,6 +73,7 @@ interface State {
   errorTransactionHistory: string | null;
   errorPricingOptionData: string | null;
   errorSessionByDate: string | null;
+  errorSessionById: string | null;
 }
 
 const initialState: State = {
@@ -85,6 +90,7 @@ const initialState: State = {
   transactionHistory: [],
   pricingOptionData: null,
   sessionByDate: [],
+  sessionById: null,
 
   loadingLocation: false,
   loadingVisitorCount: false,
@@ -98,6 +104,7 @@ const initialState: State = {
   loadingTransactionHistory: false,
   loadingPricingOptionData: false,
   loadingSessionByDate: false,
+  loadingSessionById: false,
 
   errorLocation: null,
   errorVisitorCount: null,
@@ -111,6 +118,7 @@ const initialState: State = {
   errorTransactionHistory: null,
   errorPricingOptionData: null,
   errorSessionByDate: null,
+  errorSessionById: null,
 };
 
 export const ownerDashboardSlice = createSlice({
@@ -299,6 +307,21 @@ export const ownerDashboardSlice = createSlice({
       state.loadingSessionByDate = false;
       state.errorSessionByDate =
         action.error.message || "Failed to get session by date";
+    });
+
+    // get sessions by id
+    builder.addCase(getSessionById.pending, (state) => {
+      state.loadingSessionById = true;
+      state.errorSessionById = null;
+    });
+    builder.addCase(getSessionById.fulfilled, (state, { payload }) => {
+      state.sessionById = payload;
+      state.loadingSessionById = false;
+    });
+    builder.addCase(getSessionById.rejected, (state, action) => {
+      state.loadingSessionById = false;
+      state.errorSessionById =
+        action.error.message || "Failed to get session by id";
     });
   },
 });

@@ -21,14 +21,6 @@ function AdminAppNavigator() {
         options={{ title: "Change Password", headerShown: false }}
       />
       <Stack.Screen
-        name="setoflegends"
-        options={{
-          title: "Set of Legends",
-          headerShown: false,
-          contentStyle: { backgroundColor: "#FFFFFF" },
-        }}
-      />
-      <Stack.Screen
         name="joinsession"
         options={{
           title: "Join Session",

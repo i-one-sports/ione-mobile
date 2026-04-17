@@ -48,8 +48,14 @@ type Match = {
   team1score: number | string;
   team2score: number | string;
   joined: boolean;
-};
 
+  sessionData: {
+    location: {
+      name: string;
+      address?: string;
+    };
+  };
+};
 type TeamSchedule = {
   teamName: string;
   teamInitials: string;
@@ -102,14 +108,11 @@ export default function Schedule() {
   const { user } = useAppSelector((state) => state.auth);
   const { location, sessionByDate, loadingSessionByDate, errorSessionByDate } =
     useAppSelector((state) => state.ownerDashboard);
-  const { all, loadingAll, errorAll } = useAppSelector(
-    (state) => state.sessions,
-  );
 
   const [date, setDate] = useState(new Date());
   const [isPickerVisible, setPickerVisible] = useState(false);
 
-  const formattedDate = date.toISOString().split("T")[0];
+  const formattedDate = date.toLocaleDateString("en-CA");
 
   // Fetch all sessions on mount
   useEffect(() => {
@@ -126,8 +129,6 @@ export default function Schedule() {
       );
     }
   }, [dispatch, location?._id, formattedDate]);
-
-  console.log("sessions by date:", sessionByDate);
 
   // Format sessions from API response
   const formattedMatches = useMemo(() => {
@@ -342,11 +343,17 @@ export default function Schedule() {
   }) => {
     const handleJoinSession = () => {
       if (sessionData) {
-        // Pass the full session data to the join session screen
         router.push({
           pathname: "/admin/joinsession",
           params: {
-            session: JSON.stringify(sessionData),
+            sessionId: sessionData._id,
+            sessionPreview: JSON.stringify({
+              location: sessionData.location,
+              startTime: sessionData.startTime,
+              timeDuration: sessionData.timeDuration,
+              minsPerSet: sessionData.minsPerSet,
+              winningDecider: sessionData.winningDecider,
+            }),
           },
         });
       }
@@ -521,7 +528,7 @@ export default function Schedule() {
                   return router.push("/screens/newsession");
                 }
 
-                router.push(`/${tabId}`);
+                router.push(`/${tabId}` as any);
               }}
             >
               <Text className="text-base text-[#696969]">New game? </Text>
