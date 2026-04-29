@@ -1,37 +1,29 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 
-import React, { useEffect } from 'react';
-import SafeAreaScreen from '@/components/SafeAreaScreen';
-import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
+import { nearBy, nearByLocation } from "@/api/sessions";
+import FilterSvg from "@/assets/svg/FilterSvg";
+import NotificationIcon from "@/assets/svg/NotificationIcon";
+import FixtureList from "@/components/FixtureList";
+import PitchCarousel from "@/components/PitchCarousel";
+import SafeAreaScreen from "@/components/SafeAreaScreen";
+import ShimmerCarousel from "@/components/ShimmerCarousel";
+import { ThemedText } from "@/components/ThemedText";
+import { useAppDispatch, useAppSelector } from "@/redux/store";
+import React, { useEffect } from "react";
 import {
-  FlatList,
-  ScrollView,
+  TextInput,
   TouchableOpacity,
   View,
   useColorScheme,
-  TextInput,
-} from 'react-native';
-import NotificationIcon from '@/assets/svg/NotificationIcon';
-import PitchCarousel from '@/components/PitchCarousel';
-import FilterSvg from '@/assets/svg/FilterSvg';
-import FixtureList from '@/components/FixtureList';
-import { useAppDispatch, useAppSelector } from '@/redux/store';
-import { allSessions, nearBy, nearByLocation } from '@/api/sessions';
-import ShimmerCarousel from '@/components/ShimmerCarousel';
-import { getUser } from '@/api/authThunks';
-
+} from "react-native";
 
 export default function HomeScreen() {
   const colorScheme = useColorScheme();
-  const { user } = useAppSelector(
-    (state) => state.auth
-  );
-  const { sessions, pitches, loadingPitches, errorPitches, all } = useAppSelector(
-    (state) => state.sessions
-  );
+  const { user } = useAppSelector((state) => state.auth);
+  const { sessions, pitches, loadingPitches, errorPitches, all } =
+    useAppSelector((state) => state.sessions);
   const dispatch = useAppDispatch();
-  console.log('pitches from home screen', user?.location?.coordinates);
+  console.log("pitches from home screen", user?.location?.coordinates);
   useEffect(() => {
     if (!user?.location?.coordinates) return;
 
@@ -44,23 +36,21 @@ export default function HomeScreen() {
 
     dispatch(nearBy(payload));
     dispatch(nearByLocation(payload));
-   
   }, [dispatch, user]);
 
-  const formattedPitches = pitches?.map((p: any) => ({
-    id: p._id,
-    name: p.name,
-    location: p.address, 
-    image: { uri: p.pitchPhoto },
-    isBooked: p.booked,
-  })) || [];
+  const formattedPitches =
+    pitches?.map((p: any) => ({
+      id: p._id,
+      name: p.name,
+      location: p.address,
+      image: { uri: p.pitchPhoto },
+      isBooked: p.booked,
+    })) || [];
 
   return (
-    <SafeAreaScreen className="flex-1"> {/* Add flex-1 here */}
-      <View 
-        className="py-6 px-[35px]"
-       
-      >
+    <SafeAreaScreen className="flex-1">
+      {/* Add flex-1 here */}
+      <View className="py-6 px-[35px]">
         <View className="flex flex-col gap-6">
           {/* Header */}
           <View className="flex flex-row items-center justify-between">
@@ -109,9 +99,8 @@ export default function HomeScreen() {
           </View>
         </View>
       </View>
-      
-
-      <View className="flex-1 px-[35px] mb-[70px]"> {/* Add flex-1 and padding */}
+      <View className="flex-1 px-[35px] mb-[70px]">
+        {/* Add flex-1 and padding */}
         <ThemedText className="text-lg font-semibold mb-4">
           Upcoming Fixtures
         </ThemedText>

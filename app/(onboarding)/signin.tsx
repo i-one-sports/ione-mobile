@@ -1,33 +1,32 @@
 /* eslint-disable react/no-unescaped-entities */
 /* eslint-disable @typescript-eslint/no-unused-vars */
+import { Formik } from "formik";
+import * as React from "react";
 import {
   Dimensions,
-  View,
-  TouchableWithoutFeedback,
-  useColorScheme,
-  ScrollView,
   KeyboardAvoidingView,
   Platform,
-} from 'react-native';
-import * as yup from 'yup';
-import * as React from 'react';
-import { Formik } from 'formik';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+  ScrollView,
+  TouchableWithoutFeedback,
+  useColorScheme,
+  View,
+} from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import * as yup from "yup";
 
-import Loader from '@/components/loader';
-import { ThemedText } from '@/components/ThemedText';
-import CustomButton from '@/components/ui/CustomButton';
-import InputField from '@/components/InputField';
-import { useRouter } from 'expo-router';
-import SafeAreaScreen from '@/components/SafeAreaScreen';
-import { Colors } from '@/constants/Colors';
-import { Icon } from '@/components/ui/Icon';
-import { Toast } from 'toastify-react-native';
-import { useAppDispatch } from '@/redux/store';
-import { login } from '@/api/authThunks';
+import { login } from "@/api/authThunks";
+import InputField from "@/components/InputField";
+import Loader from "@/components/loader";
+import SafeAreaScreen from "@/components/SafeAreaScreen";
+import { ThemedText } from "@/components/ThemedText";
+import CustomButton from "@/components/ui/CustomButton";
+import { Icon } from "@/components/ui/Icon";
+import { Colors } from "@/constants/Colors";
+import { useAppDispatch } from "@/redux/store";
+import { useRouter } from "expo-router";
+import { Toast } from "toastify-react-native";
 
-
-const { width } = Dimensions.get('screen');
+const { width } = Dimensions.get("screen");
 
 type SigninInput = {
   email: string;
@@ -36,7 +35,7 @@ type SigninInput = {
 
 export default function SignIn() {
   const colorScheme = useColorScheme();
-  const theme = Colors[colorScheme ?? 'light'];
+  const theme = Colors[colorScheme ?? "light"];
   const { bottom } = useSafeAreaInsets();
   const dispatch = useAppDispatch();
   const [loading, setLoading] = React.useState(false);
@@ -48,19 +47,16 @@ export default function SignIn() {
   };
 
   const initialValues = {
-    email: '',
-    password: '',
+    email: "",
+    password: "",
   };
 
   const signinValidationSchema = yup.object().shape({
-    email: yup
-      .string()
-      .email('Invalid email')
-      .required('Email is required'),
+    email: yup.string().email("Invalid email").required("Email is required"),
     password: yup
       .string()
-      .required('Password is required')
-      .min(6, 'Password must be at least 6 characters'),
+      .required("Password is required")
+      .min(5, "Password must be at least 6 characters"), //remember to change to 6
   });
 
   const handleSubmit = async (values: SigninInput) => {
@@ -76,19 +72,20 @@ export default function SignIn() {
         setLoading(false);
         console.log(response);
         Toast.show({
-          type: 'success',
-          text1: 'Success',
-          text2: response.message || 'Login successful',
+          type: "success",
+          text1: "Success",
+          text2: response.message || "Login successful",
         });
-        router.replace('/(tabs)');
+        // router.replace('/(tabs)');
+        router.replace("/admin/(tabs)");
       })
       .catch((err) => {
         setLoading(false);
-        console.log('error is', err);
-        const message = err?.msg?.message || err?.msg || 'Login failed';
+        console.log("error is", err);
+        const message = err?.msg?.message || err?.msg || "Login failed";
         Toast.show({
-          type: 'error',
-          text1: 'Error',
+          type: "error",
+          text1: "Error",
           text2: message,
         });
       });
@@ -97,14 +94,24 @@ export default function SignIn() {
   return (
     <SafeAreaScreen className="h-svh w-full">
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={{ flex: 1 }}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 20 : 0}>
+        keyboardVerticalOffset={Platform.OS === "ios" ? 20 : 0}
+      >
         <Formik
           initialValues={initialValues}
           validationSchema={signinValidationSchema}
-          onSubmit={handleSubmit}>
-          {({ handleChange, handleSubmit, values, errors, touched, handleBlur, setFieldValue }) => (
+          onSubmit={handleSubmit}
+        >
+          {({
+            handleChange,
+            handleSubmit,
+            values,
+            errors,
+            touched,
+            handleBlur,
+            setFieldValue,
+          }) => (
             <ScrollView
               ref={scrollViewRef}
               showsVerticalScrollIndicator={false}
@@ -113,7 +120,8 @@ export default function SignIn() {
                 paddingBottom: 40,
                 flexGrow: 1,
               }}
-              keyboardShouldPersistTaps="handled">
+              keyboardShouldPersistTaps="handled"
+            >
               <View className="mb-8 mt-4 items-end">
                 <Icon />
               </View>
@@ -123,13 +131,15 @@ export default function SignIn() {
                 <ThemedText
                   lightColor={theme.text}
                   darkColor={theme.text}
-                  className="mb-2 text-[20px] font-[500]">
+                  className="mb-2 text-[20px] font-[500]"
+                >
                   Welcome Back
                 </ThemedText>
                 <ThemedText
                   lightColor="#6C757D"
                   darkColor="#9BA1A6"
-                  className="text-sm">
+                  className="text-sm"
+                >
                   Sign in to continue
                 </ThemedText>
               </View>
@@ -144,13 +154,15 @@ export default function SignIn() {
                     placeholder="Enter email address"
                     keyboardType="email-address"
                     value={values.email}
-                    onChangeText={handleChange('email')}
-                    onBlur={handleBlur('email')}
+                    onChangeText={handleChange("email")}
+                    onBlur={handleBlur("email")}
                     onFocus={() => handleInputFocus(0)}
                     autoCapitalize="none"
                     autoComplete="email"
                     autoCorrect={false}
-                    errorMessage={touched.email && errors.email ? errors.email : ''}
+                    errorMessage={
+                      touched.email && errors.email ? errors.email : ""
+                    }
                   />
                 </View>
 
@@ -163,22 +175,26 @@ export default function SignIn() {
                     placeholder="Enter password"
                     secureTextEntry
                     value={values.password}
-                    onChangeText={handleChange('password')}
-                    onBlur={handleBlur('password')}
+                    onChangeText={handleChange("password")}
+                    onBlur={handleBlur("password")}
                     onFocus={() => handleInputFocus(100)}
                     autoCapitalize="none"
-                    errorMessage={touched.password && errors.password ? errors.password : ''}
+                    errorMessage={
+                      touched.password && errors.password ? errors.password : ""
+                    }
                   />
                 </View>
 
                 {/* Forgot Password Link */}
                 <View className="flex flex-row items-end justify-end">
                   <TouchableWithoutFeedback
-                    onPress={() => router.push('/forgottenpassword')}>
+                    onPress={() => router.push("/forgottenpassword")}
+                  >
                     <ThemedText
                       lightColor="#46BB1C"
                       darkColor="#46BB1C"
-                      className="text-sm font-medium underline">
+                      className="text-sm font-medium underline"
+                    >
                       Forgot Password?
                     </ThemedText>
                   </TouchableWithoutFeedback>
@@ -189,7 +205,7 @@ export default function SignIn() {
               <View className="mt-8 w-full">
                 <CustomButton
                   primary
-                  title={loading ? 'Signing In...' : 'Sign In'}
+                  title={loading ? "Signing In..." : "Sign In"}
                   onPress={() => handleSubmit()}
                   disabled={loading}
                 />
@@ -197,15 +213,22 @@ export default function SignIn() {
 
               {/* Sign Up Link */}
               <View className="mt-6 items-center">
-                <TouchableWithoutFeedback onPress={() => router.push('/(onboarding)/role')}>
+                <TouchableWithoutFeedback
+                  onPress={() => router.push("/(onboarding)/role")}
+                >
                   <View className="flex-row items-center">
-                    <ThemedText lightColor="#6C757D" darkColor="#9BA1A6" className="text-base">
-                      Don't have an account?{' '}
+                    <ThemedText
+                      lightColor="#6C757D"
+                      darkColor="#9BA1A6"
+                      className="text-base"
+                    >
+                      Don't have an account?{" "}
                     </ThemedText>
                     <ThemedText
                       lightColor="#46BB1C"
                       darkColor="#46BB1C"
-                      className="text-base font-semibold">
+                      className="text-base font-semibold"
+                    >
                       Sign Up
                     </ThemedText>
                   </View>
