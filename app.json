@@ -2,7 +2,7 @@
   "expo": {
     "name": "iOne",
     "slug": "i-one",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "i-one",
@@ -22,7 +22,7 @@
         "android.permission.ACCESS_FINE_LOCATION"
       ],
       "package": "com.ione.mobile",
-      "versionCode": 1
+      "versionCode": 3
     },
     "web": {
       "bundler": "metro",
