@@ -38,7 +38,7 @@ function AppNavigator() {
   console.log("user", user.location?.coordinates, user._id);
 
   useEffect(() => {
-    if (!user) return;
+    if (!user?._id) return;
     if (isAuthenticated && user.role === Role.ADMIN) {
       router.replace("/admin/(tabs)");
     } else if (isAuthenticated && user.role === Role.USER) {

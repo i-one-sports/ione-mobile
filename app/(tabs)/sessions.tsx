@@ -355,7 +355,7 @@ export default function Schedule() {
           <View className="w-full flex-1 flex-col relative items-start gap-2 whitespace-nowrap border-l-[1px] border-[#DFDFDF] pl-4">
             <View className="flex flex-row  border-[0.1px] border-primary">
               <ThemedText lightColor="#00FF94">
-                {match.sessionData.location.name}
+                {match.sessionData?.location?.name ?? "Unknown Location"}
               </ThemedText>
             </View>
             <View className="flex-row flex-1 items-center justify-between w-full pr-[23px]">

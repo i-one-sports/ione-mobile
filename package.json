@@ -5,10 +5,32 @@
   "scripts": {
     "start": "expo start",
     "reset-project": "node ./scripts/reset-project.js",
-    "android": "expo start --android",
-    "ios": "expo start --ios",
+    "android": "expo run:android",
+    "ios": "expo run:ios",
     "web": "expo start --web",
-    "lint": "expo lint"
+    "lint": "expo lint",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "prepare": "husky"
+  },
+  "jest": {
+    "preset": "jest-expo",
+    "setupFilesAfterEnv": [
+      "<rootDir>/jest.setup.ts"
+    ],
+    "transformIgnorePatterns": [
+      "/node_modules/(?!(.pnpm|react-native|@react-native|@react-native-community|expo|@expo|@expo-google-fonts|react-navigation|@react-navigation|@sentry/react-native|native-base|immer|nativewind|@gorhom|lottie-react-native))",
+      "/node_modules/react-native-reanimated/plugin/"
+    ],
+    "moduleNameMapper": {
+      "^@/(.*)$": "<rootDir>/$1",
+      "^axios$": "<rootDir>/__mocks__/axios.ts",
+      "^expo-secure-store$": "<rootDir>/__mocks__/expo-secure-store.ts",
+      "^expo/src/winter$": "<rootDir>/__mocks__/empty.ts",
+      "ImportMetaRegistry": "<rootDir>/__mocks__/expo-import-meta-registry.ts",
+      "^@react-native-async-storage/async-storage$": "@react-native-async-storage/async-storage/jest/async-storage-mock"
+    }
   },
   "dependencies": {
     "@expo-google-fonts/playfair-display": "^0.4.2",
@@ -44,7 +66,7 @@
     "expo-web-browser": "~15.0.8",
     "formik": "^2.4.9",
     "lottie-react-native": "^7.3.4",
-    "nativewind": "latest",
+    "nativewind": "4.2.3",
     "prettier-plugin-tailwindcss": "^0.5.14",
     "react": "19.1.0",
     "react-dom": "19.1.0",
@@ -69,15 +91,31 @@
   },
   "devDependencies": {
     "@babel/core": "^7.20.0",
+    "@testing-library/react-native": "^13.3.3",
+    "@types/jest": "^30.0.0",
     "@types/react": "~19.1.10",
     "baseline-browser-mapping": "^2.9.17",
     "eslint": "^9.25.1",
     "eslint-config-expo": "~10.0.0",
     "eslint-config-prettier": "^10.1.2",
+    "husky": "^9.1.7",
+    "jest": "^30.3.0",
+    "jest-expo": "^54.0.17",
+    "lint-staged": "^16.4.0",
     "prettier": "^3.2.5",
     "prettier-plugin-tailwindcss": "^0.5.11",
+    "react-test-renderer": "^19.1.0",
     "tailwindcss": "^3.4.0",
     "typescript": "~5.9.2"
   },
-  "private": true
+  "private": true,
+  "lint-staged": {
+    "*.{js,jsx,ts,tsx}": [
+      "prettier --write",
+      "eslint --fix"
+    ],
+    "*.{json,md}": [
+      "prettier --write"
+    ]
+  }
 }

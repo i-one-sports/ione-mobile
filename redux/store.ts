@@ -19,16 +19,18 @@ import ownerDashboardReducer from "./reducers/ownerDashboard";
 import sessionReducer from "./reducers/sessions";
 import walletReducer from "./reducers/wallet";
 
-const asyncPersistConfig = {
+const authPersistConfig = {
   key: "main",
   storage: AsyncStorage,
 };
 
-const persistedLangReducer = persistReducer(
-  asyncPersistConfig,
-  languageReducer,
-);
-const persistedAuthReducer = persistReducer(asyncPersistConfig, authReducer);
+const langPersistConfig = {
+  key: "language",
+  storage: AsyncStorage,
+};
+
+const persistedLangReducer = persistReducer(langPersistConfig, languageReducer);
+const persistedAuthReducer = persistReducer(authPersistConfig, authReducer);
 
 const reducers = combineReducers({
   language: persistedLangReducer,
