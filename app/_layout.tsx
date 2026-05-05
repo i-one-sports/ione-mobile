@@ -10,7 +10,7 @@ import store, {
 } from "@/redux/store";
 import { setupAxiosInterceptors } from "@/utils/SetUpAxiosInterceptors";
 import toastConfig from "@/utils/toast";
-import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
+// import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
 import {
   DarkTheme,
   DefaultTheme,
@@ -93,23 +93,23 @@ export default function RootLayout() {
     <Provider store={store}>
       <PersistGate loading={null} persistor={persistor}>
         <GestureHandlerRootView style={{ flex: 1 }}>
-          <BottomSheetModalProvider>
-            <ThemeProvider
-              value={colorScheme === "dark" ? DarkTheme : DefaultTheme}
-            >
-              <AppNavigator />
+          {/* <BottomSheetModalProvider> */}
+          <ThemeProvider
+            value={colorScheme === "dark" ? DarkTheme : DefaultTheme}
+          >
+            <AppNavigator />
 
-              <StatusBar style="auto" />
-              <Toast
-                config={toastConfig}
-                position="top"
-                topOffset={50}
-                visibilityTime={4000}
-                autoHide
-              />
-            </ThemeProvider>
-            <ToastManager />
-          </BottomSheetModalProvider>
+            <StatusBar style="auto" />
+            <Toast
+              config={toastConfig}
+              position="top"
+              topOffset={50}
+              visibilityTime={4000}
+              autoHide
+            />
+          </ThemeProvider>
+          <ToastManager />
+          {/* </BottomSheetModalProvider> */}
         </GestureHandlerRootView>
       </PersistGate>
     </Provider>
