@@ -1,7 +1,5 @@
 import { getSummary } from "@/api/ownerDashboardThunk";
 import AdminNotificationIcon from "@/assets/svg/AdminNotificationIcon";
-import ChevronRight from "@/assets/svg/ChevronRight";
-import SafeAreaScreen from "@/components/SafeAreaScreen";
 import { ThemedText } from "@/components/ThemedText";
 import { logout } from "@/redux/reducers/auth";
 import { persistor, useAppDispatch, useAppSelector } from "@/redux/store";
@@ -9,10 +7,14 @@ import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useRouter } from "expo-router";
 import * as SecureStore from "expo-secure-store";
 import React, { useEffect, useState } from "react";
-import { Alert, Text, TouchableOpacity, View } from "react-native";
+import { Alert, TouchableOpacity, View } from "react-native";
 import { Toast } from "toastify-react-native";
+import { useColorScheme } from "nativewind";
+import { StatusBar } from "expo-status-bar";
 
 export default function AdminSettingsScreen() {
+  const { colorScheme } = useColorScheme();
+  const isDark = colorScheme === "dark";
   const router = useRouter();
   const dispatch = useAppDispatch();
   const { dashboardSummary, location } = useAppSelector(
@@ -79,13 +81,16 @@ export default function AdminSettingsScreen() {
     );
   };
   return (
-    <SafeAreaScreen className="flex-1">
-      <View className="py-6 px-[35px] flex-1 justify-between">
+    <View className="flex-1 dark:bg-black">
+      <StatusBar style="auto" />
+      <View className="pb-6 pt-16 px-[35px] flex-1 justify-between">
         <View>
           <View className="flex flex-row items-center justify-between">
             <ThemedText
               style={{ fontFamily: "Poppins_600SemiBold" }}
-              className="text-black text-xl"
+              className="text-xl"
+              darkColor="#FFFFFF"
+              lightColor="#000000"
             >
               Settings
             </ThemedText>
@@ -97,20 +102,28 @@ export default function AdminSettingsScreen() {
           <View className="flex flex-row mt-12 py-5 items-center justify-between">
             <ThemedText
               style={{ fontFamily: "Poppins_500Medium" }}
-              className="text-black text-[15px]"
+              className="text-[15px]"
+              darkColor="#FFFFFF"
+              lightColor="#000000"
             >
               Open Hours
             </ThemedText>
             <View className="flex flex-row gap-[9px]">
               <ThemedText
                 style={{ fontFamily: "Poppins_400Regular" }}
-                className="text-[#00000080] text-[15px]"
+                className="text-[15px]"
+                darkColor="#FFFFFF"
+                lightColor="#000000"
               >
                 {!dashboardSummary?.openingHour && "8am"}-
                 {!dashboardSummary?.closingHour && "10pm"}
               </ThemedText>
-              <TouchableOpacity className="bg-[#00000033] rounded-[10px] p-[5px]">
-                <ChevronRight />
+              <TouchableOpacity className="bg-[#00000033] dark:bg-[#FFFFFF1A] rounded-[10px] p-[5px]">
+                <MaterialIcons
+                  name="chevron-right"
+                  color={isDark ? "#fff" : "#00000033"}
+                  size={15}
+                />
               </TouchableOpacity>
             </View>
           </View>
@@ -118,15 +131,21 @@ export default function AdminSettingsScreen() {
             onPress={() => router.push("/admin/changepassword")}
             className="flex flex-row mt-12 py-5 items-center justify-between"
           >
-            <Text
+            <ThemedText
               style={{ fontFamily: "Poppins_500Medium" }}
-              className="text-black text-[15px]"
+              className="text-[15px]"
+              darkColor="#FFFFFF"
+              lightColor="#000000"
             >
               Change Password
-            </Text>
+            </ThemedText>
 
-            <View className="bg-[#00000033] rounded-[10px] p-[5px]">
-              <ChevronRight />
+            <View className="bg-[#00000033] dark:bg-[#FFFFFF1A] rounded-[10px] p-[5px]">
+              <MaterialIcons
+                name="chevron-right"
+                color={isDark ? "#fff" : "#00000033"}
+                size={15}
+              />
             </View>
           </TouchableOpacity>
           <TouchableOpacity
@@ -135,12 +154,18 @@ export default function AdminSettingsScreen() {
           >
             <ThemedText
               style={{ fontFamily: "Poppins_500Medium" }}
-              className="text-black text-[15px]"
+              className="text-[15px]"
+              darkColor="#FFFFFF"
+              lightColor="#000000"
             >
               Update Pitch Condition
             </ThemedText>
-            <View className="bg-[#00000033] rounded-[10px] p-[5px]">
-              <ChevronRight />
+            <View className="bg-[#00000033] dark:bg-[#FFFFFF1A] rounded-[10px] p-[5px]">
+              <MaterialIcons
+                name="chevron-right"
+                color={isDark ? "#fff" : "#00000033"}
+                size={15}
+              />
             </View>
           </TouchableOpacity>
           <TouchableOpacity
@@ -149,12 +174,18 @@ export default function AdminSettingsScreen() {
           >
             <ThemedText
               style={{ fontFamily: "Poppins_500Medium" }}
-              className="text-black text-[15px]"
+              className="text-[15px]"
+              darkColor="#FFFFFF"
+              lightColor="#000000"
             >
               Pricing Options
             </ThemedText>
-            <View className="bg-[#00000033] rounded-[10px] p-[5px]">
-              <ChevronRight />
+            <View className="bg-[#00000033] dark:bg-[#FFFFFF1A] rounded-[10px] p-[5px]">
+              <MaterialIcons
+                name="chevron-right"
+                color={isDark ? "#fff" : "#00000033"}
+                size={15}
+              />
             </View>
           </TouchableOpacity>
           <TouchableOpacity
@@ -163,12 +194,18 @@ export default function AdminSettingsScreen() {
           >
             <ThemedText
               style={{ fontFamily: "Poppins_500Medium" }}
-              className="text-black text-[15px]"
+              className="text-[15px]"
+              darkColor="#FFFFFF"
+              lightColor="#000000"
             >
               Transaction History
             </ThemedText>
-            <View className="bg-[#00000033] rounded-[10px] p-[5px]">
-              <ChevronRight />
+            <View className="bg-[#00000033] dark:bg-[#FFFFFF1A] rounded-[10px] p-[5px]">
+              <MaterialIcons
+                name="chevron-right"
+                color={isDark ? "#fff" : "#00000033"}
+                size={15}
+              />
             </View>
           </TouchableOpacity>
         </View>
@@ -181,7 +218,9 @@ export default function AdminSettingsScreen() {
           >
             <ThemedText
               style={{ fontFamily: "Poppins_500Medium" }}
-              className="text-black text-[15px]"
+              className="text-[15px]"
+              darkColor="#FFFFFF"
+              lightColor="#000000"
             >
               {isLoading ? "Logging out..." : "Logout"}
             </ThemedText>
@@ -192,7 +231,9 @@ export default function AdminSettingsScreen() {
           <View className="flex flex-row items-center justify-between">
             <ThemedText
               style={{ fontFamily: "Poppins_500Medium" }}
-              className="text-black text-[15px]"
+              className="text-[15px]"
+              darkColor="#FFFFFF"
+              lightColor="#000000"
             >
               Delete Account
             </ThemedText>
@@ -202,6 +243,6 @@ export default function AdminSettingsScreen() {
           </View>
         </View>
       </View>
-    </SafeAreaScreen>
+    </View>
   );
 }

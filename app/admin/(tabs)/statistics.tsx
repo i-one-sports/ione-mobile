@@ -134,7 +134,10 @@ export default function AdminStatisticsScreen() {
                   </TouchableOpacity>
 
                   {openDropdown && (
-                    <View className="absolute top-12 z-10 bg-white shrink-0 rounded-lg p-1 shadow-md">
+                    <View
+                      style={{ borderColor: "#00492A" }}
+                      className="absolute top-14 z-10 border bg-white shrink-0 rounded-lg p-1 shadow-md w-32"
+                    >
                       {Object.entries(periodLabels).map(([key, label]) => (
                         <TouchableOpacity
                           key={key}
@@ -142,7 +145,7 @@ export default function AdminStatisticsScreen() {
                             setPeriod(key as typeof period);
                             setOpenDropdown(false);
                           }}
-                          className="py-2 px-3"
+                          className="pl-3 py-2"
                         >
                           <Text>{label}</Text>
                         </TouchableOpacity>
@@ -275,12 +278,12 @@ export default function AdminStatisticsScreen() {
             >
               Ratings
             </ThemedText>
-            <Text
+            <ThemedText
               style={{ fontFamily: "PlayfairDisplay_700Bold" }}
               className="text-black mt-3 text-[40px]"
             >
               245
-            </Text>
+            </ThemedText>
           </View>
           <View className="px-[10px]">
             <ThemedText

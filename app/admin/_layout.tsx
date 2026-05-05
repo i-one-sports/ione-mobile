@@ -60,6 +60,14 @@ function AdminAppNavigator() {
           headerShown: false,
         }}
       />
+
+      <Stack.Screen
+        name="notification"
+        options={{
+          title: "Notifications",
+          headerShown: false,
+        }}
+      />
     </Stack>
   );
 }

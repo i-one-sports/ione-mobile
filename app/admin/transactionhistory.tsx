@@ -5,12 +5,11 @@ import {
 } from "@/api/ownerDashboardThunk";
 import AdminNotificationIcon from "@/assets/svg/AdminNotificationIcon";
 import MoneyIcon from "@/assets/svg/MoneyIcon";
-import SafeAreaScreen from "@/components/SafeAreaScreen";
 import { ThemedText } from "@/components/ThemedText";
 import { useAppDispatch, useAppSelector } from "@/redux/store";
 import dayjs from "dayjs";
 import React, { useEffect } from "react";
-import { ScrollView, Text, TouchableOpacity, View } from "react-native";
+import { ScrollView, TouchableOpacity, View } from "react-native";
 
 export default function AdminTransactionHistoryScreen() {
   const recentActivity = [
@@ -114,15 +113,16 @@ export default function AdminTransactionHistoryScreen() {
     }
   }, [dispatch, location?._id]);
 
-  console.log(location);
   return (
-    <SafeAreaScreen className="flex-1">
-      <View className="py-6 px-[35px] flex-1">
+    <View className="flex-1 dark:bg-black">
+      <View className="pb-6 pt-16 px-[35px] flex-1">
         <View>
           <View className="flex flex-row items-center justify-between">
             <ThemedText
+              darkColor="#FFFFFF"
+              lightColor="#000000"
               style={{ fontFamily: "Poppins_600SemiBold" }}
-              className="text-black text-xl"
+              className="text-xl"
             >
               Transaction History
             </ThemedText>
@@ -131,12 +131,14 @@ export default function AdminTransactionHistoryScreen() {
             </TouchableOpacity>
           </View>
 
-          <Text
+          <ThemedText
+            darkColor="#FFFFFF"
+            lightColor="#000000"
             style={{ fontFamily: "Poppins_500Medium" }}
-            className="text-black mt-5 text-lg"
+            className="mt-5 text-lg"
           >
             Recent Activity
-          </Text>
+          </ThemedText>
         </View>
         {/* <ScrollView showsVerticalScrollIndicator={false}>
           {Object.entries(grouped).map(([date, group]) => (
@@ -187,11 +189,19 @@ export default function AdminTransactionHistoryScreen() {
         </ScrollView> */}
         <ScrollView showsVerticalScrollIndicator={false}>
           {transactionHistory.length === 0 && (
-            <Text className="text-center mt-10">No transactions yet</Text>
+            <ThemedText
+              darkColor="#FFFFFF"
+              lightColor="#000000"
+              className="text-center mt-10"
+            >
+              No transactions yet
+            </ThemedText>
           )}
           {transactionHistory.map((group) => (
             <View className="mt-3" key={group.date}>
-              <Text className="text-[#7D7D7D]">{formatDate(group.date)}</Text>
+              <ThemedText darkColor="#FFFFFF" lightColor="#7D7D7D">
+                {formatDate(group.date)}
+              </ThemedText>
 
               {group.entries.map((item) => (
                 <View
@@ -204,45 +214,52 @@ export default function AdminTransactionHistoryScreen() {
                     </View>
 
                     <View>
-                      <Text
+                      <ThemedText
+                        darkColor="#FFFFFF"
+                        lightColor="#000000"
                         style={{ fontFamily: "Poppins_500Medium" }}
-                        className="text-black text-lg"
+                        className="text-lg"
                       >
                         {item.teamName}
-                      </Text>
+                      </ThemedText>
 
                       <View className="mt-1 flex-row items-center gap-5">
-                        <Text
+                        <ThemedText
+                          darkColor="#FFFFFF"
+                          lightColor="#7D7D7D"
                           style={{ fontFamily: "Poppins_300Light" }}
-                          className="text-[#7D7D7D] text-sm"
+                          className="text-sm"
                         >
                           {dayjs(item.sessionStartTime).format("h:mm A")}
-                        </Text>
+                        </ThemedText>
 
                         <View className="h-1 w-1 bg-[#000000BF] rounded-full" />
 
-                        <Text
+                        <ThemedText
+                          darkColor="#FFFFFF"
+                          lightColor="#7D7D7D"
                           style={{ fontFamily: "Poppins_300Light" }}
-                          className="text-[#7D7D7D] text-sm"
+                          className="text-sm"
                         >
                           {item.pricingOption}
-                        </Text>
+                        </ThemedText>
                       </View>
                     </View>
                   </View>
 
-                  <Text
+                  <ThemedText
+                    darkColor="#FFFFFF"
+                    lightColor="#000000"
                     style={{ fontFamily: "Poppins_500Medium" }}
-                    className="text-black"
                   >
                     ₦{item.totalPaid.toLocaleString()}
-                  </Text>
+                  </ThemedText>
                 </View>
               ))}
             </View>
           ))}
         </ScrollView>
       </View>
-    </SafeAreaScreen>
+    </View>
   );
 }

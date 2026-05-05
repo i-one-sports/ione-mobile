@@ -1,5 +1,4 @@
 import { getLocation, getSessionByDate } from "@/api/ownerDashboardThunk";
-import CalendarIcon from "@/assets/svg/CalendarIcon";
 import CloseIcon from "@/assets/svg/CloseIcon";
 import OpenIcon from "@/assets/svg/OpenIcon";
 import PlusIcon from "@/assets/svg/PlusIcon";
@@ -12,6 +11,7 @@ import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { router } from "expo-router";
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import { Ionicons } from "@expo/vector-icons";
 import {
   Image,
   Pressable,
@@ -485,7 +485,11 @@ export default function Schedule() {
                   Match schedule
                 </ThemedText>
                 <TouchableOpacity onPress={() => setPickerVisible(true)}>
-                  <CalendarIcon />
+                  <Ionicons
+                    name="calendar-outline"
+                    size={28}
+                    color={theme.icon}
+                  />
                 </TouchableOpacity>
                 <CustomDatePicker
                   date={date}

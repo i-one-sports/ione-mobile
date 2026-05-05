@@ -61,13 +61,15 @@ export default function AdminChangePasswordScreen() {
     }
   };
   return (
-    <SafeAreaScreen className="flex-1">
-      <View className="py-6 px-[35px] flex-1">
+    <View className="flex-1 dark:bg-black">
+      <View className="pb-6 pt-16 px-[35px] flex-1">
         <View>
           <View className="flex flex-row items-center justify-between">
             <ThemedText
               style={{ fontFamily: "Poppins_600SemiBold" }}
-              className="text-black text-xl"
+              className="text-xl"
+              darkColor="#FFFFFF"
+              lightColor="#000000"
             >
               Change Password
             </ThemedText>
@@ -159,6 +161,6 @@ export default function AdminChangePasswordScreen() {
           )}
         </Formik>
       </View>
-    </SafeAreaScreen>
+    </View>
   );
 }
