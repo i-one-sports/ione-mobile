@@ -18,6 +18,7 @@ import React, { useEffect, useState } from "react";
 import { Modal, ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import MatchCardSkeleton from "@/components/MatchCardSkeleton";
+import { formatPitchCondition } from "@/utils/formatPitchConditon";
 
 export default function AdminHomeScreen() {
   const dispatch = useAppDispatch();
@@ -84,8 +85,8 @@ export default function AdminHomeScreen() {
               >
                 Pitch Condition:{" "}
                 {loadingSummmary
-                  ? "loading.."
-                  : dashboardSummary?.pitchCondition}
+                  ? "loading..."
+                  : formatPitchCondition(dashboardSummary?.pitchCondition)}
               </Text>
               <View className="flex flex-row items-center gap-2">
                 <TouchableOpacity
@@ -134,9 +135,13 @@ export default function AdminHomeScreen() {
           </View>
         </SafeAreaView>
       </ImageBackground>
-      <SafeAreaScreen className="flex-1">
+      <SafeAreaScreen className="flex-1" style={{ paddingTop: 0 }}>
         <ScrollView
-          contentContainerStyle={{ paddingHorizontal: 35 }}
+          contentContainerStyle={{
+            paddingHorizontal: 35,
+            paddingBottom: 100,
+            paddingTop: 12,
+          }}
           showsVerticalScrollIndicator={false}
         >
           <ThemedText
@@ -157,9 +162,9 @@ export default function AdminHomeScreen() {
           )}
 
           {!loadingLastMatches && lastMatches.length === 0 && (
-            <Text className="text-black text-center">
+            <ThemedText className="text-black text-center">
               {errorLastMatches || "no recent match 😕"}
-            </Text>
+            </ThemedText>
           )}
 
           <View className="gap-4">

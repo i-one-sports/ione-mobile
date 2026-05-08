@@ -7,10 +7,9 @@ import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useRouter } from "expo-router";
 import * as SecureStore from "expo-secure-store";
 import React, { useEffect, useState } from "react";
-import { Alert, TouchableOpacity, View } from "react-native";
+import { Alert, TouchableOpacity, View, ScrollView } from "react-native";
 import { Toast } from "toastify-react-native";
 import { useColorScheme } from "nativewind";
-import { StatusBar } from "expo-status-bar";
 
 export default function AdminSettingsScreen() {
   const { colorScheme } = useColorScheme();
@@ -82,167 +81,179 @@ export default function AdminSettingsScreen() {
   };
   return (
     <View className="flex-1 dark:bg-black">
-      <StatusBar style="auto" />
-      <View className="pb-6 pt-16 px-[35px] flex-1 justify-between">
-        <View>
-          <View className="flex flex-row items-center justify-between">
-            <ThemedText
-              style={{ fontFamily: "Poppins_600SemiBold" }}
-              className="text-xl"
-              darkColor="#FFFFFF"
-              lightColor="#000000"
-            >
-              Settings
-            </ThemedText>
-            <TouchableOpacity className="bg-[#00FF943B] rounded-[10px] w-[30px] h-[32px] items-center justify-center">
-              <AdminNotificationIcon />
-            </TouchableOpacity>
-          </View>
-
-          <View className="flex flex-row mt-12 py-5 items-center justify-between">
-            <ThemedText
-              style={{ fontFamily: "Poppins_500Medium" }}
-              className="text-[15px]"
-              darkColor="#FFFFFF"
-              lightColor="#000000"
-            >
-              Open Hours
-            </ThemedText>
-            <View className="flex flex-row gap-[9px]">
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{
+          paddingHorizontal: 35,
+          paddingTop: 64,
+          paddingBottom: 105,
+          flexGrow: 1,
+        }}
+      >
+        <View className="flex-1 justify-between">
+          <View>
+            <View className="flex flex-row items-center justify-between">
               <ThemedText
-                style={{ fontFamily: "Poppins_400Regular" }}
+                style={{ fontFamily: "Poppins_600SemiBold" }}
+                className="text-xl"
+                darkColor="#FFFFFF"
+                lightColor="#000000"
+              >
+                Settings
+              </ThemedText>
+              <TouchableOpacity
+                onPress={() => router.navigate("/admin/notification")}
+                className="bg-[#00FF943B] rounded-[10px] w-[30px] h-[32px] items-center justify-center"
+              >
+                <AdminNotificationIcon />
+              </TouchableOpacity>
+            </View>
+
+            <View className="flex flex-row mt-12 py-5 items-center justify-between">
+              <ThemedText
+                style={{ fontFamily: "Poppins_500Medium" }}
                 className="text-[15px]"
                 darkColor="#FFFFFF"
                 lightColor="#000000"
               >
-                {!dashboardSummary?.openingHour && "8am"}-
-                {!dashboardSummary?.closingHour && "10pm"}
+                Open Hours
               </ThemedText>
-              <TouchableOpacity className="bg-[#00000033] dark:bg-[#FFFFFF1A] rounded-[10px] p-[5px]">
+              <View className="flex flex-row gap-[9px]">
+                <ThemedText
+                  style={{ fontFamily: "Poppins_400Regular" }}
+                  className="text-[15px]"
+                  darkColor="#FFFFFF"
+                  lightColor="#000000"
+                >
+                  {!dashboardSummary?.openingHour && "8am"}-
+                  {!dashboardSummary?.closingHour && "10pm"}
+                </ThemedText>
+                <TouchableOpacity className="bg-[#00000033] dark:bg-[#FFFFFF1A] rounded-[10px] p-[5px]">
+                  <MaterialIcons
+                    name="chevron-right"
+                    color={isDark ? "#fff" : "#00000033"}
+                    size={15}
+                  />
+                </TouchableOpacity>
+              </View>
+            </View>
+            <TouchableOpacity
+              onPress={() => router.push("/admin/changepassword")}
+              className="flex flex-row mt-12 py-5 items-center justify-between"
+            >
+              <ThemedText
+                style={{ fontFamily: "Poppins_500Medium" }}
+                className="text-[15px]"
+                darkColor="#FFFFFF"
+                lightColor="#000000"
+              >
+                Change Password
+              </ThemedText>
+
+              <View className="bg-[#00000033] dark:bg-[#FFFFFF1A] rounded-[10px] p-[5px]">
                 <MaterialIcons
                   name="chevron-right"
                   color={isDark ? "#fff" : "#00000033"}
                   size={15}
                 />
+              </View>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => router.push("/admin/pitchcondition")}
+              className="flex flex-row mt-4 py-5 items-center justify-between"
+            >
+              <ThemedText
+                style={{ fontFamily: "Poppins_500Medium" }}
+                className="text-[15px]"
+                darkColor="#FFFFFF"
+                lightColor="#000000"
+              >
+                Update Pitch Condition
+              </ThemedText>
+              <View className="bg-[#00000033] dark:bg-[#FFFFFF1A] rounded-[10px] p-[5px]">
+                <MaterialIcons
+                  name="chevron-right"
+                  color={isDark ? "#fff" : "#00000033"}
+                  size={15}
+                />
+              </View>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => router.push("/admin/pricingoption")}
+              className="flex flex-row mt-4 py-5 items-center justify-between"
+            >
+              <ThemedText
+                style={{ fontFamily: "Poppins_500Medium" }}
+                className="text-[15px]"
+                darkColor="#FFFFFF"
+                lightColor="#000000"
+              >
+                Pricing Options
+              </ThemedText>
+              <View className="bg-[#00000033] dark:bg-[#FFFFFF1A] rounded-[10px] p-[5px]">
+                <MaterialIcons
+                  name="chevron-right"
+                  color={isDark ? "#fff" : "#00000033"}
+                  size={15}
+                />
+              </View>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => router.push("/admin/transactionhistory")}
+              className="flex flex-row mt-4 py-5 items-center justify-between"
+            >
+              <ThemedText
+                style={{ fontFamily: "Poppins_500Medium" }}
+                className="text-[15px]"
+                darkColor="#FFFFFF"
+                lightColor="#000000"
+              >
+                Transaction History
+              </ThemedText>
+              <View className="bg-[#00000033] dark:bg-[#FFFFFF1A] rounded-[10px] p-[5px]">
+                <MaterialIcons
+                  name="chevron-right"
+                  color={isDark ? "#fff" : "#00000033"}
+                  size={15}
+                />
+              </View>
+            </TouchableOpacity>
+          </View>
+
+          <View className="flex-col gap-6">
+            <TouchableOpacity
+              onPress={handleLogout}
+              disabled={isLoading}
+              className="flex flex-row items-center justify-between"
+            >
+              <ThemedText
+                style={{ fontFamily: "Poppins_500Medium" }}
+                className="text-[15px]"
+                darkColor="#FFFFFF"
+                lightColor="#000000"
+              >
+                {isLoading ? "Logging out..." : "Logout"}
+              </ThemedText>
+
+              <MaterialIcons name="logout" size={20} color="#FF00008C" />
+            </TouchableOpacity>
+
+            <View className="flex flex-row items-center justify-between">
+              <ThemedText
+                style={{ fontFamily: "Poppins_500Medium" }}
+                className="text-[15px]"
+                darkColor="#FFFFFF"
+                lightColor="#000000"
+              >
+                Delete Account
+              </ThemedText>
+              <TouchableOpacity className="bg-[#FF00008C] rounded-[10px] p-3">
+                <MaterialIcons name="logout" size={20} color="#2D264B" />
               </TouchableOpacity>
             </View>
           </View>
-          <TouchableOpacity
-            onPress={() => router.push("/admin/changepassword")}
-            className="flex flex-row mt-12 py-5 items-center justify-between"
-          >
-            <ThemedText
-              style={{ fontFamily: "Poppins_500Medium" }}
-              className="text-[15px]"
-              darkColor="#FFFFFF"
-              lightColor="#000000"
-            >
-              Change Password
-            </ThemedText>
-
-            <View className="bg-[#00000033] dark:bg-[#FFFFFF1A] rounded-[10px] p-[5px]">
-              <MaterialIcons
-                name="chevron-right"
-                color={isDark ? "#fff" : "#00000033"}
-                size={15}
-              />
-            </View>
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => router.push("/admin/pitchcondition")}
-            className="flex flex-row mt-4 py-5 items-center justify-between"
-          >
-            <ThemedText
-              style={{ fontFamily: "Poppins_500Medium" }}
-              className="text-[15px]"
-              darkColor="#FFFFFF"
-              lightColor="#000000"
-            >
-              Update Pitch Condition
-            </ThemedText>
-            <View className="bg-[#00000033] dark:bg-[#FFFFFF1A] rounded-[10px] p-[5px]">
-              <MaterialIcons
-                name="chevron-right"
-                color={isDark ? "#fff" : "#00000033"}
-                size={15}
-              />
-            </View>
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => router.push("/admin/pricingoption")}
-            className="flex flex-row mt-4 py-5 items-center justify-between"
-          >
-            <ThemedText
-              style={{ fontFamily: "Poppins_500Medium" }}
-              className="text-[15px]"
-              darkColor="#FFFFFF"
-              lightColor="#000000"
-            >
-              Pricing Options
-            </ThemedText>
-            <View className="bg-[#00000033] dark:bg-[#FFFFFF1A] rounded-[10px] p-[5px]">
-              <MaterialIcons
-                name="chevron-right"
-                color={isDark ? "#fff" : "#00000033"}
-                size={15}
-              />
-            </View>
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => router.push("/admin/transactionhistory")}
-            className="flex flex-row mt-4 py-5 items-center justify-between"
-          >
-            <ThemedText
-              style={{ fontFamily: "Poppins_500Medium" }}
-              className="text-[15px]"
-              darkColor="#FFFFFF"
-              lightColor="#000000"
-            >
-              Transaction History
-            </ThemedText>
-            <View className="bg-[#00000033] dark:bg-[#FFFFFF1A] rounded-[10px] p-[5px]">
-              <MaterialIcons
-                name="chevron-right"
-                color={isDark ? "#fff" : "#00000033"}
-                size={15}
-              />
-            </View>
-          </TouchableOpacity>
         </View>
-
-        <View className="flex-col gap-6">
-          <TouchableOpacity
-            onPress={handleLogout}
-            disabled={isLoading}
-            className="flex flex-row items-center justify-between"
-          >
-            <ThemedText
-              style={{ fontFamily: "Poppins_500Medium" }}
-              className="text-[15px]"
-              darkColor="#FFFFFF"
-              lightColor="#000000"
-            >
-              {isLoading ? "Logging out..." : "Logout"}
-            </ThemedText>
-
-            <MaterialIcons name="logout" size={20} color="#FF00008C" />
-          </TouchableOpacity>
-
-          <View className="flex flex-row items-center justify-between">
-            <ThemedText
-              style={{ fontFamily: "Poppins_500Medium" }}
-              className="text-[15px]"
-              darkColor="#FFFFFF"
-              lightColor="#000000"
-            >
-              Delete Account
-            </ThemedText>
-            <TouchableOpacity className="bg-[#FF00008C] rounded-[10px] p-3">
-              <MaterialIcons name="logout" size={20} color="#2D264B" />
-            </TouchableOpacity>
-          </View>
-        </View>
-      </View>
+      </ScrollView>
     </View>
   );
 }

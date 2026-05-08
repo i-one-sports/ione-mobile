@@ -19,9 +19,12 @@ import {
   View,
 } from "react-native";
 import { BarChart } from "react-native-gifted-charts";
+import { useColorScheme } from "nativewind";
 
 export default function AdminStatisticsScreen() {
   const router = useRouter();
+  const { colorScheme } = useColorScheme();
+  const isDark = colorScheme === "dark";
   const [period, setPeriod] = useState<
     "this_week" | "this_month" | "this_year"
   >("this_month");
@@ -98,7 +101,7 @@ export default function AdminStatisticsScreen() {
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{
-          paddingBottom: 20,
+          paddingBottom: 100,
           flexGrow: 1,
         }}
       >
@@ -254,18 +257,19 @@ export default function AdminStatisticsScreen() {
                 frontColor="lightgray"
                 data={barData}
                 yAxisThickness={0}
+                yAxisTextStyle={{ color: isDark ? "#fff" : "#000" }}
                 xAxisThickness={0}
               />
             </View>
             <View className="flex flex-row gap-[5px] pl-4 items-center pt-6 pb-2">
               <View className="w-2 h-2 bg-[#7987FF] rounded-full" />
-              <Text
+              <ThemedText
                 style={{ fontFamily: "Poppins_500Medium" }}
-                className="text-black text-base"
+                className="text-base"
               >
                 Total number of Users:{" "}
                 {loadingUsersChart ? "loading..." : usersChart?.total}
-              </Text>
+              </ThemedText>
             </View>
           </View>
         </View>

@@ -1,10 +1,9 @@
 import React, { useEffect } from "react";
-import { ScrollView, View, TouchableOpacity } from "react-native";
+import { View, TouchableOpacity, ScrollView } from "react-native";
 import { ThemedText } from "@/components/ThemedText";
 import { Ionicons } from "@expo/vector-icons";
 import { useColorScheme } from "nativewind";
 import { useRouter } from "expo-router";
-import { StatusBar } from "expo-status-bar";
 import { useAppDispatch, useAppSelector } from "@/redux/store";
 import { setNotification } from "@/redux/reducers/ownerDashboard";
 import EventSource from "react-native-sse";
@@ -61,40 +60,49 @@ export default function Notification() {
 
   return (
     <View className="flex-1 bg-white dark:bg-black">
-      <StatusBar style="auto" />
-      <View className="pt-16 px-[35px] flex-1">
-        <View className="flex flex-row items-center gap-8">
-          <TouchableOpacity onPress={() => router.navigate("/admin")}>
-            <Ionicons
-              name="arrow-back"
-              size={28}
-              color={colorScheme === "dark" ? "#fff" : "#000"}
-            />
-          </TouchableOpacity>
-          <ThemedText
-            style={{ fontFamily: "Poppins_600SemiBold" }}
-            className="text-2xl"
-            lightColor="#000000"
-            darkColor="#FFFFFF"
-          >
-            Notifications
-          </ThemedText>
-        </View>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{
+          paddingHorizontal: 35,
+          paddingTop: 64,
+          paddingBottom: 120,
+          flexGrow: 1,
+        }}
+      >
+        <View className="flex-1">
+          <View className="flex flex-row items-center gap-8">
+            <TouchableOpacity onPress={() => router.navigate("/admin")}>
+              <Ionicons
+                name="arrow-back"
+                size={28}
+                color={colorScheme === "dark" ? "#fff" : "#000"}
+              />
+            </TouchableOpacity>
+            <ThemedText
+              style={{ fontFamily: "Poppins_600SemiBold" }}
+              className="text-2xl"
+              lightColor="#000000"
+              darkColor="#FFFFFF"
+            >
+              Notifications
+            </ThemedText>
+          </View>
 
-        <ScrollView
-          contentContainerStyle={{ paddingHorizontal: 35 }}
-          showsVerticalScrollIndicator={false}
-        >
-          <ThemedText
-            style={{ fontFamily: "Poppins_500Medium" }}
-            lightColor="#000000"
-            darkColor="#FFFFFF"
-            className="text-xl text-center mt-10"
+          <ScrollView
+            contentContainerStyle={{ paddingHorizontal: 35 }}
+            showsVerticalScrollIndicator={false}
           >
-            {latestNotification?.body || "No notification"}
-          </ThemedText>
-        </ScrollView>
-      </View>
+            <ThemedText
+              style={{ fontFamily: "Poppins_500Medium" }}
+              lightColor="#000000"
+              darkColor="#FFFFFF"
+              className="text-xl text-center mt-10"
+            >
+              {latestNotification?.body || "No notification"}
+            </ThemedText>
+          </ScrollView>
+        </View>
+      </ScrollView>
     </View>
   );
 }

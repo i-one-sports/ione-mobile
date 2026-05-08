@@ -13,6 +13,7 @@ import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import { Text, TouchableOpacity, View } from "react-native";
 import { Toast } from "toastify-react-native";
+import { formatPitchCondition } from "@/utils/formatPitchConditon";
 
 export default function AdminPitchConditionScreen() {
   const { colorScheme } = useColorScheme();
@@ -44,7 +45,7 @@ export default function AdminPitchConditionScreen() {
     },
     {
       id: 6,
-      label: "Under_Maintenance",
+      label: "Under Maintenance",
       value: "under_maintenance",
     },
   ] as const;
@@ -118,7 +119,7 @@ export default function AdminPitchConditionScreen() {
             >
               <ThemedText darkColor="#FFFFFF" lightColor="#000000">
                 {pitchCondition ||
-                  dashboardSummary?.pitchCondition ||
+                  formatPitchCondition(dashboardSummary?.pitchCondition) ||
                   "Select condition"}
               </ThemedText>
 
