@@ -18,7 +18,7 @@ import React, { useEffect, useState } from "react";
 import { Modal, ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import MatchCardSkeleton from "@/components/MatchCardSkeleton";
-import { formatPitchCondition } from "@/utils/formatPitchConditon";
+import { formatPitchCondition } from "@/utils/formatPitchCondition";
 
 export default function AdminHomeScreen() {
   const dispatch = useAppDispatch();

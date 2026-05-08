@@ -13,7 +13,7 @@ import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import { Text, TouchableOpacity, View } from "react-native";
 import { Toast } from "toastify-react-native";
-import { formatPitchCondition } from "@/utils/formatPitchConditon";
+import { formatPitchCondition } from "@/utils/formatPitchCondition";
 
 export default function AdminPitchConditionScreen() {
   const { colorScheme } = useColorScheme();
