@@ -71,7 +71,7 @@ export default function Notification() {
       >
         <View className="flex-1">
           <View className="flex flex-row items-center gap-8">
-            <TouchableOpacity onPress={() => router.navigate("/admin")}>
+            <TouchableOpacity onPress={() => router.back()}>
               <Ionicons
                 name="arrow-back"
                 size={28}

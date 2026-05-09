@@ -206,7 +206,7 @@ export default function JoinSession() {
                   <View>
                     <Text
                       style={{ fontFamily: "Poppins_600SemiBold" }}
-                      className={`text-[15px] pb-2 ${activeTab === tab ? "text-black" : "text-[#929292]"}`}
+                      className={`text-[15px] pb-2 ${activeTab === tab ? "text-black dark:text-white" : "text-[#929292]"}`}
                     >
                       {tab
                         .split(" ")
