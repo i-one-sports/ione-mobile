@@ -1,5 +1,5 @@
-/* eslint-disable import/order */
-/* eslint-disable @typescript-eslint/no-use-before-define */
+ 
+ 
 import {
   Image,
   NativeSyntheticEvent,
@@ -15,13 +15,13 @@ import {
   useColorScheme,
   View,
   ViewStyle,
-} from 'react-native';
+} from "react-native";
 
-import React, { ReactNode, useState } from 'react';
+import React, { ReactNode, useState } from "react";
 
-import { Ionicons, Entypo } from '@expo/vector-icons';
-import { ThemedText } from './ThemedText';
-import { Colors } from '@/constants/Colors';
+import { Ionicons, Entypo } from "@expo/vector-icons";
+import { ThemedText } from "./ThemedText";
+import { Colors } from "@/constants/Colors";
 
 interface Props extends TextInputProps {
   label: string;
@@ -70,20 +70,20 @@ export default function InputField({
   pickerPressed,
 }: Props) {
   const colorScheme = useColorScheme();
-  const theme = Colors[colorScheme ?? 'light'];
+  const theme = Colors[colorScheme ?? "light"];
   const [isFocused, setIsFocused] = useState(false);
   const [hidePassword, setHidePassword] = useState(true);
 
   // Define colors based on theme
   const colors = {
-    primary: '#46BB1C',
-    secondary: '#F5FFF2',
-    error: '#FF4D4F',
-    stroke: '#DADADA',
+    primary: "#46BB1C",
+    secondary: "#F5FFF2",
+    error: "#FF4D4F",
+    stroke: "#DADADA",
     text: theme.text,
     background: theme.background,
     icon: theme.icon,
-    placeholder: colorScheme === 'dark' ? '#9BA1A6' : '#6C757D',
+    placeholder: colorScheme === "dark" ? "#9BA1A6" : "#6C757D",
   };
 
   const getBorderColor = () => {
@@ -112,7 +112,8 @@ export default function InputField({
           <ThemedText
             lightColor={colors.text}
             darkColor={colors.text}
-            className="text-base font-medium">
+            className="text-base font-medium"
+          >
             {label}
             {required && <Text style={{ color: colors.error }}> *</Text>}
           </ThemedText>
@@ -129,12 +130,13 @@ export default function InputField({
               // backgroundColor: colors.secondary,
             },
             inputComponentStyle,
-          ]}>
+          ]}
+        >
           <TextInput
             onFocus={handleOnFocus}
             onBlur={handleOnBlur}
             accessibilityLabel={label}
-            style={[styles.input, { color: '#000' }]}
+            style={[styles.input, { color: colors.text }]}
             cursorColor={colors.primary}
             autoCapitalize={autoCapitalize}
             onChangeText={onChangeText}
@@ -162,12 +164,13 @@ export default function InputField({
               // backgroundColor: colors.secondary,
             },
             inputComponentStyle,
-          ]}>
+          ]}
+        >
           <TextInput
             onFocus={handleOnFocus}
             onBlur={handleOnBlur}
             accessibilityLabel={label}
-            style={[styles.input, styles.passwordInput, { color: '#000' }]}
+            style={[styles.input, styles.passwordInput, { color: colors.text }]}
             cursorColor={colors.primary}
             autoCapitalize="none"
             onChangeText={onChangeText}
@@ -181,8 +184,16 @@ export default function InputField({
             editable={editable}
             maxLength={maxLength}
           />
-          <Pressable hitSlop={20} onPress={handlePasswordVisibility} style={styles.eyeIcon}>
-            <Ionicons name={!hidePassword ? 'eye' : 'eye-off'} size={20} color={colors.icon} />
+          <Pressable
+            hitSlop={20}
+            onPress={handlePasswordVisibility}
+            style={styles.eyeIcon}
+          >
+            <Ionicons
+              name={!hidePassword ? "eye" : "eye-off"}
+              size={20}
+              color={colors.icon}
+            />
           </Pressable>
         </View>
       )}
@@ -197,27 +208,37 @@ export default function InputField({
               backgroundColor: colors.secondary,
             },
             inputComponentStyle,
-          ]}>
+          ]}
+        >
           <View style={styles.phoneInputContent}>
             {openCountryModal ? (
-              <TouchableOpacity onPress={openCountryModal} style={styles.countrySelector}>
-                {flagUri && <Image source={{ uri: flagUri }} style={styles.flagImage} />}
+              <TouchableOpacity
+                onPress={openCountryModal}
+                style={styles.countrySelector}
+              >
+                {flagUri && (
+                  <Image source={{ uri: flagUri }} style={styles.flagImage} />
+                )}
                 <ThemedText
                   lightColor={colors.text}
-                  darkColor="#000"
-                  className="text-base font-medium">
-                  {countryCodeValue || 'NGN'}
+                  darkColor={colors.text}
+                  className="text-base font-medium"
+                >
+                  {countryCodeValue || "NGN"}
                 </ThemedText>
                 <Entypo name="chevron-down" size={16} color={colors.icon} />
               </TouchableOpacity>
             ) : (
               <View style={styles.countrySelector}>
-                {flagUri && <Image source={{ uri: flagUri }} style={styles.flagImage} />}
+                {flagUri && (
+                  <Image source={{ uri: flagUri }} style={styles.flagImage} />
+                )}
                 <ThemedText
                   lightColor={colors.text}
-                  darkColor="#000"
-                  className="text-base font-medium">
-                  {countryCodeValue || 'NGN'}
+                  darkColor={colors.text}
+                  className="text-base font-medium"
+                >
+                  {countryCodeValue || "NGN"}
                 </ThemedText>
               </View>
             )}
@@ -225,7 +246,7 @@ export default function InputField({
               onFocus={handleOnFocus}
               onBlur={handleOnBlur}
               accessibilityLabel={label}
-              style={[styles.input, styles.phoneInput, { color: '#000' }]}
+              style={[styles.input, styles.phoneInput, { color: colors.text }]}
               cursorColor={colors.primary}
               autoCapitalize={autoCapitalize}
               onChangeText={onChangeText}
@@ -233,7 +254,7 @@ export default function InputField({
               autoComplete={autoComplete}
               autoCorrect={autoCorrect}
               autoFocus={autoFocus}
-              keyboardType={keyboardType || 'phone-pad'}
+              keyboardType={keyboardType || "phone-pad"}
               placeholder={placeholder}
               placeholderTextColor={placeholderTextColor || colors.placeholder}
               multiline={multiline}
@@ -256,12 +277,14 @@ export default function InputField({
               backgroundColor: colors.secondary,
             },
             inputComponentStyle,
-          ]}>
+          ]}
+        >
           <ThemedText
             lightColor={value ? colors.text : colors.placeholder}
-            darkColor={value ? '#000' : colors.placeholder}
+            darkColor={value ? colors.text : colors.placeholder}
             className="text-[11px]"
-            style={styles.pickerText}>
+            style={styles.pickerText}
+          >
             {value || placeholder}
           </ThemedText>
           {rightIcon}
@@ -271,7 +294,11 @@ export default function InputField({
       {/* Error Message */}
       {errorMessage && (
         <View style={styles.errorView}>
-          <ThemedText lightColor={colors.error} darkColor={colors.error} className="text-sm">
+          <ThemedText
+            lightColor={colors.error}
+            darkColor={colors.error}
+            className="text-sm"
+          >
             {errorMessage}
           </ThemedText>
         </View>
@@ -288,9 +315,9 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   inputContainer: {
-    width: '100%',
-    flexDirection: 'row',
-    alignItems: 'center',
+    width: "100%",
+    flexDirection: "row",
+    alignItems: "center",
     borderWidth: 1,
     borderRadius: 8,
     paddingHorizontal: 16,
@@ -309,17 +336,17 @@ const styles = StyleSheet.create({
     padding: 0,
   },
   phoneInputContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     flex: 1,
   },
   countrySelector: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingRight: 12,
     marginRight: 12,
     borderRightWidth: 1,
-    borderRightColor: '#DADADA', // stroke color
+    borderRightColor: "#DADADA", // stroke color
   },
   flagImage: {
     width: 24,
@@ -331,7 +358,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   pickerContainer: {
-    justifyContent: 'space-between',
+    justifyContent: "space-between",
   },
   pickerText: {
     flex: 1,

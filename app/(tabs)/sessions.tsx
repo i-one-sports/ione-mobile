@@ -64,6 +64,12 @@ type DateItem = {
 };
 
 type ExpandedState = Record<string, boolean>;
+type SessionTab = "all" | "tournaments" | "friendlies" | "sets";
+
+type ScheduleProps = {
+  initialTab?: SessionTab;
+  title?: string;
+};
 
 // 🔥 TAB → ID Mapping (added)
 const TAB_ROUTE_MAP = {
@@ -73,7 +79,10 @@ const TAB_ROUTE_MAP = {
   sets: "screens/set",
 };
 
-export default function Schedule() {
+export default function Schedule({
+  initialTab = "all",
+  title = "Match schedule",
+}: ScheduleProps = {}) {
   const [expandedAll, setExpandedAll] = useState<ExpandedState>({
     "All Teams": false,
   });
@@ -91,9 +100,7 @@ export default function Schedule() {
   const [dates, setDates] = useState<DateItem[]>([]);
   const colorScheme = useColorScheme();
   const theme = Colors[colorScheme ?? "light"];
-  const [activeTab, setActiveTab] = useState<
-    "all" | "tournaments" | "friendlies" | "sets"
-  >("all");
+  const [activeTab, setActiveTab] = useState<SessionTab>(initialTab);
   const navigation = useNavigation<NavigationProp>();
   const scrollViewRef = useRef<ScrollView>(null);
 
@@ -465,7 +472,7 @@ export default function Schedule() {
                   darkColor={theme.text}
                   className="text-[20px] font-[600] text-black"
                 >
-                  Match schedule
+                  {title}
                 </ThemedText>
                 <CalendarIcon />
               </View>

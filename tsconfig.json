@@ -4,9 +4,7 @@
     "jsx": "react",
     "strict": true,
     "paths": {
-      "@/*": [
-        "./*"
-      ]
+      "@/*": ["./*"]
     }
   },
   "include": [
@@ -15,6 +13,8 @@
     ".expo/types/**/*.ts",
     "expo-env.d.ts",
     "app/(tabs)/earnings",
-    "nativewind-env.d.ts"
-, "app/(onboarding)/forgottenpassword.tsx"  ]
+    "nativewind-env.d.ts",
+    "app/(onboarding)/forgottenpassword.tsx",
+    "assets/svg"
+  ]
 }

@@ -146,8 +146,6 @@ export default function AdminPitchConditionScreen() {
               ))}
             </View>
           )}
-
-         
         </View>
 
         <View className="mt-auto mb-[42px]">
