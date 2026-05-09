@@ -1,5 +1,3 @@
- 
- 
 import {
   Image,
   NativeSyntheticEvent,
@@ -195,6 +193,17 @@ export default function InputField({
               color={colors.icon}
             />
           </Pressable>
+          <Pressable
+            hitSlop={20}
+            onPress={handlePasswordVisibility}
+            style={styles.eyeIcon}
+          >
+            <Ionicons
+              name={!hidePassword ? "eye" : "eye-off"}
+              size={20}
+              color={colors.icon}
+            />
+          </Pressable>
         </View>
       )}
 
@@ -235,7 +244,7 @@ export default function InputField({
                 )}
                 <ThemedText
                   lightColor={colors.text}
-                  darkColor={colors.text}
+                  darkColor="#000"
                   className="text-base font-medium"
                 >
                   {countryCodeValue || "NGN"}
@@ -246,7 +255,7 @@ export default function InputField({
               onFocus={handleOnFocus}
               onBlur={handleOnBlur}
               accessibilityLabel={label}
-              style={[styles.input, styles.phoneInput, { color: colors.text }]}
+              style={[styles.input, styles.phoneInput, { color: "#000" }]}
               cursorColor={colors.primary}
               autoCapitalize={autoCapitalize}
               onChangeText={onChangeText}
