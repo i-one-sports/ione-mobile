@@ -193,17 +193,6 @@ export default function InputField({
               color={colors.icon}
             />
           </Pressable>
-          <Pressable
-            hitSlop={20}
-            onPress={handlePasswordVisibility}
-            style={styles.eyeIcon}
-          >
-            <Ionicons
-              name={!hidePassword ? "eye" : "eye-off"}
-              size={20}
-              color={colors.icon}
-            />
-          </Pressable>
         </View>
       )}
 
