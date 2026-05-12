@@ -3,8 +3,8 @@ import { User } from "@/components/typings";
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
 interface State {
-  user: User;
-  profile: object;
+  user: User | null;
+  profile: object | null;
   isRegistered: boolean;
   isAuthenticated: boolean;
   isVerified: boolean;
@@ -13,8 +13,8 @@ interface State {
 }
 
 const initialState: State = {
-  user: {},
-  profile: {},
+  user: null,
+  profile: null,
   isRegistered: false,
   isAuthenticated: false,
   isVerified: false,

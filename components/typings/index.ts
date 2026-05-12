@@ -233,3 +233,18 @@ export interface TermsCheckboxProps {
   label: string;
   required?: boolean;
 }
+
+export type TournamentSession = {
+  tournamentName?: string;
+  location?: {
+    name?: string;
+    address?: string;
+  };
+  teams?: {
+    teamOne?: string;
+    teamTwo?: string;
+  };
+  startTime?: string;
+  playersPerTeam?: number;
+  setNumber?: number;
+};
