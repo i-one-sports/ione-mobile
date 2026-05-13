@@ -4,7 +4,7 @@ import {
   updatePitchCondition,
 } from "@/api/ownerDashboardThunk";
 import AdminNotificationIcon from "@/assets/svg/AdminNotificationIcon";
-import SafeAreaScreen from "@/components/SafeAreaScreen";
+import { useColorScheme } from "nativewind";
 import { ThemedText } from "@/components/ThemedText";
 import { PitchConditionType } from "@/components/typings/apiResponse";
 import { useAppDispatch, useAppSelector } from "@/redux/store";
@@ -13,8 +13,10 @@ import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import { Text, TouchableOpacity, View } from "react-native";
 import { Toast } from "toastify-react-native";
+import { formatPitchCondition } from "@/utils/formatPitchCondition";
 
 export default function AdminPitchConditionScreen() {
+  const { colorScheme } = useColorScheme();
   const pitchState = [
     {
       id: 1,
@@ -43,10 +45,11 @@ export default function AdminPitchConditionScreen() {
     },
     {
       id: 6,
-      label: "Under_Maintenance",
+      label: "Under Maintenance",
       value: "under_maintenance",
     },
   ] as const;
+  const isDark = colorScheme === "dark";
   const dispatch = useAppDispatch();
   const router = useRouter();
   const [openDropdown, setOpenDropdown] = useState<boolean>(false);
@@ -89,13 +92,15 @@ export default function AdminPitchConditionScreen() {
   };
 
   return (
-    <SafeAreaScreen className="flex-1">
-      <View className="py-6 px-[35px] flex-1">
+    <View className="flex-1 dark:bg-black">
+      <View className="pb-6 pt-16 px-[35px] flex-1">
         <View>
           <View className="flex flex-row items-center justify-between">
             <ThemedText
               style={{ fontFamily: "Poppins_600SemiBold" }}
-              className="text-black text-xl"
+              className="text-xl"
+              darkColor="#FFFFFF"
+              lightColor="#000000"
             >
               Pitch Condition
             </ThemedText>
@@ -112,16 +117,16 @@ export default function AdminPitchConditionScreen() {
               style={{ borderColor: "#B2B2B2", borderRadius: 5 }}
               className="flex-row px-[10px] border h-14 items-center justify-between"
             >
-              <Text>
+              <ThemedText darkColor="#FFFFFF" lightColor="#000000">
                 {pitchCondition ||
-                  dashboardSummary?.pitchCondition ||
+                  formatPitchCondition(dashboardSummary?.pitchCondition) ||
                   "Select condition"}
-              </Text>
+              </ThemedText>
 
-              <View className="bg-[#00000033] rounded-[10px] p-[5px]">
+              <View className="bg-[#00000033] dark:bg-[#FFFFFF1A] rounded-[10px] p-[5px]">
                 <Ionicons
                   size={14}
-                  color="#00000033"
+                  color={isDark ? "#fff" : "#00000033"}
                   name={
                     openDropdown ? "chevron-up-outline" : "chevron-down-outline"
                   }
@@ -146,8 +151,6 @@ export default function AdminPitchConditionScreen() {
               ))}
             </View>
           )}
-
-         
         </View>
 
         <View className="mt-auto mb-[42px]">
@@ -161,6 +164,6 @@ export default function AdminPitchConditionScreen() {
           </TouchableOpacity>
         </View>
       </View>
-    </SafeAreaScreen>
+    </View>
   );
 }

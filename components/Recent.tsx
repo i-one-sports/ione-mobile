@@ -4,6 +4,7 @@ import React from "react";
 import { TouchableOpacity, View } from "react-native";
 import Polygon from "./Polygon";
 import { ThemedText } from "./ThemedText";
+import { useColorScheme } from "nativewind";
 
 type RecentProps = {
   matchId: string;
@@ -57,6 +58,8 @@ export default function Recent({
       },
     });
   };
+  const { colorScheme } = useColorScheme();
+  const isDark = colorScheme === "dark";
   return (
     <TouchableOpacity
       onPress={() => handleMatchDetails()}
@@ -67,7 +70,7 @@ export default function Recent({
         <ThemedText className="text-xs text-gray-600 dark:text-gray-400">
           {type || "friendly"}
         </ThemedText>
-        <RightArrow />
+        <RightArrow color={isDark ? "#fff" : "#2D264B"} />
       </View>
 
       <View className="flex-row items-center gap-4 justify-center">

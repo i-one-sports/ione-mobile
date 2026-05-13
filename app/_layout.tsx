@@ -35,7 +35,6 @@ function AppNavigator() {
   const { isAuthenticated, user, isRegistered, isVerified } = useAppSelector(
     (state) => state.auth,
   );
-  console.log("user", user.location?.coordinates, user._id);
 
   useEffect(() => {
     if (!user?._id) return;
@@ -50,9 +49,8 @@ function AppNavigator() {
     } else {
       router.replace("/(onboarding)");
     }
-  }, [isAuthenticated, user, isRegistered, isVerified]);
+  }, [user, isRegistered, isVerified]);
 
-  console.log("check", user.role === Role.USER);
   console.log("AUTH STATE:", {
     isAuthenticated,
     user,

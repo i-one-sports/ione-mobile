@@ -12,11 +12,14 @@ import { Platform } from "react-native";
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
+  const isDark = colorScheme === "dark";
 
   return (
     <Tabs
       screenOptions={{
-        sceneStyle: { backgroundColor: "#F3FFFA" },
+        sceneStyle: {
+          backgroundColor: isDark ? "#000" : "#F3FFFA",
+        },
         tabBarActiveTintColor: Colors[colorScheme ?? "light"].tint,
         tabBarInactiveTintColor: Colors[colorScheme ?? "light"].tabIconDefault,
         headerShown: false,
@@ -27,9 +30,7 @@ export default function TabLayout() {
             // Use a transparent background on iOS to show the blur effect
             position: "absolute",
           },
-          default: {
-            backgroundColor: "#F3FFFA",
-          },
+          default: {},
         }),
       }}
     >
@@ -37,7 +38,7 @@ export default function TabLayout() {
         name="index"
         options={{
           title: "Home",
-          sceneStyle: { backgroundColor: "#FFFFFF" },
+          sceneStyle: { backgroundColor: isDark ? "#fff" : "#FFFFFF" },
           tabBarIcon: ({ color }) => (
             <HomeIcon color={color} width={28} height={28} />
           ),

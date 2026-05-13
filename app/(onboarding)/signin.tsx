@@ -76,8 +76,7 @@ export default function SignIn() {
           text1: "Success",
           text2: response.message || "Login successful",
         });
-        // router.replace('/(tabs)');
-        router.replace("/admin/(tabs)");
+        router.replace("/(tabs)");
       })
       .catch((err) => {
         setLoading(false);

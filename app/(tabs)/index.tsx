@@ -56,7 +56,7 @@ export default function HomeScreen() {
           <View className="flex flex-row items-center justify-between">
             <View>
               <ThemedText className="text-sm font-normal">
-                Hey, {user.firstName}👋
+                Hey, {user?.firstName}👋
               </ThemedText>
               <ThemedText className="text-xl font-semibold">
                 {"It's Matchday!"}

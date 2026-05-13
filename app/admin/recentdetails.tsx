@@ -4,14 +4,13 @@ import FieldSvg from "@/assets/svg/FieldSvg";
 import PitchIcon from "@/assets/svg/PitchSvg";
 import Polygon from "@/components/Polygon";
 import { formateDate, getInitials } from "@/components/Recent";
-import SafeAreaScreen from "@/components/SafeAreaScreen";
 import { ThemedText } from "@/components/ThemedText";
 import { useAppDispatch, useAppSelector } from "@/redux/store";
 import { router, useLocalSearchParams } from "expo-router";
 import React, { useEffect, useMemo, useState } from "react";
 import { ScrollView, TouchableOpacity, View } from "react-native";
 
-export default function recentDetails() {
+export default function RecentDetails() {
   const dispatch = useAppDispatch();
   const { matchId, date } = useLocalSearchParams<{
     date: string;
@@ -91,7 +90,7 @@ export default function recentDetails() {
   );
 
   return (
-    <SafeAreaScreen className="flex-1">
+    <View className="flex-1 pt-16 dark:bg-black">
       <View className="flex-row px-[35px] mb-[27px]">
         <TouchableOpacity onPress={() => router.back()} className="mr-4">
           <ThemedText className="text-2xl">←</ThemedText>
@@ -159,22 +158,23 @@ export default function recentDetails() {
         </View>
       </View>
 
-      <View className="flex-row border-b gap-[17px] border-t py-[21px] border-gray-300 dark:border-gray-700 mb-4 px-[35px]">
+      <View className="gap-[17px] dark:border-gray-700 px-[35px] border-[#EDEDED] border-t border-b py-5 flex flex-row  items-center mt-[25px] mb-5">
         <TouchableOpacity
           onPress={() => setActiveTab("lineups")}
           className="relative pb-3 items-center"
         >
           <ThemedText
-            className={`text-center font-semibold text-base ${activeTab === "lineups" ? "text-primary" : "text-gray-500"}`}
-            style={{
-              color: activeTab === "lineups" ? "#000000" : "#B9B9B9",
-            }}
+            className={`text-center font-semibold text-base ${
+              activeTab === "lineups"
+                ? "text-black dark:text-white"
+                : "text-gray-400"
+            }`}
           >
             Lineups
           </ThemedText>
 
           {activeTab === "lineups" && (
-            <View className="absolute bottom-0 w-8 h-[2px] bg-[#46BB1C] rounded-full" />
+            <View className="absolute bottom-[-19px] h-[2px] w-full bg-[#00FF94]" />
           )}
         </TouchableOpacity>
 
@@ -183,16 +183,16 @@ export default function recentDetails() {
           className="relative pb-3 items-center"
         >
           <ThemedText
-            className={`text-center font-semibold text-base`}
-            style={{
-              color: activeTab === "substitutes" ? "#000000" : "#B9B9B9",
-            }}
+            className={`text-center font-semibold text-base ${
+              activeTab === "substitutes"
+                ? "text-black dark:text-white"
+                : "text-gray-400"
+            }`}
           >
             Substitutes
           </ThemedText>
-
           {activeTab === "substitutes" && (
-            <View className="absolute bottom-0 w-8 h-[2px] bg-[#46BB1C] rounded-full" />
+            <View className="absolute bottom-[-19px] h-[2px] w-full bg-[#00FF94]" />
           )}
         </TouchableOpacity>
       </View>
@@ -241,7 +241,14 @@ export default function recentDetails() {
           <FieldSvg />
         </View>
       </View>
-      <ScrollView className="flex-1 px-[35px]">
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{
+          paddingHorizontal: 35,
+          paddingBottom: 120,
+          flexGrow: 1,
+        }}
+      >
         {/* Lineups Section */}
         {activeTab === "lineups" && activeTeam === "T1" && (
           <View className="mb-6">
@@ -315,6 +322,6 @@ export default function recentDetails() {
           </View>
         )}
       </ScrollView>
-    </SafeAreaScreen>
+    </View>
   );
 }
