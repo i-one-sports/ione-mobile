@@ -6,174 +6,254 @@ import {
 } from "@/api/ownerDashboardThunk";
 import AdminNotificationIcon from "@/assets/svg/AdminNotificationIcon";
 import LocationIcon from "@/assets/svg/LocationIcon";
+import MatchCardSkeleton from "@/components/MatchCardSkeleton";
 import Recent from "@/components/Recent";
 import SafeAreaScreen from "@/components/SafeAreaScreen";
 import { ThemedText } from "@/components/ThemedText";
 import { useAppDispatch, useAppSelector } from "@/redux/store";
-import { Ionicons } from "@expo/vector-icons";
+import { formatPitchCondition } from "@/utils/formatPitchCondition";
+import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { ImageBackground } from "expo-image";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
+import { useColorScheme } from "nativewind";
 import React, { useEffect, useState } from "react";
 import { Modal, ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import MatchCardSkeleton from "@/components/MatchCardSkeleton";
-import { formatPitchCondition } from "@/utils/formatPitchCondition";
+
+const CONDITION_EMOJI: Record<string, string> = {
+  excellent: "🌟",
+  good: "🌤️",
+  fair: "🌥️",
+  poor: "😬",
+  wet: "💧",
+  under_maintenance: "🚧",
+};
 
 export default function AdminHomeScreen() {
   const dispatch = useAppDispatch();
   const router = useRouter();
-  const [modalVisible, setModalVisible] = useState<boolean>(false);
+  const { colorScheme } = useColorScheme();
+  const isDark = colorScheme === "dark";
+  const [modalVisible, setModalVisible] = useState(false);
+
   const {
     dashboardSummary,
     loadingSummmary,
     location,
     lastMatches,
-    loadingLocation,
     loadingLastMatches,
     errorLastMatches,
-    errorLocation,
-    errorSummary,
+    loadingLocation,
   } = useAppSelector((state) => state.ownerDashboard);
 
   useEffect(() => {
     dispatch(getLocation());
     if (location?._id) {
       dispatch(getSummary(location._id));
-      dispatch(getLastMatches(location?._id));
+      dispatch(getLastMatches(location._id));
       dispatch(getUpcomingSessions(location._id));
     }
   }, [dispatch, location?._id]);
 
-  const getPitchEmoji = (condition?: string) => {
-    switch (condition) {
-      case "excellent":
-        return "🌟";
-      case "good":
-        return "🌤️";
-      case "fair":
-        return "🌥️";
-      case "poor":
-        return "😬";
-      case "wet":
-        return "💧";
-      case "under_maintenance":
-        return "🚧";
-      default:
-        return "❓";
-    }
-  };
+  const pitchEmoji =
+    CONDITION_EMOJI[dashboardSummary?.pitchCondition ?? ""] ?? "❓";
+  const accent = isDark ? "#00FF94" : "#00cc77";
 
   return (
-    <View className="flex-1">
+    <View style={{ flex: 1, backgroundColor: isDark ? "#000" : "#fff" }}>
+      {/* Hero image background */}
       <ImageBackground
-        source={
-          //   location?.pitchPhoto
-          //     ? { uri: location.pitchPhoto }
-          //     : require("../../../assets/images/adminHeader.png")
-          require("../../../assets/images/adminHeader.png")
-        }
-        //
+        source={require("../../../assets/images/adminHeader.png")}
       >
         <SafeAreaView edges={["top"]}>
-          <StatusBar style="auto" />
-          <View className="px-[35px] pt-5 pb-6">
-            <View className="flex flex-row items-center justify-between">
-              <Text
-                style={{ fontFamily: "Poppins_600SemiBold" }}
-                className="text-white text-xs bg-[#FFFFFF33] rounded-[10px] p-[10px]"
+          <StatusBar style="light" />
+          <View
+            style={{ paddingHorizontal: 35, paddingTop: 16, paddingBottom: 24 }}
+          >
+            {/* Top bar: condition pill + action buttons */}
+            <View
+              style={{
+                flexDirection: "row",
+                justifyContent: "space-between",
+                alignItems: "center",
+              }}
+            >
+              <View
+                style={{
+                  backgroundColor: "rgba(255,255,255,0.2)",
+                  borderRadius: 20,
+                  paddingHorizontal: 12,
+                  paddingVertical: 7,
+                }}
               >
-                Pitch Condition:{" "}
-                {loadingSummmary
-                  ? "loading..."
-                  : formatPitchCondition(dashboardSummary?.pitchCondition)}
-              </Text>
-              <View className="flex flex-row items-center gap-2">
+                <Text
+                  style={{
+                    fontFamily: "Poppins_600SemiBold",
+                    color: "#fff",
+                    fontSize: 11,
+                  }}
+                >
+                  {loadingSummmary
+                    ? "Loading..."
+                    : `${pitchEmoji}  ${formatPitchCondition(dashboardSummary?.pitchCondition)}`}
+                </Text>
+              </View>
+
+              <View style={{ flexDirection: "row", gap: 8 }}>
                 <TouchableOpacity
                   onPress={() => router.navigate("/admin/notification")}
-                  className="bg-[#FFFFFF33] px-[10px] py-[9px] rounded-[10px]"
+                  style={{
+                    backgroundColor: "rgba(255,255,255,0.2)",
+                    borderRadius: 10,
+                    padding: 9,
+                  }}
                 >
                   <AdminNotificationIcon />
                 </TouchableOpacity>
-
                 <TouchableOpacity
                   onPress={() => router.push("/admin/pitchcondition")}
-                  className="bg-[#FFFFFF33] py-2 px-2 rounded-[10px]"
+                  style={{
+                    backgroundColor: "rgba(255,255,255,0.2)",
+                    borderRadius: 10,
+                    padding: 9,
+                  }}
                 >
-                  <Text>{getPitchEmoji(dashboardSummary?.pitchCondition)}</Text>
+                  <Text style={{ fontSize: 16 }}>{pitchEmoji}</Text>
                 </TouchableOpacity>
               </View>
             </View>
-            <View className="mt-[105px]">
-              <View className="flex flex-row items-center gap-2 bg-[#FFFFFF33] self-start rounded-[10px] px-2 py-[10px]">
+
+            {/* Location + pitch name */}
+            <View style={{ marginTop: 80 }}>
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  gap: 6,
+                  backgroundColor: "rgba(255,255,255,0.2)",
+                  alignSelf: "flex-start",
+                  borderRadius: 10,
+                  paddingHorizontal: 10,
+                  paddingVertical: 7,
+                  marginBottom: 6,
+                }}
+              >
                 <LocationIcon />
                 <Text
-                  style={{ fontFamily: "Poppins_600SemiBold" }}
-                  className="text-white text-xs"
+                  style={{
+                    fontFamily: "Poppins_600SemiBold",
+                    color: "#fff",
+                    fontSize: 11,
+                  }}
                 >
                   {loadingSummmary
-                    ? "loading..."
-                    : dashboardSummary?.address
-                      ? dashboardSummary?.address
-                      : "location not found"}
+                    ? "Loading..."
+                    : dashboardSummary?.address || "Location not found"}
                 </Text>
               </View>
+
               <TouchableOpacity onPress={() => setModalVisible(true)}>
                 <Text
                   numberOfLines={1}
-                  style={{ fontFamily: "PlayfairDisplay_700Bold" }}
-                  className="text-white text-[50px] text-center uppercase"
+                  style={{
+                    fontFamily: "PlayfairDisplay_700Bold",
+                    color: "#fff",
+                    fontSize: 46,
+                    textTransform: "uppercase",
+                  }}
                 >
                   {loadingLocation
-                    ? "loading..."
-                    : location?.name
-                      ? location.name
-                      : "location error"}
+                    ? "Loading..."
+                    : location?.name || "No Location"}
                 </Text>
               </TouchableOpacity>
             </View>
           </View>
         </SafeAreaView>
       </ImageBackground>
-      <SafeAreaScreen className="flex-1" style={{ paddingTop: 0 }}>
+
+      {/* Content section */}
+      <SafeAreaScreen
+        style={{
+          flex: 1,
+          paddingTop: 0,
+          backgroundColor: isDark ? "#000" : "#fff",
+        }}
+      >
         <ScrollView
           contentContainerStyle={{
             paddingHorizontal: 35,
+            paddingTop: 20,
             paddingBottom: 100,
-            paddingTop: 12,
           }}
           showsVerticalScrollIndicator={false}
         >
-          <ThemedText
-            style={{ fontFamily: "Poppins_600SemiBold" }}
-            className="text-[15px] mb-5"
-            darkColor="#000"
-            lightColor="#000000"
+          {/* Section header */}
+          <View
+            style={{
+              flexDirection: "row",
+              justifyContent: "space-between",
+              alignItems: "center",
+              marginBottom: 16,
+            }}
           >
-            Recents
-          </ThemedText>
+            <ThemedText
+              style={{ fontFamily: "Poppins_600SemiBold", fontSize: 16 }}
+            >
+              Recent Matches
+            </ThemedText>
+            {lastMatches.length > 0 && (
+              <TouchableOpacity>
+                <ThemedText
+                  lightColor={accent}
+                  darkColor={accent}
+                  style={{ fontSize: 12, fontWeight: "600" }}
+                >
+                  See all
+                </ThemedText>
+              </TouchableOpacity>
+            )}
+          </View>
 
+          {/* Skeleton loading */}
           {loadingLastMatches && lastMatches.length === 0 && (
-            <View className="gap-4">
-              {[1, 2, 3].map((item) => (
-                <MatchCardSkeleton key={item} />
+            <View style={{ gap: 12 }}>
+              {[1, 2, 3].map((i) => (
+                <MatchCardSkeleton key={i} />
               ))}
             </View>
           )}
 
+          {/* Empty state */}
           {!loadingLastMatches && lastMatches.length === 0 && (
-            <ThemedText className="text-black text-center">
-              {errorLastMatches || "no recent match 😕"}
-            </ThemedText>
+            <View
+              style={{
+                backgroundColor: isDark ? "#0D2B1F" : "#EDFFF8",
+                borderRadius: 12,
+                paddingVertical: 32,
+                alignItems: "center",
+                gap: 8,
+              }}
+            >
+              <MaterialIcons name="sports-soccer" size={32} color={accent} />
+              <ThemedText
+                lightColor="#666"
+                darkColor="#aaa"
+                style={{ fontSize: 13, textAlign: "center" }}
+              >
+                {errorLastMatches || "No recent matches yet"}
+              </ThemedText>
+            </View>
           )}
 
-          <View className="gap-4">
+          {/* Match cards */}
+          <View style={{ gap: 12 }}>
             {lastMatches.map((match) => (
               <Recent
-                matchId={match._id}
                 key={match._id}
+                matchId={match._id}
                 date={match.createdAt}
-                //   type={match.session}
                 homeTeamInitial={match.teamOne.name}
                 homeTeamId={match.teamOne._id}
                 awayTeamId={match.teamTwo._id}
@@ -186,33 +266,62 @@ export default function AdminHomeScreen() {
             ))}
           </View>
         </ScrollView>
-        <Modal
-          visible={modalVisible}
-          transparent
-          onRequestClose={() => setModalVisible(false)}
-        >
-          <View className="flex-1 items-center justify-center px-2 bg-black/30">
-            <View className="p-6 rounded-lg ">
-              <Text
-                style={{ fontFamily: "PlayfairDisplay_700Bold" }}
-                className="text-white text-[50px] text-center uppercase"
-              >
-                {loadingLocation
-                  ? "loading..."
-                  : location?.name
-                    ? location.name
-                    : "location error"}
-              </Text>
-              <TouchableOpacity
-                onPress={() => setModalVisible(false)}
-                className="absolute right-4 top-4"
-              >
-                <Ionicons name="close" size={25} color="#333" />
-              </TouchableOpacity>
-            </View>
-          </View>
-        </Modal>
       </SafeAreaScreen>
+
+      {/* Location name modal */}
+      <Modal
+        visible={modalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <View
+          style={{
+            flex: 1,
+            alignItems: "center",
+            justifyContent: "center",
+            backgroundColor: "rgba(0,0,0,0.6)",
+            padding: 24,
+          }}
+        >
+          <View
+            style={{
+              backgroundColor: isDark ? "#141414" : "#fff",
+              borderRadius: 20,
+              padding: 28,
+              width: "100%",
+              alignItems: "center",
+              gap: 16,
+            }}
+          >
+            <Text
+              style={{
+                fontFamily: "PlayfairDisplay_700Bold",
+                fontSize: 36,
+                textTransform: "uppercase",
+                textAlign: "center",
+                color: isDark ? "#fff" : "#111",
+              }}
+            >
+              {location?.name || "No Location"}
+            </Text>
+
+            <TouchableOpacity
+              onPress={() => setModalVisible(false)}
+              style={{
+                backgroundColor: isDark ? "#2a2a2a" : "#f5f5f5",
+                borderRadius: 20,
+                paddingHorizontal: 24,
+                paddingVertical: 10,
+              }}
+            >
+              <ThemedText style={{ fontSize: 13, fontWeight: "600" }}>
+                Close
+              </ThemedText>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }

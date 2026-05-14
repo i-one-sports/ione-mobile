@@ -1,33 +1,49 @@
 import { getSummary } from "@/api/ownerDashboardThunk";
 import AdminNotificationIcon from "@/assets/svg/AdminNotificationIcon";
 import { ThemedText } from "@/components/ThemedText";
+import { SettingsHeader } from "@/components/admin/settings/SettingsHeader";
+import { SettingsRow } from "@/components/admin/settings/SettingsRow";
+import { SettingsSection } from "@/components/admin/settings/SettingsSection";
 import { logout } from "@/redux/reducers/auth";
 import { persistor, useAppDispatch, useAppSelector } from "@/redux/store";
-import MaterialIcons from "@expo/vector-icons/MaterialIcons";
-import { useRouter } from "expo-router";
 import * as SecureStore from "expo-secure-store";
-import React, { useEffect, useState } from "react";
-import { Alert, TouchableOpacity, View, ScrollView } from "react-native";
-import { Toast } from "toastify-react-native";
+import { useRouter } from "expo-router";
 import { useColorScheme } from "nativewind";
+import React, { useEffect } from "react";
+import {
+  Alert,
+  Platform,
+  ScrollView,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { Toast } from "toastify-react-native";
 
 export default function AdminSettingsScreen() {
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === "dark";
   const router = useRouter();
   const dispatch = useAppDispatch();
+  const insets = useSafeAreaInsets();
+
   const { dashboardSummary, location } = useAppSelector(
     (state) => state.ownerDashboard,
   );
-  const [isLoading, setIsLoading] = useState(false);
+  const { user } = useAppSelector((state) => state.auth);
 
   useEffect(() => {
     if (location?._id) {
-      dispatch(getSummary(location?._id));
+      dispatch(getSummary(location._id));
     }
-  }, [dispatch]);
+  }, [dispatch, location?._id]);
 
-  const handleLogout = async () => {
+  const openHours =
+    dashboardSummary?.openingHour && dashboardSummary?.closingHour
+      ? `${dashboardSummary.openingHour} – ${dashboardSummary.closingHour}`
+      : "8am – 10pm";
+
+  const handleLogout = () => {
     Alert.alert(
       "Logout",
       "Are you sure you want to log out?",
@@ -36,42 +52,24 @@ export default function AdminSettingsScreen() {
         {
           text: "Logout",
           style: "destructive",
-          onPress: async () => {
+          onPress: () => {
             try {
-              setIsLoading(true);
-
-              // Retrieve token for API logout if needed
-              const token = await SecureStore.getItemAsync("i-one");
-
-              // Dispatch Redux logout to reset auth slice
               dispatch(logout());
-
-              // Remove tokens from SecureStore
-              await SecureStore.deleteItemAsync("i-one");
-              await SecureStore.deleteItemAsync("user-data");
-
-              // Clear Redux persist storage
-              await persistor.purge();
-
-              // Navigate back to onboarding or login
               router.replace("/(onboarding)/signin");
-
+              SecureStore.deleteItemAsync("i-one").catch(() => {});
+              SecureStore.deleteItemAsync("user-data").catch(() => {});
+              persistor.purge().catch(() => {});
               Toast.show({
                 type: "success",
-
-                text1: "Success",
-                text2: "You have been logged out successfully.",
+                text1: "Logged out",
+                text2: "See you soon!",
               });
-            } catch (error) {
-              console.log("Logout error:", error);
+            } catch {
               Toast.show({
                 type: "error",
-
                 text1: "Error",
                 text2: "Please try again.",
               });
-            } finally {
-              setIsLoading(false);
             }
           },
         },
@@ -79,180 +77,142 @@ export default function AdminSettingsScreen() {
       { cancelable: false },
     );
   };
+
+  const handleDeleteAccount = () => {
+    Alert.alert(
+      "Delete Account",
+      "This is permanent and cannot be undone. Are you sure?",
+      [
+        { text: "Cancel", style: "cancel" },
+        { text: "Delete", style: "destructive", onPress: () => {} },
+      ],
+      { cancelable: false },
+    );
+  };
+
+  const paddingTop = Platform.OS === "ios" ? insets.top + 12 : 52;
+  const paddingBottom = insets.bottom + 100;
+
   return (
-    <View className="flex-1 dark:bg-black">
+    <View style={{ flex: 1, backgroundColor: isDark ? "#000" : "#f5f5f5" }}>
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{
-          paddingHorizontal: 35,
-          paddingTop: 64,
-          paddingBottom: 105,
-          flexGrow: 1,
+          paddingTop,
+          paddingBottom,
+          paddingHorizontal: 20,
         }}
       >
-        <View className="flex-1 justify-between">
-          <View>
-            <View className="flex flex-row items-center justify-between">
-              <ThemedText
-                style={{ fontFamily: "Poppins_600SemiBold" }}
-                className="text-xl"
-                darkColor="#FFFFFF"
-                lightColor="#000000"
-              >
-                Settings
-              </ThemedText>
-              <TouchableOpacity
-                onPress={() => router.navigate("/admin/notification")}
-                className="bg-[#00FF943B] rounded-[10px] w-[30px] h-[32px] items-center justify-center"
-              >
-                <AdminNotificationIcon />
-              </TouchableOpacity>
-            </View>
+        {/* Top bar */}
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "space-between",
+            marginBottom: 4,
+          }}
+        >
+          <ThemedText
+            style={{ fontFamily: "Poppins_600SemiBold", fontSize: 22 }}
+            lightColor="#000"
+            darkColor="#fff"
+          >
+            Settings
+          </ThemedText>
 
-            <View className="flex flex-row mt-12 py-5 items-center justify-between">
-              <ThemedText
-                style={{ fontFamily: "Poppins_500Medium" }}
-                className="text-[15px]"
-                darkColor="#FFFFFF"
-                lightColor="#000000"
-              >
-                Open Hours
-              </ThemedText>
-              <View className="flex flex-row gap-[9px]">
-                <ThemedText
-                  style={{ fontFamily: "Poppins_400Regular" }}
-                  className="text-[15px]"
-                  darkColor="#FFFFFF"
-                  lightColor="#000000"
-                >
-                  {!dashboardSummary?.openingHour && "8am"}-
-                  {!dashboardSummary?.closingHour && "10pm"}
-                </ThemedText>
-                <TouchableOpacity className="bg-[#00000033] dark:bg-[#FFFFFF1A] rounded-[10px] p-[5px]">
-                  <MaterialIcons
-                    name="chevron-right"
-                    color={isDark ? "#fff" : "#00000033"}
-                    size={15}
-                  />
-                </TouchableOpacity>
-              </View>
-            </View>
-            <TouchableOpacity
-              onPress={() => router.push("/admin/changepassword")}
-              className="flex flex-row mt-12 py-5 items-center justify-between"
-            >
-              <ThemedText
-                style={{ fontFamily: "Poppins_500Medium" }}
-                className="text-[15px]"
-                darkColor="#FFFFFF"
-                lightColor="#000000"
-              >
-                Change Password
-              </ThemedText>
-
-              <View className="bg-[#00000033] dark:bg-[#FFFFFF1A] rounded-[10px] p-[5px]">
-                <MaterialIcons
-                  name="chevron-right"
-                  color={isDark ? "#fff" : "#00000033"}
-                  size={15}
-                />
-              </View>
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={() => router.push("/admin/pitchcondition")}
-              className="flex flex-row mt-4 py-5 items-center justify-between"
-            >
-              <ThemedText
-                style={{ fontFamily: "Poppins_500Medium" }}
-                className="text-[15px]"
-                darkColor="#FFFFFF"
-                lightColor="#000000"
-              >
-                Update Pitch Condition
-              </ThemedText>
-              <View className="bg-[#00000033] dark:bg-[#FFFFFF1A] rounded-[10px] p-[5px]">
-                <MaterialIcons
-                  name="chevron-right"
-                  color={isDark ? "#fff" : "#00000033"}
-                  size={15}
-                />
-              </View>
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={() => router.push("/admin/pricingoption")}
-              className="flex flex-row mt-4 py-5 items-center justify-between"
-            >
-              <ThemedText
-                style={{ fontFamily: "Poppins_500Medium" }}
-                className="text-[15px]"
-                darkColor="#FFFFFF"
-                lightColor="#000000"
-              >
-                Pricing Options
-              </ThemedText>
-              <View className="bg-[#00000033] dark:bg-[#FFFFFF1A] rounded-[10px] p-[5px]">
-                <MaterialIcons
-                  name="chevron-right"
-                  color={isDark ? "#fff" : "#00000033"}
-                  size={15}
-                />
-              </View>
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={() => router.push("/admin/transactionhistory")}
-              className="flex flex-row mt-4 py-5 items-center justify-between"
-            >
-              <ThemedText
-                style={{ fontFamily: "Poppins_500Medium" }}
-                className="text-[15px]"
-                darkColor="#FFFFFF"
-                lightColor="#000000"
-              >
-                Transaction History
-              </ThemedText>
-              <View className="bg-[#00000033] dark:bg-[#FFFFFF1A] rounded-[10px] p-[5px]">
-                <MaterialIcons
-                  name="chevron-right"
-                  color={isDark ? "#fff" : "#00000033"}
-                  size={15}
-                />
-              </View>
-            </TouchableOpacity>
-          </View>
-
-          <View className="flex-col gap-6">
-            <TouchableOpacity
-              onPress={handleLogout}
-              disabled={isLoading}
-              className="flex flex-row items-center justify-between"
-            >
-              <ThemedText
-                style={{ fontFamily: "Poppins_500Medium" }}
-                className="text-[15px]"
-                darkColor="#FFFFFF"
-                lightColor="#000000"
-              >
-                {isLoading ? "Logging out..." : "Logout"}
-              </ThemedText>
-
-              <MaterialIcons name="logout" size={20} color="#FF00008C" />
-            </TouchableOpacity>
-
-            <View className="flex flex-row items-center justify-between">
-              <ThemedText
-                style={{ fontFamily: "Poppins_500Medium" }}
-                className="text-[15px]"
-                darkColor="#FFFFFF"
-                lightColor="#000000"
-              >
-                Delete Account
-              </ThemedText>
-              <TouchableOpacity className="bg-[#FF00008C] rounded-[10px] p-3">
-                <MaterialIcons name="logout" size={20} color="#2D264B" />
-              </TouchableOpacity>
-            </View>
-          </View>
+          <TouchableOpacity
+            onPress={() => router.navigate("/admin/notification")}
+            style={{
+              backgroundColor: "#00FF943B",
+              borderRadius: 10,
+              width: 38,
+              height: 38,
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <AdminNotificationIcon />
+          </TouchableOpacity>
         </View>
+
+        {/* Profile card */}
+        <SettingsHeader
+          firstName={user?.firstName ?? ""}
+          lastName={user?.lastName ?? ""}
+          email={user?.email ?? ""}
+          nickname={user?.nickname}
+        />
+
+        {/* Pitch Management */}
+        <SettingsSection title="Pitch">
+          <SettingsRow
+            icon="schedule"
+            iconColor="#00FF94"
+            label="Open Hours"
+            rightElement={
+              <ThemedText
+                style={{ fontFamily: "Poppins_400Regular", fontSize: 13 }}
+                lightColor="#999"
+                darkColor="#666"
+              >
+                {openHours}
+              </ThemedText>
+            }
+          />
+          <SettingsRow
+            icon="grass"
+            iconColor="#4CAF50"
+            label="Pitch Condition"
+            onPress={() => router.push("/admin/pitchcondition")}
+          />
+          <SettingsRow
+            icon="attach-money"
+            iconColor="#FF9800"
+            label="Pricing Options"
+            onPress={() => router.push("/admin/pricingoption")}
+          />
+        </SettingsSection>
+
+        {/* Account */}
+        <SettingsSection title="Account">
+          <SettingsRow
+            icon="lock-outline"
+            iconColor="#2196F3"
+            label="Change Password"
+            onPress={() => router.push("/admin/changepassword")}
+          />
+          <SettingsRow
+            icon="receipt-long"
+            iconColor="#9C27B0"
+            label="Transaction History"
+            onPress={() => router.push("/admin/transactionhistory")}
+          />
+          <SettingsRow
+            icon="notifications-none"
+            iconColor="#FF5722"
+            label="Notifications"
+            onPress={() => router.navigate("/admin/notification")}
+          />
+        </SettingsSection>
+
+        {/* Danger zone */}
+        <SettingsSection title="Account Actions">
+          <SettingsRow
+            icon="logout"
+            iconColor="#FF5252"
+            label="Logout"
+            onPress={handleLogout}
+            showChevron={false}
+          />
+          <SettingsRow
+            icon="delete-forever"
+            iconColor="#FF1744"
+            label="Delete Account"
+            labelColor="#FF1744"
+            onPress={handleDeleteAccount}
+            showChevron={false}
+          />
+        </SettingsSection>
       </ScrollView>
     </View>
   );

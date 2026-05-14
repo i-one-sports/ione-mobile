@@ -1,8 +1,5 @@
-'use client';
-
-import React from 'react';
-import { ImageBackground } from 'react-native';
-import { ThemedText } from './ThemedText';
+import React from "react";
+import { ImageBackground, Text } from "react-native";
 
 type PolygonProps = {
   teamCode: string;
@@ -10,7 +7,7 @@ type PolygonProps = {
 };
 
 const Polygon: React.FC<PolygonProps> = ({ teamCode, size = 48 }) => {
-    const imageSource = require('@/assets/images/polygon.png')
+  const imageSource = require("@/assets/images/polygon.png");
   return (
     <ImageBackground
       source={imageSource}
@@ -18,13 +15,22 @@ const Polygon: React.FC<PolygonProps> = ({ teamCode, size = 48 }) => {
       style={{
         width: size,
         height: size,
-        justifyContent: 'center',
-        alignItems: 'center',
+        justifyContent: "center",
+        alignItems: "center",
       }}
     >
-      <ThemedText className="text-white font-bold text-base">
+      <Text
+        style={{
+          color: "#fff",
+          fontWeight: "700",
+          fontSize: size * 0.3,
+          textShadowColor: "rgba(0,0,0,0.6)",
+          textShadowOffset: { width: 0, height: 1 },
+          textShadowRadius: 3,
+        }}
+      >
         {teamCode}
-      </ThemedText>
+      </Text>
     </ImageBackground>
   );
 };

@@ -38,7 +38,7 @@ export default function TabLayout() {
         name="index"
         options={{
           title: "Home",
-          sceneStyle: { backgroundColor: isDark ? "#fff" : "#FFFFFF" },
+          sceneStyle: { backgroundColor: isDark ? "#000" : "#FFFFFF" },
           tabBarIcon: ({ color }) => (
             <HomeIcon color={color} width={28} height={28} />
           ),

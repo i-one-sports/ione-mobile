@@ -1,21 +1,36 @@
-"use client";
-
 import RightArrow from "@/assets/svg/RightArrow";
 import { useAppSelector } from "@/redux/store";
 import { router } from "expo-router";
 import React from "react";
-import { FlatList, ListRenderItem, TouchableOpacity, View } from "react-native";
+import {
+  FlatList,
+  ListRenderItem,
+  Platform,
+  TouchableOpacity,
+  View,
+  useColorScheme,
+} from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Polygon from "./Polygon";
 import { ThemedText } from "./ThemedText";
 import { Fixture } from "./typings";
 
-const FixtureList: React.FC = () => {
+interface Props {
+  limit?: number;
+}
+
+const FixtureList: React.FC<Props> = ({ limit }) => {
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === "dark";
+  const insets = useSafeAreaInsets();
+  // On iOS the tab bar is absolutely positioned and overlays content, so we
+  // need extra bottom clearance. On Android it pushes content up natively.
+  const bottomPadding = Platform.OS === "ios" ? insets.bottom + 80 : 32;
   const { sessions } = useAppSelector((state) => state.sessions);
 
-  // Transform backend sessions → Fixture format
-  const fixtures: Fixture[] = sessions.map((s) => ({
+  const allFixtures: Fixture[] = sessions.map((s) => ({
     id: s._id,
-    time: "14:00", // placeholder until backend sends actual match time
+    time: "14:00",
     teamA: s.teamOne?.name?.slice(0, 2).toUpperCase() || "NA",
     teamAName: s.teamOne?.name || "Unknown",
     teamB: s.teamTwo?.name?.slice(0, 2).toUpperCase() || "NA",
@@ -23,39 +38,102 @@ const FixtureList: React.FC = () => {
     type: s.matchType || "Match",
   }));
 
+  const fixtures = limit ? allFixtures.slice(0, limit) : allFixtures;
+
   const handleFixturePress = (fixture: Fixture) => {
-    router.push({
-      pathname: "/fixtureDetails",
-      params: fixture,
-    });
+    router.push({ pathname: "/fixtureDetails", params: fixture });
   };
+
+  const cardBg = isDark ? "#0D2B1F" : "#EDFFF8";
+  const cardBorder = isDark ? "#1a3d2b" : "#c8f5e2";
+  const accent = isDark ? "#00FF94" : "#00cc77";
 
   const renderItem: ListRenderItem<Fixture> = ({ item }) => (
     <TouchableOpacity
-      className="dark:bg-gray-800 rounded-[5px] py-[10px] px-[25px] flex-col justify-between gap-[7px]  bg-[#EDFFF8]"
       onPress={() => handleFixturePress(item)}
+      style={{
+        backgroundColor: cardBg,
+        borderRadius: 10,
+        borderWidth: 1,
+        borderColor: cardBorder,
+        paddingVertical: 14,
+        paddingHorizontal: 20,
+        gap: 12,
+      }}
     >
-      <View className="flex flex-row justify-between items-center">
-        <ThemedText className="text-xs">{item.time}</ThemedText>
-        <ThemedText className="text-xs text-gray-600 dark:text-gray-400">
-          {item.type}
+      {/* Top row: time | type badge | arrow */}
+      <View
+        style={{
+          flexDirection: "row",
+          justifyContent: "space-between",
+          alignItems: "center",
+        }}
+      >
+        <ThemedText lightColor="#555" darkColor="#aaa" style={{ fontSize: 11 }}>
+          {item.time}
         </ThemedText>
+        <View
+          style={{
+            backgroundColor: `${accent}22`,
+            paddingHorizontal: 10,
+            paddingVertical: 3,
+            borderRadius: 20,
+          }}
+        >
+          <ThemedText
+            lightColor={accent}
+            darkColor={accent}
+            style={{ fontSize: 10, fontWeight: "600" }}
+          >
+            {item.type}
+          </ThemedText>
+        </View>
         <RightArrow />
       </View>
 
-      <View className="flex-row items-center gap-4 justify-center">
-        <View className="items-center">
+      {/* Teams row */}
+      <View
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: 16,
+        }}
+      >
+        <View style={{ alignItems: "center", flex: 1 }}>
           <Polygon teamCode={item.teamA} />
-          <ThemedText className="text-xs mt-1 font-semibold">
+          <ThemedText
+            style={{
+              fontSize: 11,
+              marginTop: 4,
+              fontWeight: "600",
+              textAlign: "center",
+            }}
+            numberOfLines={1}
+          >
             {item.teamAName}
           </ThemedText>
         </View>
 
-        <ThemedText className="text-xs">VS</ThemedText>
+        <ThemedText
+          lightColor="#aaa"
+          darkColor="#555"
+          style={{ fontSize: 12, fontWeight: "700" }}
+        >
+          VS
+        </ThemedText>
 
-        <View className="items-center">
+        <View style={{ alignItems: "center", flex: 1 }}>
           <Polygon teamCode={item.teamB} />
-          <ThemedText className="text-xs mt-1 font-semibold">
+          <ThemedText
+            style={{
+              fontSize: 11,
+              marginTop: 4,
+              fontWeight: "600",
+              textAlign: "center",
+            }}
+            numberOfLines={1}
+          >
             {item.teamBName}
           </ThemedText>
         </View>
@@ -63,16 +141,36 @@ const FixtureList: React.FC = () => {
     </TouchableOpacity>
   );
 
+  if (allFixtures.length === 0) {
+    return (
+      <View
+        style={{
+          backgroundColor: isDark ? "#0D2B1F" : "#EDFFF8",
+          borderRadius: 12,
+          paddingVertical: 32,
+          alignItems: "center",
+          gap: 8,
+        }}
+      >
+        <ThemedText
+          lightColor="#666"
+          darkColor="#aaa"
+          style={{ fontSize: 13, textAlign: "center" }}
+        >
+          No upcoming fixtures yet
+        </ThemedText>
+      </View>
+    );
+  }
+
   return (
     <FlatList
       data={fixtures}
       keyExtractor={(item) => item.id.toString()}
       renderItem={renderItem}
-      contentContainerStyle={{
-        gap: 12,
-        marginBottom: 70,
-      }}
+      contentContainerStyle={{ gap: 10, paddingBottom: bottomPadding }}
       showsVerticalScrollIndicator={false}
+      scrollEnabled={true}
     />
   );
 };

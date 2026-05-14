@@ -19,7 +19,7 @@ import {
 import { useFonts } from "expo-font";
 import { Stack, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import "react-native-reanimated";
 import Toast from "react-native-toast-message";
@@ -35,29 +35,14 @@ function AppNavigator() {
   const { isAuthenticated, user, isRegistered, isVerified } = useAppSelector(
     (state) => state.auth,
   );
+  const [isUserReady, setIsUserReady] = useState(false);
 
   useEffect(() => {
-    if (!user?._id) return;
-    if (isAuthenticated && user.role === Role.ADMIN) {
-      router.replace("/admin/(tabs)");
-    } else if (isAuthenticated && user.role === Role.USER) {
-      router.replace("/(tabs)");
-    } else if (isRegistered && !isVerified) {
-      router.replace("/(onboarding)/verify");
-    } else if (isVerified && !isAuthenticated) {
-      router.replace("/(onboarding)/signin");
-    } else {
-      router.replace("/(onboarding)");
+    if (!isAuthenticated) {
+      setIsUserReady(false);
+      return;
     }
-  }, [user, isRegistered, isVerified]);
-
-  console.log("AUTH STATE:", {
-    isAuthenticated,
-    user,
-  });
-
-  useEffect(() => {
-    console.log("Token exists, fetching user data...");
+    setIsUserReady(false);
     dispatch(getUser())
       .unwrap()
       .then((response) => {
@@ -66,8 +51,26 @@ function AppNavigator() {
       .catch((err) => {
         const message = err?.msg?.message || err?.msg;
         console.error("Failed to fetch user data:", message);
+      })
+      .finally(() => {
+        setIsUserReady(true);
       });
-  }, [dispatch]);
+  }, [isAuthenticated, dispatch]);
+
+  useEffect(() => {
+    if (!isUserReady) return;
+    if (isAuthenticated && user?.role === Role.ADMIN) {
+      router.replace("/admin/(tabs)");
+    } else if (isAuthenticated && user?.role === Role.USER) {
+      router.replace("/(tabs)");
+    } else if (isRegistered && !isVerified) {
+      router.replace("/(onboarding)/verify");
+    } else if (isVerified && !isAuthenticated) {
+      router.replace("/(onboarding)/signin");
+    } else {
+      router.replace("/(onboarding)/signin");
+    }
+  }, [user, isRegistered, isVerified, isUserReady]);
 
   return (
     <Stack screenOptions={{ headerShown: false }}>

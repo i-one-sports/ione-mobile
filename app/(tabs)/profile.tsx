@@ -1,80 +1,35 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
-import * as React from "react";
+import ProfileSkeleton from "@/components/ProfileSkeleton";
 import SafeAreaScreen from "@/components/SafeAreaScreen";
 import { ThemedText } from "@/components/ThemedText";
-import { useRouter } from "expo-router";
-import Feather from "@expo/vector-icons/Feather";
-import MaterialIcons from "@expo/vector-icons/MaterialIcons";
-import { useState, useMemo } from "react";
+import { PlayerDetailsCard } from "@/components/profile/PlayerDetailsCard";
+import { ProfileCard } from "@/components/profile/ProfileCard";
 import {
-  Dimensions,
-  ScrollView,
-  TouchableOpacity,
-  View,
-  useColorScheme,
-  Alert,
-} from "react-native";
-import { Image } from "expo-image";
-import * as SecureStore from "expo-secure-store";
-import { Toast } from "toastify-react-native";
+  convertHeightToFeet,
+  formatDate,
+  getPositionName,
+} from "@/components/profile/utils";
 import { logout } from "@/redux/reducers/auth";
 import { persistor, useAppDispatch, useAppSelector } from "@/redux/store";
-import { Colors } from "@/constants/Colors";
-import ProfileSkeleton from "@/components/ProfileSkeleton";
-
-// Helper function to format date
-const formatDate = (dateString: string) => {
-  if (!dateString) return "Not set";
-  const date = new Date(dateString);
-  return date.toLocaleDateString("en-US", {
-    month: "2-digit",
-    day: "2-digit",
-    year: "numeric",
-  });
-};
-
-// Helper function to convert height from cm to feet/inches
-const convertHeightToFeet = (cm: number) => {
-  if (!cm) return "Not set";
-  const inches = cm * 0.393701;
-  const feet = Math.floor(inches / 12);
-  const remainingInches = Math.round(inches % 12);
-  return `${feet}ft ${remainingInches}in`;
-};
-
-// Helper function to get position name
-const getPositionName = (positionCode: string) => {
-  const positions: { [key: string]: string } = {
-    GK: "Goalkeeper",
-    DF: "Defender",
-    MF: "Midfielder",
-    FW: "Forward",
-    ST: "Striker",
-    CM: "Central Midfielder",
-    CDM: "Defensive Midfielder",
-    CAM: "Attacking Midfielder",
-    LW: "Left Winger",
-    RW: "Right Winger",
-    CB: "Center Back",
-    LB: "Left Back",
-    RB: "Right Back",
-  };
-  return positions[positionCode] || positionCode || "Not set";
-};
+import { MaterialIcons } from "@expo/vector-icons";
+import * as SecureStore from "expo-secure-store";
+import { useRouter } from "expo-router";
+import { useColorScheme } from "nativewind";
+import { Toast } from "toastify-react-native";
+import React, { useMemo, useState } from "react";
+import { Alert, ScrollView, TouchableOpacity, View } from "react-native";
 
 export default function ProfileScreen() {
   const router = useRouter();
   const dispatch = useAppDispatch();
-  const colorScheme = useColorScheme();
-  const { width, height } = Dimensions.get("window");
-  const theme = Colors[colorScheme ?? "light"];
-  const iconColor = colorScheme === "dark" ? "#F5FFF2BA" : "#1C1C1C";
-  const [isLoading, setIsLoading] = useState(false);
+  const { colorScheme } = useColorScheme();
+  const isDark = colorScheme === "dark";
   const { user } = useAppSelector((state) => state.auth);
-  // Memoized user data formatting
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  const accent = isDark ? "#00FF94" : "#00cc77";
+
   const formattedUserData = useMemo(() => {
     if (!user) return null;
-
     return {
       firstName: user.firstName || "Not set",
       lastName: user.lastName || "Not set",
@@ -91,7 +46,7 @@ export default function ProfileScreen() {
     };
   }, [user]);
 
-  const handleLogout = async () => {
+  const handleLogout = () => {
     Alert.alert(
       "Logout",
       "Are you sure you want to log out?",
@@ -100,42 +55,26 @@ export default function ProfileScreen() {
         {
           text: "Logout",
           style: "destructive",
-          onPress: async () => {
+          onPress: () => {
             try {
-              setIsLoading(true);
-
-              // Retrieve token for API logout if needed
-              const token = await SecureStore.getItemAsync("i-one");
-
-              // Dispatch Redux logout to reset auth slice
+              setIsLoggingOut(true);
               dispatch(logout());
-
-              // Remove tokens from SecureStore
-              await SecureStore.deleteItemAsync("i-one");
-              await SecureStore.deleteItemAsync("user-data");
-
-              // Clear Redux persist storage
-              await persistor.purge();
-
-              // Navigate back to onboarding or login
               router.replace("/(onboarding)/signin");
-
+              SecureStore.deleteItemAsync("i-one").catch(() => {});
+              SecureStore.deleteItemAsync("user-data").catch(() => {});
+              persistor.purge().catch(() => {});
               Toast.show({
                 type: "success",
-
-                text1: "Success",
-                text2: "You have been logged out successfully.",
+                text1: "Logged out",
+                text2: "See you soon!",
               });
-            } catch (error) {
-              console.log("Logout error:", error);
+            } catch {
+              setIsLoggingOut(false);
               Toast.show({
                 type: "error",
-
                 text1: "Error",
                 text2: "Please try again.",
               });
-            } finally {
-              setIsLoading(false);
             }
           },
         },
@@ -144,142 +83,86 @@ export default function ProfileScreen() {
     );
   };
 
+  if (isLoggingOut) {
+    return (
+      <View style={{ flex: 1, backgroundColor: isDark ? "#000" : "#fff" }} />
+    );
+  }
+
   return (
     <SafeAreaScreen className="flex-1">
-      <View className="py-6 px-[35px]">
-        <View className="flex-row justify-between flex items-center w-full">
-          <ThemedText className="text-2xl font-semibold">Profile</ThemedText>
-          <View className="flex-row gap-4 items-center">
-            <TouchableOpacity onPress={() => router.push("/stats")}>
-              <ThemedText className="text-sm font-medium">Stats</ThemedText>
-            </TouchableOpacity>
+      {/* Header */}
+      <View
+        style={{
+          flexDirection: "row",
+          justifyContent: "space-between",
+          alignItems: "center",
+          paddingHorizontal: 35,
+          paddingTop: 24,
+          paddingBottom: 8,
+        }}
+      >
+        <ThemedText style={{ fontSize: 22, fontWeight: "700" }}>
+          Profile
+        </ThemedText>
 
-            <TouchableOpacity
-              onPress={handleLogout}
-              disabled={isLoading}
-              className="flex-row items-center gap-1"
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+          <TouchableOpacity
+            onPress={() => router.push("/stats")}
+            style={{
+              backgroundColor: `${accent}20`,
+              borderRadius: 20,
+              paddingHorizontal: 14,
+              paddingVertical: 7,
+              borderWidth: 1,
+              borderColor: `${accent}44`,
+            }}
+          >
+            <ThemedText
+              lightColor={accent}
+              darkColor={accent}
+              style={{ fontSize: 12, fontWeight: "600" }}
             >
-              <MaterialIcons name="logout" size={20} color="#DC2626" />
-            </TouchableOpacity>
-          </View>
+              Stats
+            </ThemedText>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={handleLogout}
+            style={{
+              width: 36,
+              height: 36,
+              borderRadius: 18,
+              backgroundColor: "#DC262620",
+              alignItems: "center",
+              justifyContent: "center",
+              borderWidth: 1,
+              borderColor: "#DC262640",
+            }}
+          >
+            <MaterialIcons name="logout" size={17} color="#DC2626" />
+          </TouchableOpacity>
         </View>
-
-        <ScrollView
-          className="mt-10"
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={{
-            paddingBottom: 90,
-            flexGrow: 1,
-          }}
-        >
-          {!user ? (
-            <ProfileSkeleton />
-          ) : (
-            <>
-              <View className="bg-white dark:bg-[#111111] p-4 rounded-md">
-                <View className="flex-row gap-4 items-center pb-4 border-b border-gray-100 dark:border-zinc-900">
-                  <Image
-                    source={user?.avatar}
-                    resizeMode="contain"
-                    style={{
-                      width: 80,
-                      height: 80,
-                      borderRadius: 100,
-                      objectFit: "contain",
-                    }}
-                  />
-                  <View>
-                    {/* Use nickname or full name as the display name */}
-                    <ThemedText className="text-xl font-semibold uppercase">
-                      Hi, {user?.nickname || user?.firstName}
-                    </ThemedText>
-                    <ThemedText className="mt-1 text-base">
-                      {formattedUserData?.phoneNumber}
-                    </ThemedText>
-                  </View>
-                </View>
-                <View className="flex flex-row justify-between py-4 items-center border-b border-gray-100 dark:border-zinc-900">
-                  <ThemedText className="text-xl font-normal">Name:</ThemedText>
-                  <ThemedText className="text-base" lightColor="#00FF94">
-                    {formattedUserData?.firstName} {formattedUserData?.lastName}
-                  </ThemedText>
-                </View>
-                <View className="flex flex-row justify-between items-center border-b py-4 border-gray-100 dark:border-zinc-900">
-                  <ThemedText className="text-xl font-normal">
-                    Email:
-                  </ThemedText>
-                  <ThemedText className="text-base" lightColor="#00FF94">
-                    {formattedUserData?.email}
-                  </ThemedText>
-                </View>
-                <View className="flex flex-row justify-between items-center pt-4">
-                  <ThemedText className="text-xl font-normal">
-                    Position:
-                  </ThemedText>
-                  <ThemedText className="text-base" lightColor="#00FF94">
-                    {formattedUserData?.position}
-                  </ThemedText>
-                </View>
-              </View>
-              <View className="bg-white dark:bg-[#111111] p-4 rounded-md mt-4">
-                <View className="flex flex-row justify-between items-center border-b py-4 border-gray-100 dark:border-zinc-900">
-                  <ThemedText className="text-xl font-normal">
-                    Date of Birth:
-                  </ThemedText>
-                  <ThemedText className="text-base" lightColor="#00FF94">
-                    {formattedUserData?.dateOfBirth}
-                  </ThemedText>
-                </View>
-
-                <View className="flex flex-row justify-between items-center border-b py-4 border-gray-100 dark:border-zinc-900">
-                  <ThemedText className="text-xl font-normal">
-                    Height:
-                  </ThemedText>
-                  <ThemedText className="text-base" lightColor="#00FF94">
-                    {formattedUserData?.height}
-                  </ThemedText>
-                </View>
-
-                <View className="flex flex-row justify-between items-center border-b py-4 border-gray-100 dark:border-zinc-900">
-                  <ThemedText className="text-xl font-normal">
-                    Place of Birth:
-                  </ThemedText>
-                  <ThemedText className="text-base" lightColor="#00FF94">
-                    {formattedUserData?.placeOfBirth}
-                  </ThemedText>
-                </View>
-
-                <View className="flex flex-row justify-between items-center border-b py-4 border-gray-100 dark:border-zinc-900">
-                  <ThemedText className="text-xl font-normal">
-                    Captain:
-                  </ThemedText>
-                  <ThemedText className="text-base" lightColor="#00FF94">
-                    {formattedUserData?.isCaptain}
-                  </ThemedText>
-                </View>
-
-                <View className="flex flex-row justify-between items-center border-b py-4 border-gray-100 dark:border-zinc-900">
-                  <ThemedText className="text-xl font-normal">
-                    Phone:
-                  </ThemedText>
-                  <ThemedText className="text-base" lightColor="#00FF94">
-                    {formattedUserData?.phoneNumber}
-                  </ThemedText>
-                </View>
-
-                <View className="flex flex-row justify-between items-center pt-4">
-                  <ThemedText className="text-xl font-normal">
-                    Address:
-                  </ThemedText>
-                  <ThemedText className="text-base" lightColor="#00FF94">
-                    {formattedUserData?.address}
-                  </ThemedText>
-                </View>
-              </View>
-            </>
-          )}
-        </ScrollView>
       </View>
+
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 110 }}
+      >
+        {!user || !formattedUserData ? (
+          <ProfileSkeleton />
+        ) : (
+          <>
+            <ProfileCard
+              avatar={user.avatar}
+              nickname={user.nickname}
+              firstName={user.firstName}
+              data={formattedUserData}
+            />
+            <PlayerDetailsCard data={formattedUserData} />
+          </>
+        )}
+      </ScrollView>
     </SafeAreaScreen>
   );
 }

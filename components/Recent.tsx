@@ -1,10 +1,10 @@
 import RightArrow from "@/assets/svg/RightArrow";
 import { router } from "expo-router";
+import { useColorScheme } from "nativewind";
 import React from "react";
 import { TouchableOpacity, View } from "react-native";
 import Polygon from "./Polygon";
 import { ThemedText } from "./ThemedText";
-import { useColorScheme } from "nativewind";
 
 type RecentProps = {
   matchId: string;
@@ -33,7 +33,7 @@ export const getInitials = (name: string) => {
 export const formateDate = (date: string) => {
   return new Date(date).toLocaleDateString("en-US", {
     day: "numeric",
-    month: "numeric",
+    month: "short",
     year: "2-digit",
   });
 };
@@ -49,47 +49,134 @@ export default function Recent({
   homeScore,
   awayScore,
 }: RecentProps) {
-  const handleMatchDetails = () => {
-    router.push({
-      pathname: "/admin/recentdetails",
-      params: {
-        matchId,
-        date,
-      },
-    });
-  };
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === "dark";
+
+  const accent = isDark ? "#00FF94" : "#00cc77";
+  const cardBg = isDark ? "#0D2B1F" : "#EDFFF8";
+  const cardBorder = isDark ? "#1a3d2b" : "#c8f5e2";
+  const scoreBg = isDark ? "rgba(0,255,148,0.1)" : "rgba(0,204,119,0.08)";
+
   return (
     <TouchableOpacity
-      onPress={() => handleMatchDetails()}
-      className="dark:bg-gray-800 rounded-[5px] py-[10px] px-[25px] flex-col justify-between gap-[7px] bg-[#EDFFF8]"
+      onPress={() =>
+        router.push({
+          pathname: "/admin/recentdetails",
+          params: { matchId, date },
+        })
+      }
+      style={{
+        backgroundColor: cardBg,
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: cardBorder,
+        paddingVertical: 14,
+        paddingHorizontal: 18,
+        gap: 12,
+      }}
     >
-      <View className="flex flex-row justify-between items-center">
-        <ThemedText className="text-xs">{formateDate(date)}</ThemedText>
-        <ThemedText className="text-xs text-gray-600 dark:text-gray-400">
-          {type || "friendly"}
+      {/* Top row: date | type badge | arrow */}
+      <View
+        style={{
+          flexDirection: "row",
+          justifyContent: "space-between",
+          alignItems: "center",
+        }}
+      >
+        <ThemedText lightColor="#777" darkColor="#888" style={{ fontSize: 11 }}>
+          {formateDate(date)}
         </ThemedText>
-        <RightArrow color={isDark ? "#fff" : "#2D264B"} />
+
+        <View
+          style={{
+            backgroundColor: `${accent}22`,
+            paddingHorizontal: 10,
+            paddingVertical: 3,
+            borderRadius: 20,
+          }}
+        >
+          <ThemedText
+            lightColor={accent}
+            darkColor={accent}
+            style={{ fontSize: 10, fontWeight: "600" }}
+          >
+            {type || "Friendly"}
+          </ThemedText>
+        </View>
+
+        <RightArrow color={isDark ? "#00FF94" : "#00cc77"} />
       </View>
 
-      <View className="flex-row items-center gap-4 justify-center">
-        <View className="items-center">
+      {/* Teams + score */}
+      <View
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "space-between",
+        }}
+      >
+        {/* Home team */}
+        <View style={{ alignItems: "center", flex: 1 }}>
           <Polygon teamCode={getInitials(homeTeamInitial)} />
-          <ThemedText className="text-xs mt-1 font-semibold">
+          <ThemedText
+            style={{
+              fontSize: 11,
+              marginTop: 4,
+              fontWeight: "600",
+              textAlign: "center",
+            }}
+            numberOfLines={1}
+          >
             {homeTeamName}
           </ThemedText>
         </View>
 
-        <View className="flex flex-row gap-1">
-          <ThemedText className="text-xs">{homeScore}</ThemedText>
-          <ThemedText className="text-xs">-</ThemedText>
-          <ThemedText className="text-xs">{awayScore}</ThemedText>
+        {/* Score */}
+        <View
+          style={{
+            backgroundColor: scoreBg,
+            borderRadius: 10,
+            paddingHorizontal: 16,
+            paddingVertical: 8,
+            alignItems: "center",
+            minWidth: 72,
+          }}
+        >
+          <ThemedText
+            style={{ fontSize: 20, fontWeight: "800", letterSpacing: 2 }}
+          >
+            {homeScore}
+            <ThemedText
+              lightColor="#ccc"
+              darkColor="#555"
+              style={{ fontSize: 16 }}
+            >
+              {" "}
+              –{" "}
+            </ThemedText>
+            {awayScore}
+          </ThemedText>
+          <ThemedText
+            lightColor="#aaa"
+            darkColor="#666"
+            style={{ fontSize: 9, marginTop: 2 }}
+          >
+            FT
+          </ThemedText>
         </View>
 
-        <View className="items-center">
+        {/* Away team */}
+        <View style={{ alignItems: "center", flex: 1 }}>
           <Polygon teamCode={getInitials(awayTeamInitial)} />
-          <ThemedText className="text-xs mt-1 font-semibold">
+          <ThemedText
+            style={{
+              fontSize: 11,
+              marginTop: 4,
+              fontWeight: "600",
+              textAlign: "center",
+            }}
+            numberOfLines={1}
+          >
             {awayTeamName}
           </ThemedText>
         </View>
