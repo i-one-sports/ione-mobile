@@ -230,7 +230,7 @@ export default function TournamentDetailScreen() {
                       : "Rewards"}
                 </Text>
                 <View
-                  className={`mt-3 h-[2px] w-[39px] ${
+                  className={`absolute bottom-[-28.4px] h-[2px] w-full ${
                     activeTab === tab ? "bg-[#69F99B]" : "bg-transparent"
                   }`}
                 />

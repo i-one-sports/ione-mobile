@@ -109,7 +109,7 @@ export default function TournamentTeamScreen() {
                   {tab === "players" ? "Players" : "Accolades"}
                 </Text>
                 <View
-                  className={`mt-2 h-[2px] w-[28px] ${
+                  className={`absolute bottom-[-21.8px] h-[2px] w-full ${
                     activeTab === tab ? "bg-[#69F99B]" : "bg-transparent"
                   }`}
                 />

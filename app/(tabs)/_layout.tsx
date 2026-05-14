@@ -1,7 +1,7 @@
 import HomeIcon from "@/assets/svg/HomeIcon";
 import ProfileIcon from "@/assets/svg/ProfileIcon";
 import SessionsIcon from "@/assets/svg/SessionsIcon";
-import TournamentTabIcon from "@/assets/svg/TournamentIcon";
+import TournamentIcon from "@/assets/svg/TournamentIcon";
 import { HapticTab } from "@/components/HapticTab";
 import TabBarBackground from "@/components/ui/TabBarBackground";
 import { Colors } from "@/constants/Colors";
@@ -57,7 +57,7 @@ export default function TabLayout() {
           title: "Tournaments",
 
           tabBarIcon: ({ color }) => (
-            <TournamentTabIcon color={color} width={28} height={28} />
+            <TournamentIcon color={color} width={28} height={28} />
           ),
         }}
       />
