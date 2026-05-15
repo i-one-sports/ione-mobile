@@ -7,12 +7,16 @@ import {
 import { useFonts } from "expo-font";
 import { Stack } from "expo-router";
 import React from "react";
+import { useColorScheme } from "react-native";
 
 function AdminAppNavigator() {
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === "dark";
+
   return (
     <Stack
       screenOptions={{
-        contentStyle: { backgroundColor: "#F3FFFA" },
+        contentStyle: { backgroundColor: isDark ? "#000" : "#F3FFFA" },
       }}
     >
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
@@ -65,6 +69,13 @@ function AdminAppNavigator() {
         name="notification"
         options={{
           title: "Notifications",
+          headerShown: false,
+        }}
+      />
+      <Stack.Screen
+        name="onboarding"
+        options={{
+          title: "Verify Account",
           headerShown: false,
         }}
       />

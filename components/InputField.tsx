@@ -125,7 +125,7 @@ export default function InputField({
             styles.inputContainer,
             {
               borderColor: getBorderColor(),
-              // backgroundColor: colors.secondary,
+              backgroundColor: colors.background,
             },
             inputComponentStyle,
           ]}
@@ -159,7 +159,7 @@ export default function InputField({
             styles.inputContainer,
             {
               borderColor: getBorderColor(),
-              // backgroundColor: colors.secondary,
+              backgroundColor: colors.background,
             },
             inputComponentStyle,
           ]}
@@ -272,7 +272,7 @@ export default function InputField({
             styles.pickerContainer,
             {
               borderColor: getBorderColor(),
-              backgroundColor: colors.secondary,
+              backgroundColor: colors.background,
             },
             inputComponentStyle,
           ]}
@@ -319,7 +319,12 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: 8,
     paddingHorizontal: 16,
-    paddingVertical: 17,
+    height: 52,
+    shadowColor: "#737373",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 3,
   },
   input: {
     flex: 1,

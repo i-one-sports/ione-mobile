@@ -32,7 +32,7 @@ export const authSlice = createSlice({
     success: (state) => {
       state.isVerified = true;
     },
-    logout: () => ({ ...initialState }),
+    logout: (state) => ({ ...initialState, isRegistered: state.isRegistered }),
   },
   extraReducers(builder) {
     builder.addCase(getUser.fulfilled, (state, { payload }) => {

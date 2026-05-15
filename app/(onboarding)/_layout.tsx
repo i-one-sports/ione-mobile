@@ -1,17 +1,29 @@
-import { Stack } from 'expo-router';
-import React from 'react';
+import { Stack } from "expo-router";
+import React from "react";
+import { useColorScheme } from "react-native";
 
 export default function OnboardingLayout() {
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === "dark";
+
   return (
-    <Stack>
-      <Stack.Screen name="index" options={{ headerShown: false }} />
-      <Stack.Screen name="signin" options={{ headerShown: false }} />
-      <Stack.Screen name="role" options={{ headerShown: false }} />
-      <Stack.Screen name="signup" options={{ headerShown: false }} />
-      <Stack.Screen name="resetpassword" options={{ headerShown: false }} />
-      <Stack.Screen name="verify" options={{ headerShown: false }} />
-      <Stack.Screen name="forgottenpassword" options={{ headerShown: false }} />
-      <Stack.Screen name="success" options={{ headerShown: false }} />
+    <Stack
+      screenOptions={{
+        headerShown: false,
+        contentStyle: { backgroundColor: isDark ? "#000" : "#fff" },
+        animation: "slide_from_right",
+      }}
+    >
+      <Stack.Screen name="index" />
+      <Stack.Screen name="signin" />
+      <Stack.Screen name="role" />
+      <Stack.Screen name="signup" />
+      <Stack.Screen name="resetpassword" />
+      <Stack.Screen name="verify" />
+      <Stack.Screen name="forgottenpassword" />
+      <Stack.Screen name="success" />
+      <Stack.Screen name="admin-signup" />
+      <Stack.Screen name="admin-signup-2" />
     </Stack>
   );
 }

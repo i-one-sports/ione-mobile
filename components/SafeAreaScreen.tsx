@@ -1,8 +1,6 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
-import { StyleProp, StyleSheet, View, ViewStyle } from 'react-native'
-import React, { ReactNode } from 'react'
-import { useSafeAreaInsets } from 'react-native-safe-area-context'
-
+import { StyleProp, View, ViewStyle, useColorScheme } from "react-native";
+import React, { ReactNode } from "react";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 interface Props {
   children: ReactNode;
@@ -10,22 +8,25 @@ interface Props {
   className?: string;
 }
 
-const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    marginVertical: 20,
-  }
-})
-
-export default function SafeAreaScreen({children, style,className}: Props) {
+export default function SafeAreaScreen({ children, style, className }: Props) {
   const { top, bottom } = useSafeAreaInsets();
+  const colorScheme = useColorScheme();
+  const bg = colorScheme === "dark" ? "#000" : "#fff";
 
   return (
     <View
-    className={className}
-      style={[styles.screen, { paddingTop: top,  }, style]}>
+      className={className}
+      style={[
+        {
+          flex: 1,
+          backgroundColor: bg,
+          paddingTop: top,
+          paddingBottom: bottom,
+        },
+        style,
+      ]}
+    >
       {children}
     </View>
-  )
+  );
 }
-// paddingBottom: bottom

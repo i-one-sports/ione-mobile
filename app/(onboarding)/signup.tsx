@@ -1,103 +1,199 @@
-/* eslint-disable react/jsx-no-undef */
-
-/* eslint-disable @typescript-eslint/no-unused-vars */
-import { Formik } from 'formik';
-import * as React from 'react';
+import { Formik } from "formik";
+import * as React from "react";
 import {
-  Dimensions,
   KeyboardAvoidingView,
   Modal,
   Platform,
+  Pressable,
   ScrollView,
-  TouchableWithoutFeedback,
+  Text,
+  TouchableOpacity,
   useColorScheme,
   View,
-} from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import * as Yup from 'yup';
-import { register, uploadAvatar } from '@/api/authThunks';
-import * as ImagePicker from 'expo-image-picker';
-import GeolocationComponent from '@/components/GeoLocation';
-import InputField from '@/components/InputField';
-import Loader from '@/components/loader';
-import SafeAreaScreen from '@/components/SafeAreaScreen';
-import { ThemedText } from '@/components/ThemedText';
-import CustomButton from '@/components/ui/CustomButton';
-import { Icon } from '@/components/ui/Icon';
-import { Colors } from '@/constants/Colors';
-import { useAppDispatch } from '@/redux/store';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+} from "react-native";
+import * as Yup from "yup";
+import { register, uploadAvatar } from "@/api/authThunks";
+import * as ImagePicker from "expo-image-picker";
+import GeolocationComponent from "@/components/GeoLocation";
+import InputField from "@/components/InputField";
+import SafeAreaScreen from "@/components/SafeAreaScreen";
+import { ThemedText } from "@/components/ThemedText";
+import CustomButton from "@/components/ui/CustomButton";
+import { Icon } from "@/components/ui/Icon";
+import CustomCheckbox from "@/components/CustomCheckbox";
+import TermsCheckbox from "@/components/ui/TermsCheckbox";
+import { useAppDispatch } from "@/redux/store";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { Toast } from "toastify-react-native";
-import CustomDatePicker from '@/components/modals/CustomDatePicker';
-import { Image } from 'expo-image';
-import { Ionicons } from '@expo/vector-icons';
-import CustomCheckbox from '@/components/CustomCheckbox';
-import TermsCheckbox from '@/components/ui/TermsCheckbox';
+import CustomDatePicker from "@/components/modals/CustomDatePicker";
+import { Image } from "expo-image";
+import { Entypo, Ionicons } from "@expo/vector-icons";
 
-const { width } = Dimensions.get('screen');
+const POSITIONS = ["GK", "DF", "MF", "ST"];
 
+function SectionCard({
+  title,
+  children,
+  isDark,
+}: {
+  title: string;
+  children: React.ReactNode;
+  isDark: boolean;
+}) {
+  return (
+    <View
+      style={{
+        backgroundColor: isDark ? "#111" : "#F9FAFB",
+        borderRadius: 14,
+        borderWidth: 1,
+        borderColor: isDark ? "#222" : "#F0F0F0",
+        padding: 16,
+        marginBottom: 16,
+      }}
+    >
+      <ThemedText
+        lightColor="#555"
+        darkColor="#aaa"
+        style={{
+          fontSize: 11,
+          fontWeight: "600",
+          textTransform: "uppercase",
+          letterSpacing: 0.8,
+          marginBottom: 12,
+        }}
+      >
+        {title}
+      </ThemedText>
+      {children}
+    </View>
+  );
+}
+
+function DropdownModal({
+  visible,
+  options,
+  onSelect,
+  onClose,
+  isDark,
+}: {
+  visible: boolean;
+  options: string[];
+  onSelect: (v: string) => void;
+  onClose: () => void;
+  isDark: boolean;
+}) {
+  return (
+    <Modal
+      visible={visible}
+      transparent
+      animationType="fade"
+      onRequestClose={onClose}
+    >
+      <Pressable
+        style={{
+          flex: 1,
+          backgroundColor: "rgba(0,0,0,0.4)",
+          justifyContent: "center",
+          paddingHorizontal: 32,
+        }}
+        onPress={onClose}
+      >
+        <Pressable
+          style={{
+            backgroundColor: isDark ? "#1a1a1a" : "#fff",
+            borderRadius: 16,
+            overflow: "hidden",
+          }}
+          onPress={() => {}}
+        >
+          {options.map((opt, i) => (
+            <TouchableOpacity
+              key={opt}
+              onPress={() => {
+                onSelect(opt);
+                onClose();
+              }}
+              style={{
+                paddingVertical: 15,
+                paddingHorizontal: 20,
+                borderBottomWidth: i < options.length - 1 ? 1 : 0,
+                borderBottomColor: isDark ? "#2a2a2a" : "#f2f2f2",
+              }}
+            >
+              <Text style={{ fontSize: 14, color: isDark ? "#fff" : "#111" }}>
+                {opt}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </Pressable>
+      </Pressable>
+    </Modal>
+  );
+}
 
 export default function SignUp() {
   const colorScheme = useColorScheme();
-  const theme = Colors[colorScheme ?? 'light'];
-  const { bottom } = useSafeAreaInsets();
+  const isDark = colorScheme === "dark";
   const dispatch = useAppDispatch();
   const [loading, setLoading] = React.useState(false);
   const [acceptedTerms, setAcceptedTerms] = React.useState(false);
   const [newsletter, setNewsletter] = React.useState(false);
-  const [coordinates, setCoordinates] = React.useState<[number, number]>([0, 0]);
+  const [coordinates, setCoordinates] = React.useState<[number, number]>([
+    0, 0,
+  ]);
   const router = useRouter();
   const [avatarUri, setAvatarUri] = React.useState<string | null>(null);
   const [uploadingAvatar, setUploadingAvatar] = React.useState(false);
-  console.log(avatarUri)
-  const handlePickAvatar = async (setFieldValue: (field: string, value: any) => void) => {
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+  const [isDatePickerVisible, setDatePickerVisible] = React.useState(false);
+  const [isPositionModalVisible, setPositionModalVisible] =
+    React.useState(false);
+  const { owner } = useLocalSearchParams();
+  const isOwner = owner === "true";
+  const chevronColor = isDark ? "#777" : "#aaa";
 
-    if (status !== 'granted') {
+  const handlePickAvatar = async (
+    setFieldValue: (field: string, value: any) => void,
+  ) => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== "granted") {
       Toast.show({
-        type: 'error',
-        text1: 'Permission Required',
-        text2: 'Camera roll permissions are required to upload an avatar',
+        type: "error",
+        text1: "Permission Required",
+        text2: "Camera roll permissions are required to upload an avatar",
       });
       return;
     }
-
-    // Pick image
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
       aspect: [1, 1],
       quality: 0.8,
     });
-
     if (!result.canceled && result.assets[0]) {
       const asset = result.assets[0];
       setUploadingAvatar(true);
-
       try {
-        // Upload avatar
-        const response = await dispatch(uploadAvatar({
-          file: {
-            uri: asset.uri,
-            type: asset.type || 'image/jpeg',
-            name: asset.fileName || 'avatar.jpg',
-          },
-        })).unwrap();
-
-        // Set avatar URL in form
-        setFieldValue('avatar', response.avatar);
+        const response = await dispatch(
+          uploadAvatar({
+            file: {
+              uri: asset.uri,
+              type: asset.type || "image/jpeg",
+              name: asset.fileName || "avatar.jpg",
+            },
+          }),
+        ).unwrap();
+        setFieldValue("avatar", response.avatar);
         setAvatarUri(response.avatar);
-
         Toast.show({
-          type: 'success',
-          text1: 'Success',
-          text2: 'Avatar uploaded successfully',
+          type: "success",
+          text1: "Success",
+          text2: "Avatar uploaded successfully",
         });
       } catch (error: any) {
         Toast.show({
-          type: 'error',
-          text1: 'Error',
-          text2: error?.msg || 'Failed to upload avatar',
+          type: "error",
+          text1: "Error",
+          text2: error?.msg || "Failed to upload avatar",
         });
       } finally {
         setUploadingAvatar(false);
@@ -105,405 +201,406 @@ export default function SignUp() {
     }
   };
 
-  const scrollViewRef = React.useRef<ScrollView>(null);
-  const { owner } = useLocalSearchParams();
-
-  const isOwner = owner === 'true';
-
-  const handleInputFocus = (yPosition: number) => {
-    scrollViewRef.current?.scrollTo({ y: yPosition, animated: true });
-  };
-
-  const [isDatePickerVisible, setDatePickerVisible] = React.useState(false);
-  const [isPositionPickerVisible, setPositionPickerVisible] = React.useState(false);
-
-  const handleConfirmDate = (date: Date, setFieldValue: (field: string, value: any) => void) => {
-    setDatePickerVisible(false);
-    const formattedDate = date.toISOString().split('T')[0]; // YYYY-MM-DD
-    setFieldValue('dob', formattedDate);
-  };
-
   const initialValues = {
-    firstName: '',
-    lastName: '',
-    nickname: '',
-    email: '',
-    password: '',
-    phoneNumber: '',
-    address: '',
-    position: '',
-    height: '',
-    dateOfBirth: '',
-    avatar: ''
+    firstName: "",
+    lastName: "",
+    nickname: "",
+    email: "",
+    password: "",
+    phoneNumber: "",
+    address: "",
+    position: "",
+    height: "",
+    dateOfBirth: "",
+    avatar: "",
   };
 
   const validationSchema = Yup.object().shape({
-    firstName: Yup.string().required('First name is required'),
-    lastName: Yup.string().required('Last name is required'),
-    nickname: Yup.string().required('Nickname is required'),
-    email: Yup.string().email('Invalid email').required('Email is required'),
+    firstName: Yup.string().required("Required"),
+    lastName: Yup.string().required("Required"),
+    nickname: Yup.string().required("Required"),
+    email: Yup.string().email("Invalid email").required("Required"),
     password: Yup.string()
-      .required('Password is required')
-      .matches(/^.*(?=.{6,})/, 'Minimum 6 characters'),
-    phoneNumber: Yup.string().required('Phone number is required'),
-    address: Yup.string().required('Address is required'),
-    position: Yup.string().required('Position is required'),
-    height: Yup.number()
-      .typeError('Height must be a number')
-      .required('Height is required'),
-    dateOfBirth: Yup.string().required('Date of Birth is required'),
+      .required("Required")
+      .matches(/^.*(?=.{6,})/, "Minimum 6 characters"),
+    phoneNumber: Yup.string().required("Required"),
+    address: Yup.string().required("Required"),
+    position: Yup.string().required("Required"),
+    height: Yup.number().typeError("Must be a number").required("Required"),
+    dateOfBirth: Yup.string().required("Required"),
   });
 
   const handleSubmit = async (values: typeof initialValues) => {
-    // Check if terms are accepted
     if (!acceptedTerms) {
       Toast.show({
-        type: 'error',
-        text1: 'Error',
-        text2: 'Please accept the Terms and Conditions to proceed.',
+        type: "error",
+        text1: "Error",
+        text2: "Please accept the Terms and Conditions to proceed.",
       });
       return;
     }
-
-    // Check if coordinates are set (if you need location)
     if (coordinates[0] === 0 && coordinates[1] === 0) {
       Toast.show({
-        type: 'error',
-        text1: 'Error',
-        text2: 'Please get your location coordinates first',
+        type: "error",
+        text1: "Error",
+        text2: "Please get your location coordinates first",
       });
       return;
     }
-
-    const payload = {
-      ...values,
-      isOwner, // or get from navigation state if needed
-      location: {
-        type: 'Point',
-        coordinates,
-      },
-      height: Number(values.height),
-    };
-    console.log(payload);
-
     setLoading(true);
-    dispatch(register(payload))
+    dispatch(
+      register({
+        ...values,
+        isOwner,
+        location: { type: "Point", coordinates },
+        height: Number(values.height),
+      } as any),
+    )
       .unwrap()
       .then((response) => {
-        setLoading(false);
-        console.log('res', response);
-
         Toast.show({
-          type: 'success',
-          text1: 'Success',
-          text2: response.message || 'Account created successfully',
+          type: "success",
+          text1: "Success",
+          text2: response.message || "Account created successfully",
         });
         router.push("/(onboarding)/signin");
       })
       .catch((err) => {
-        setLoading(false);
-        console.log('error is', err);
-        const message = err?.msg?.message || err?.msg || 'Registration failed';
-        Toast.show({
-          type: 'error',
-          text1: 'Error',
-          text2: message,
-        });
-      });
+        const message = err?.msg?.message || err?.msg || "Registration failed";
+        Toast.show({ type: "error", text1: "Error", text2: message });
+      })
+      .finally(() => setLoading(false));
   };
 
   return (
-    <SafeAreaScreen className="h-svh w-full">
+    <SafeAreaScreen
+      style={{ flex: 1, backgroundColor: isDark ? "#000" : "#fff" }}
+    >
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={{ flex: 1 }}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 20 : 0}>
+        keyboardVerticalOffset={Platform.OS === "ios" ? 20 : 0}
+      >
         <Formik
           initialValues={initialValues}
           validationSchema={validationSchema}
-          onSubmit={handleSubmit}>
-          {({ handleChange, handleSubmit, values, errors, touched, handleBlur, setFieldValue, setFieldTouched }) => (
-            <ScrollView
-              ref={scrollViewRef}
-              showsVerticalScrollIndicator={false}
-              contentContainerStyle={{
-                paddingHorizontal: 21,
-                paddingBottom: 40,
-                flexGrow: 1,
-              }}
-              keyboardShouldPersistTaps="handled">
-              <View className="mb-8 mt-4 items-end">
-                <Icon />
-              </View>
-
-              {/* Header */}
-              <View className="mb-8 items-start">
-                <ThemedText
-                  lightColor={theme.text}
-                  darkColor={theme.text}
-                  className="mb-2 text-center text-[20px] font-[500]">
-                  Create An Account
-                </ThemedText>
-              </View>
-
-              {/* Form Fields */}
-              <View className="flex flex-col gap-[20px]">
-                <View className="mb-6 items-center">
-                  <TouchableWithoutFeedback onPress={() => handlePickAvatar(setFieldValue)}>
-                    <View className="items-center">
-                      <View className="h-24 w-24 rounded-full  items-center justify-center border-2 border-gray-300 overflow-hidden">
-                        {avatarUri ? (
-                          <Image source={{ uri: avatarUri }} style={{ height: '100%', width: '100%' }} className="h-full w-full" />
-                        ) : (
-                          <ThemedText className="text-gray-400 text-xs text-center px-2">
-                            Tap to upload avatar
-                          </ThemedText>
-                        )}
-                      </View>
-                      {uploadingAvatar && (
-                        <ThemedText className="text-xs text-gray-500 mt-2">Uploading...</ThemedText>
-                      )}
-                      {!uploadingAvatar && avatarUri && (
-                        <ThemedText className="text-xs text-green-500 mt-2">Avatar uploaded ✓</ThemedText>
-                      )}
-                    </View>
-                  </TouchableWithoutFeedback>
-                </View>
-                <View className="flex w-full flex-row justify-between gap-[27px]">
-                  <View className="flex-1">
-                    <InputField
-                      required
-                      label="First Name"
-                      placeholder="Enter first name"
-                      value={values.firstName}
-                      onChangeText={handleChange('firstName')}
-                      onBlur={handleBlur('firstName')}
-                      onFocus={() => handleInputFocus(0)}
-                      errorMessage={touched.firstName && errors.firstName ? errors.firstName : ''}
-                    />
-                  </View>
-                  <View className="flex-1">
-                    <InputField
-                      required
-                      label="Last Name"
-                      placeholder="Enter last name"
-                      value={values.lastName}
-                      onChangeText={handleChange('lastName')}
-                      onBlur={handleBlur('lastName')}
-                      onFocus={() => handleInputFocus(0)}
-                      errorMessage={touched.lastName && errors.lastName ? errors.lastName : ''}
-                    />
-                  </View>
-                </View>
-
-                <View className="flex w-full flex-row justify-between gap-[27px]">
-                  <View className="flex-1">
-                    <InputField
-                      required
-                      label="Nickname"
-                      placeholder="Enter Nickname"
-                      value={values.nickname}
-                      onChangeText={handleChange('nickname')}
-                      onBlur={handleBlur('nickname')}
-                      onFocus={() => handleInputFocus(0)}
-                      errorMessage={touched.nickname && errors.nickname ? errors.nickname : ''}
-                    />
-                  </View>
-                  <View className="flex-1">
-                    <ThemedText className="text-base font-medium text-gray-700 mb-2">
-                      Position <ThemedText className="text-red-500">*</ThemedText>
+          onSubmit={handleSubmit}
+        >
+          {({
+            handleChange,
+            handleSubmit: formikSubmit,
+            values,
+            errors,
+            touched,
+            handleBlur,
+            setFieldValue,
+            setFieldTouched,
+          }) => (
+            <>
+              <ScrollView
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={{
+                  paddingHorizontal: 24,
+                  paddingBottom: 48,
+                }}
+                keyboardShouldPersistTaps="handled"
+              >
+                {/* Header */}
+                <View
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "flex-end",
+                    justifyContent: "space-between",
+                    marginTop: 28,
+                    marginBottom: 24,
+                  }}
+                >
+                  <View>
+                    <ThemedText
+                      lightColor="#999"
+                      darkColor="#666"
+                      style={{ fontSize: 12, marginBottom: 4 }}
+                    >
+                      Player Registration
                     </ThemedText>
-                    <TouchableWithoutFeedback onPress={() => { setPositionPickerVisible(true); setFieldTouched('position', true); }}>
-                      <View
-                        className={`border rounded-md px-4 py-[16px] ${touched.position && errors.position ? 'border-red-500' : 'border-gray-300'
-                          }`}
-                      >
-                        <ThemedText className={`${values.position ? 'text-black' : 'text-gray-400'}`}>
-                          {values.position || 'Select Position'}
-                        </ThemedText>
-                      </View>
-                    </TouchableWithoutFeedback>
-                    {touched.position && errors.position && (
-                      <ThemedText className="text-xs text-red-500 mt-1">{errors.position}</ThemedText>
-                    )}
-                  </View>
-                </View>
-
-                <View className="flex-1">
-                  <InputField
-                    required
-                    label="Address"
-                    placeholder="N0 11, Trinity Estate, Awoyaya"
-                    value={values.address}
-                    onChangeText={handleChange('address')}
-                    onBlur={handleBlur('address')}
-                    onFocus={() => handleInputFocus(0)}
-                    errorMessage={touched.address && errors.address ? errors.address : ''}
-                  />
-                  <GeolocationComponent setCoordinates={setCoordinates} />
-                </View>
-
-                {/* Height + DOB Row */}
-                <View className="flex w-full flex-row justify-between gap-[27px]">
-                  {/* Height Field */}
-                  <View className="flex-1">
-                    <InputField
-                      required
-                      label="Height (cm)"
-                      placeholder="Enter your height"
-                      keyboardType="numeric"
-                      value={values.height}
-                      onChangeText={handleChange('height')}
-                      onBlur={handleBlur('height')}
-                      onFocus={() => handleInputFocus(170)}
-                      errorMessage={touched.height && errors.height ? errors.height : ''}
-                    />
-                  </View>
-
-                  <View className="flex-1 flex fled-col gap-2">
-                    <ThemedText className="text-base font-medium text-gray-700">
-                      Date of Birth <ThemedText className="text-red-500 ">*</ThemedText>
+                    <ThemedText style={{ fontSize: 22, fontWeight: "700" }}>
+                      Create An Account
                     </ThemedText>
-                    <TouchableWithoutFeedback onPress={() => setDatePickerVisible(true)}>
-                      <View
-                        className={`border rounded-md px-4 py-[16px] ${touched.dateOfBirth && errors.dateOfBirth ? 'border-red-500' : 'border-gray-300'
-                          }`}
-                      >
-                        <ThemedText className={`${values.dateOfBirth ? 'text-black text-xs' : 'text-gray-400 text-xs'}`}>
-                          {values.dateOfBirth ? values.dateOfBirth : 'Select date of birth'}
-                        </ThemedText>
-                      </View>
-                    </TouchableWithoutFeedback>
-                    {touched.dateOfBirth && errors.dateOfBirth && (
-                      <ThemedText className="text-xs text-red-500 mt-1">{errors.dateOfBirth}</ThemedText>
-                    )}
                   </View>
+                  <Icon />
+                </View>
 
-                  <CustomDatePicker
-                    isVisible={isDatePickerVisible}
-                    date={values.dateOfBirth ? new Date(values.dateOfBirth) : new Date()}
-                    onChange={(date: Date) => {
-                      setDatePickerVisible(false);
-                      setFieldValue('dateOfBirth', date.toISOString().split('T')[0]); // YYYY-MM-DD
-                    }}
-                    onClose={() => setDatePickerVisible(false)}
-                    maximumDate={new Date()} // Prevent future dates
-                  />
-
-                  <Modal
-                    visible={isPositionPickerVisible}
-                    transparent={true}
-                    animationType="slide"
-                    onRequestClose={() => setPositionPickerVisible(false)}
+                {/* Avatar */}
+                <View style={{ alignItems: "center", marginBottom: 24 }}>
+                  <TouchableOpacity
+                    onPress={() => handlePickAvatar(setFieldValue)}
+                    activeOpacity={0.8}
                   >
-                    <View className="flex-1 justify-end bg-transparent">
-                      <View className="bg-white rounded-t-lg p-4">
-                        <ThemedText className="text-lg font-bold mb-4">Select Position</ThemedText>
-                        <TouchableWithoutFeedback onPress={() => { setFieldValue('position', 'MF'); setPositionPickerVisible(false); }}>
-                          <View className="py-3 border-b border-gray-200">
-                            <ThemedText>MF</ThemedText>
-                          </View>
-                        </TouchableWithoutFeedback>
-                        <TouchableWithoutFeedback onPress={() => { setFieldValue('position', 'ST'); setPositionPickerVisible(false); }}>
-                          <View className="py-3 border-b border-gray-200">
-                            <ThemedText>ST</ThemedText>
-                          </View>
-                        </TouchableWithoutFeedback>
-                        <TouchableWithoutFeedback onPress={() => { setFieldValue('position', 'DF'); setPositionPickerVisible(false); }}>
-                          <View className="py-3">
-                            <ThemedText>DF</ThemedText>
-                          </View>
-                        </TouchableWithoutFeedback>
-                        <TouchableWithoutFeedback onPress={() => setPositionPickerVisible(false)}>
-                          <View className="py-3 mt-4 bg-gray-200 rounded">
-                            <ThemedText className="text-center">Cancel</ThemedText>
-                          </View>
-                        </TouchableWithoutFeedback>
-                      </View>
+                    <View
+                      style={{
+                        width: 88,
+                        height: 88,
+                        borderRadius: 44,
+                        backgroundColor: isDark ? "#1a1a1a" : "#f0f0f0",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        borderWidth: avatarUri ? 2 : 1.5,
+                        borderColor: avatarUri
+                          ? "#00FF94"
+                          : isDark
+                            ? "#333"
+                            : "#ddd",
+                        overflow: "hidden",
+                      }}
+                    >
+                      {avatarUri ? (
+                        <Image
+                          source={{ uri: avatarUri }}
+                          style={{ width: "100%", height: "100%" }}
+                        />
+                      ) : (
+                        <Ionicons
+                          name="camera-outline"
+                          size={28}
+                          color={isDark ? "#555" : "#aaa"}
+                        />
+                      )}
                     </View>
-                  </Modal>
+                    <ThemedText
+                      lightColor="#999"
+                      darkColor="#666"
+                      style={{
+                        fontSize: 11,
+                        textAlign: "center",
+                        marginTop: 6,
+                      }}
+                    >
+                      {uploadingAvatar
+                        ? "Uploading..."
+                        : avatarUri
+                          ? "Photo uploaded"
+                          : "Add photo"}
+                    </ThemedText>
+                  </TouchableOpacity>
                 </View>
 
-
-                <View className="w-full">
+                {/* Personal Info */}
+                <SectionCard title="Personal Info" isDark={isDark}>
+                  <View style={{ flexDirection: "row", gap: 12 }}>
+                    <View style={{ flex: 1 }}>
+                      <InputField
+                        label="First Name"
+                        placeholder="John"
+                        value={values.firstName}
+                        onChangeText={handleChange("firstName")}
+                        onBlur={handleBlur("firstName")}
+                        errorMessage={
+                          touched.firstName && errors.firstName
+                            ? errors.firstName
+                            : ""
+                        }
+                      />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <InputField
+                        label="Last Name"
+                        placeholder="Doe"
+                        value={values.lastName}
+                        onChangeText={handleChange("lastName")}
+                        onBlur={handleBlur("lastName")}
+                        errorMessage={
+                          touched.lastName && errors.lastName
+                            ? errors.lastName
+                            : ""
+                        }
+                      />
+                    </View>
+                  </View>
                   <InputField
-                    required
-                    label="Email Address"
-                    placeholder="Enter email address"
-                    keyboardType="email-address"
-                    value={values.email}
-                    onChangeText={handleChange('email')}
-                    onBlur={handleBlur('email')}
-                    onFocus={() => handleInputFocus(100)}
-                    errorMessage={touched.email && errors.email ? errors.email : ''}
+                    label="Nickname"
+                    placeholder="e.g. jdoe10"
+                    value={values.nickname}
+                    onChangeText={handleChange("nickname")}
+                    onBlur={handleBlur("nickname")}
+                    errorMessage={
+                      touched.nickname && errors.nickname ? errors.nickname : ""
+                    }
                   />
-                </View>
+                </SectionCard>
 
-                <View className="w-full">
+                {/* Player Details */}
+                <SectionCard title="Player Details" isDark={isDark}>
+                  <View style={{ flexDirection: "row", gap: 12 }}>
+                    <View style={{ flex: 1 }}>
+                      <InputField
+                        label="Position"
+                        selectPicker
+                        placeholder="Select"
+                        value={values.position}
+                        pickerPressed={() => {
+                          setFieldTouched("position", true);
+                          setPositionModalVisible(true);
+                        }}
+                        rightIcon={
+                          <Entypo
+                            name="chevron-down"
+                            size={14}
+                            color={chevronColor}
+                          />
+                        }
+                        errorMessage={
+                          touched.position && errors.position
+                            ? errors.position
+                            : ""
+                        }
+                      />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <InputField
+                        label="Height (cm)"
+                        placeholder="175"
+                        keyboardType="numeric"
+                        value={values.height}
+                        onChangeText={handleChange("height")}
+                        onBlur={handleBlur("height")}
+                        errorMessage={
+                          touched.height && errors.height ? errors.height : ""
+                        }
+                      />
+                    </View>
+                  </View>
                   <InputField
-                    required
+                    label="Date of Birth"
+                    selectPicker
+                    placeholder="Select date of birth"
+                    value={values.dateOfBirth}
+                    pickerPressed={() => {
+                      setFieldTouched("dateOfBirth", true);
+                      setDatePickerVisible(true);
+                    }}
+                    rightIcon={
+                      <Entypo
+                        name="chevron-down"
+                        size={14}
+                        color={chevronColor}
+                      />
+                    }
+                    errorMessage={
+                      touched.dateOfBirth && errors.dateOfBirth
+                        ? errors.dateOfBirth
+                        : ""
+                    }
+                  />
+                </SectionCard>
+
+                {/* Location */}
+                <SectionCard title="Location" isDark={isDark}>
+                  <InputField
+                    label="Address"
+                    placeholder="No 11, Trinity Estate, Awoyaya"
+                    value={values.address}
+                    onChangeText={handleChange("address")}
+                    onBlur={handleBlur("address")}
+                    errorMessage={
+                      touched.address && errors.address ? errors.address : ""
+                    }
+                  />
+                  <GeolocationComponent
+                    setCoordinates={setCoordinates}
+                    label="Detect Location"
+                  />
+                </SectionCard>
+
+                {/* Account Details */}
+                <SectionCard title="Account Details" isDark={isDark}>
+                  <InputField
+                    label="Email Address"
+                    placeholder="johndoe@gmail.com"
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                    value={values.email}
+                    onChangeText={handleChange("email")}
+                    onBlur={handleBlur("email")}
+                    errorMessage={
+                      touched.email && errors.email ? errors.email : ""
+                    }
+                  />
+                  <InputField
                     label="Phone Number"
-                    placeholder="Enter phone number"
+                    placeholder="0806774****"
                     keyboardType="phone-pad"
                     value={values.phoneNumber}
-                    onChangeText={handleChange('phoneNumber')}
-                    onBlur={handleBlur('phoneNumber')}
-                    onFocus={() => handleInputFocus(150)}
-                    errorMessage={touched.phoneNumber && errors.phoneNumber ? errors.phoneNumber : ''}
+                    onChangeText={handleChange("phoneNumber")}
+                    onBlur={handleBlur("phoneNumber")}
+                    errorMessage={
+                      touched.phoneNumber && errors.phoneNumber
+                        ? errors.phoneNumber
+                        : ""
+                    }
                   />
-                </View>
-
-                <View className="w-full">
                   <InputField
-                    password
-                    required
                     label="Password"
-                    placeholder="Enter password"
-                    secureTextEntry
+                    placeholder="••••••••••••"
+                    password
                     value={values.password}
-                    onChangeText={handleChange('password')}
-                    onBlur={handleBlur('password')}
-                    onFocus={() => handleInputFocus(200)}
-                    errorMessage={touched.password && errors.password ? errors.password : ''}
+                    onChangeText={handleChange("password")}
+                    onBlur={handleBlur("password")}
+                    errorMessage={
+                      touched.password && errors.password ? errors.password : ""
+                    }
+                  />
+                </SectionCard>
+
+                {/* Checkboxes */}
+                <View style={{ gap: 12, marginBottom: 28 }}>
+                  <TermsCheckbox
+                    checked={acceptedTerms}
+                    onToggle={() => setAcceptedTerms(!acceptedTerms)}
+                  />
+                  <CustomCheckbox
+                    checked={newsletter}
+                    onToggle={() => setNewsletter(!newsletter)}
+                    label="Receive Emails From Our Newsletter"
+                    required={false}
                   />
                 </View>
 
-                {/* Checkboxes Section */}
-                <View className="flex flex-col gap-4">
-                  {/* Terms and Conditions - Required */}
-                  <View className="rounded-lg">
-                    <TermsCheckbox
-                      checked={acceptedTerms}
-                      onToggle={() => setAcceptedTerms(!acceptedTerms)}
-                    />
-                  </View>
-
-                  {/* Newsletter Subscription - Optional */}
-                  <View className="rounded-lg">
-                    <CustomCheckbox
-                      checked={newsletter}
-                      onToggle={() => setNewsletter(!newsletter)}
-                      label="Recieve Emails from our Newsletter"
-                      required={false}
-                    />
-                  </View>
-                </View>
-              </View>
-
-              {/* Submit Button */}
-              <View className="mt-6 w-full">
                 <CustomButton
                   primary
-                  title={loading ? 'Creating Account...' : 'Create An Account'}
-                  onPress={() => handleSubmit()}
+                  title={loading ? "Creating Account..." : "Create An Account"}
+                  onPress={() => formikSubmit()}
                   disabled={loading}
+                  loading={loading}
                 />
-              </View>
-            </ScrollView>
+              </ScrollView>
+
+              {/* Modals rendered outside ScrollView but inside Formik render prop */}
+              <DropdownModal
+                visible={isPositionModalVisible}
+                options={POSITIONS}
+                onSelect={(v) => setFieldValue("position", v)}
+                onClose={() => setPositionModalVisible(false)}
+                isDark={isDark}
+              />
+              <CustomDatePicker
+                isVisible={isDatePickerVisible}
+                date={
+                  values.dateOfBirth ? new Date(values.dateOfBirth) : new Date()
+                }
+                onChange={(date: Date) => {
+                  setDatePickerVisible(false);
+                  setFieldValue(
+                    "dateOfBirth",
+                    date.toISOString().split("T")[0],
+                  );
+                }}
+                onClose={() => setDatePickerVisible(false)}
+                maximumDate={new Date()}
+              />
+            </>
           )}
         </Formik>
       </KeyboardAvoidingView>
-      <Loader visible={loading} />
     </SafeAreaScreen>
   );
 }

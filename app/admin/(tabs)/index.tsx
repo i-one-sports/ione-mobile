@@ -59,6 +59,8 @@ export default function AdminHomeScreen() {
   const pitchEmoji =
     CONDITION_EMOJI[dashboardSummary?.pitchCondition ?? ""] ?? "❓";
   const accent = isDark ? "#00FF94" : "#00cc77";
+  // TODO: replace with user?.onboarding_complete once backend sends the field
+  const onboardingComplete = false;
 
   return (
     <View style={{ flex: 1, backgroundColor: isDark ? "#000" : "#fff" }}>
@@ -189,6 +191,56 @@ export default function AdminHomeScreen() {
           }}
           showsVerticalScrollIndicator={false}
         >
+          {/* Onboarding banner — hardcoded false until backend sends onboarding_complete */}
+          {!onboardingComplete && (
+            <TouchableOpacity
+              onPress={() => router.push("/admin/onboarding")}
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 12,
+                backgroundColor: isDark ? "#0D2B1F" : "#EDFFF8",
+                borderRadius: 12,
+                padding: 16,
+                marginBottom: 20,
+                borderWidth: 1,
+                borderColor: isDark ? "#1a3d2b" : "#c8f5e2",
+              }}
+            >
+              <View
+                style={{
+                  width: 38,
+                  height: 38,
+                  borderRadius: 19,
+                  backgroundColor: `${accent}22`,
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <Ionicons
+                  name="shield-checkmark-outline"
+                  size={20}
+                  color={accent}
+                />
+              </View>
+              <View style={{ flex: 1 }}>
+                <ThemedText
+                  style={{ fontSize: 13, fontWeight: "600", marginBottom: 2 }}
+                >
+                  Complete Your Onboarding
+                </ThemedText>
+                <ThemedText
+                  lightColor="#666"
+                  darkColor="#aaa"
+                  style={{ fontSize: 11 }}
+                >
+                  Verify your identity to start accepting bookings
+                </ThemedText>
+              </View>
+              <Ionicons name="chevron-forward" size={18} color={accent} />
+            </TouchableOpacity>
+          )}
+
           {/* Section header */}
           <View
             style={{
@@ -217,35 +269,38 @@ export default function AdminHomeScreen() {
           </View>
 
           {/* Skeleton loading */}
-          {loadingLastMatches && lastMatches.length === 0 && (
-            <View style={{ gap: 12 }}>
-              {[1, 2, 3].map((i) => (
-                <MatchCardSkeleton key={i} />
-              ))}
-            </View>
-          )}
+          {(loadingLastMatches || loadingLocation) &&
+            lastMatches.length === 0 && (
+              <View style={{ gap: 12 }}>
+                {[1, 2, 3].map((i) => (
+                  <MatchCardSkeleton key={i} />
+                ))}
+              </View>
+            )}
 
-          {/* Empty state */}
-          {!loadingLastMatches && lastMatches.length === 0 && (
-            <View
-              style={{
-                backgroundColor: isDark ? "#0D2B1F" : "#EDFFF8",
-                borderRadius: 12,
-                paddingVertical: 32,
-                alignItems: "center",
-                gap: 8,
-              }}
-            >
-              <MaterialIcons name="sports-soccer" size={32} color={accent} />
-              <ThemedText
-                lightColor="#666"
-                darkColor="#aaa"
-                style={{ fontSize: 13, textAlign: "center" }}
+          {/* Empty state — only shown once location + matches have both finished loading */}
+          {!loadingLastMatches &&
+            !loadingLocation &&
+            lastMatches.length === 0 && (
+              <View
+                style={{
+                  backgroundColor: isDark ? "#0D2B1F" : "#EDFFF8",
+                  borderRadius: 12,
+                  paddingVertical: 32,
+                  alignItems: "center",
+                  gap: 8,
+                }}
               >
-                {errorLastMatches || "No recent matches yet"}
-              </ThemedText>
-            </View>
-          )}
+                <MaterialIcons name="sports-soccer" size={32} color={accent} />
+                <ThemedText
+                  lightColor="#666"
+                  darkColor="#aaa"
+                  style={{ fontSize: 13, textAlign: "center" }}
+                >
+                  {errorLastMatches || "No recent matches yet"}
+                </ThemedText>
+              </View>
+            )}
 
           {/* Match cards */}
           <View style={{ gap: 12 }}>

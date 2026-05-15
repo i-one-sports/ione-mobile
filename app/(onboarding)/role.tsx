@@ -1,218 +1,249 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
-import BallIcon from "@/assets/svg/BallIcon";
 import SafeAreaScreen from "@/components/SafeAreaScreen";
 import { ThemedText } from "@/components/ThemedText";
 import CustomButton from "@/components/ui/CustomButton";
 import { Icon } from "@/components/ui/Icon";
-import { Colors } from "@/constants/Colors";
+import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
-  Dimensions,
   ScrollView,
-  StyleSheet,
-  TouchableWithoutFeedback,
+  TouchableOpacity,
   useColorScheme,
   View,
 } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-const { width } = Dimensions.get("screen");
+type RoleOption = {
+  id: string;
+  title: string;
+  description: string;
+  icon: string;
+  library: "Ionicons" | "MaterialCommunityIcons";
+};
+
+const ROLES: RoleOption[] = [
+  {
+    id: "player",
+    title: "As a Player",
+    description:
+      "Find teams, join matches, and track your performance on the pitch.",
+    icon: "football-outline",
+    library: "Ionicons",
+  },
+  {
+    id: "organizer",
+    title: "As an Organizer",
+    description:
+      "Manage pitches, schedule games, and recruit players for your facility.",
+    icon: "soccer-field",
+    library: "MaterialCommunityIcons",
+  },
+];
 
 export default function Role() {
   const colorScheme = useColorScheme();
-  const theme = Colors[colorScheme ?? "light"];
-  const { bottom } = useSafeAreaInsets();
+  const isDark = colorScheme === "dark";
   const router = useRouter();
   const [selectedRole, setSelectedRole] = useState<string | null>(null);
 
-  // ✅ Handles select + deselect logic
   const handleRoleSelect = (role: string) => {
     setSelectedRole((prev) => (prev === role ? null : role));
   };
 
-  // ✅ Handles continue navigation and passes role value
   const handleContinue = () => {
-    if (!selectedRole) return; // avoid navigating without a choice
-
-    const isOwner = selectedRole === "organizer";
-    router.push({
-      pathname: "/(onboarding)/signup",
-      params: { owner: isOwner.toString() }, // you can parse it in the next screen
-    });
+    if (!selectedRole) return;
+    if (selectedRole === "organizer") {
+      router.push("/(onboarding)/admin-signup");
+    } else {
+      router.push({
+        pathname: "/(onboarding)/signup",
+        params: { owner: "false" },
+      });
+    }
   };
 
+  const accent = isDark ? "#00FF94" : "#00cc77";
+
   return (
-    <SafeAreaScreen className="flex-1">
+    <SafeAreaScreen
+      style={{ flex: 1, backgroundColor: isDark ? "#000" : "#fff" }}
+    >
       <ScrollView
-        className="flex-1"
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{
-          paddingHorizontal: 21,
+          paddingHorizontal: 24,
+          paddingBottom: 48,
           flexGrow: 1,
           justifyContent: "space-between",
-          paddingBottom: 40,
         }}
+        keyboardShouldPersistTaps="handled"
       >
-        {/* Header Section */}
         <View>
-          <View className="mb-8 mt-10 items-end">
+          {/* Header */}
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "flex-end",
+              justifyContent: "space-between",
+              marginTop: 28,
+              marginBottom: 32,
+            }}
+          >
+            <View>
+              <ThemedText
+                lightColor="#999"
+                darkColor="#666"
+                style={{ fontSize: 12, marginBottom: 4 }}
+              >
+                Welcome to iOne
+              </ThemedText>
+              <ThemedText style={{ fontSize: 18, fontWeight: "700" }}>
+                How Do You Want to Join?
+              </ThemedText>
+            </View>
             <Icon />
           </View>
 
-          <View className="mb-8 items-start">
-            <ThemedText
-              lightColor={theme.text}
-              darkColor={theme.text}
-              type="defaultSemiBold"
-              className="mb-2 text-[17px] font-[300]"
-            >
-              How Do You Want to Join?
-            </ThemedText>
-            <ThemedText
-              lightColor={theme.text}
-              darkColor={theme.text}
-              className="mb-2 text-left text-[17px] font-[300]"
-            >
-              Choose your role for the best experience in the app!
-            </ThemedText>
-          </View>
+          <ThemedText
+            lightColor="#6C757D"
+            darkColor="#9BA1A6"
+            style={{ fontSize: 14, lineHeight: 21, marginBottom: 28 }}
+          >
+            Choose your role to get the best experience tailored just for you.
+          </ThemedText>
 
-          {/* Role Options */}
-          <View className="mt-4 flex flex-col gap-[22px]">
-            {/* Player */}
-            <TouchableWithoutFeedback
-              onPress={() => handleRoleSelect("player")}
-            >
-              <View
-                style={[
-                  styles.roleOption,
-                  {
-                    borderColor:
-                      selectedRole === "player" ? "#00FF94" : "#0C4D2E",
-                  },
-                ]}
-              >
-                <View className="flex flex-row gap-[9px]">
-                  <BallIcon />
-                  <View className="flex flex-col gap-[4px] flex-1">
-                    <ThemedText
-                      lightColor={theme.text}
-                      darkColor={theme.text}
-                      className="text-[16px] font-[600]"
-                    >
-                      As a player
-                    </ThemedText>
-                    <ThemedText
-                      lightColor={theme.text}
-                      darkColor={theme.text}
-                      className="max-w-[280px] leading-[15px] text-[12px] font-[400] text-[#00000080]"
-                    >
-                      Perfect for those who just want to play and find teams
-                      without managing matches!
-                    </ThemedText>
-                  </View>
+          {/* Role cards */}
+          <View style={{ gap: 16 }}>
+            {ROLES.map((role) => {
+              const isSelected = selectedRole === role.id;
+              return (
+                <TouchableOpacity
+                  key={role.id}
+                  onPress={() => handleRoleSelect(role.id)}
+                  activeOpacity={0.8}
+                  style={{
+                    borderRadius: 14,
+                    borderWidth: 1.5,
+                    borderColor: isSelected
+                      ? accent
+                      : isDark
+                        ? "#222"
+                        : "#E8E8E8",
+                    backgroundColor: isSelected
+                      ? isDark
+                        ? "#0D2B1F"
+                        : "#EDFFF8"
+                      : isDark
+                        ? "#111"
+                        : "#F9FAFB",
+                    padding: 18,
+                    flexDirection: "row",
+                    alignItems: "center",
+                    gap: 16,
+                  }}
+                >
                   <View
-                    style={[
-                      styles.radioCircle,
-                      selectedRole === "player" && styles.radioCircleSelected,
-                    ]}
+                    style={{
+                      width: 48,
+                      height: 48,
+                      borderRadius: 24,
+                      backgroundColor: isSelected
+                        ? `${accent}22`
+                        : isDark
+                          ? "#1a1a1a"
+                          : "#f0f0f0",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
                   >
-                    {selectedRole === "player" && (
-                      <View style={styles.radioInnerCircle} />
+                    {role.library === "MaterialCommunityIcons" ? (
+                      <MaterialCommunityIcons
+                        name={role.icon as any}
+                        size={22}
+                        color={isSelected ? accent : isDark ? "#555" : "#aaa"}
+                      />
+                    ) : (
+                      <Ionicons
+                        name={role.icon as keyof typeof Ionicons.glyphMap}
+                        size={22}
+                        color={isSelected ? accent : isDark ? "#555" : "#aaa"}
+                      />
                     )}
                   </View>
-                </View>
-              </View>
-            </TouchableWithoutFeedback>
 
-            {/* Organizer */}
-            <TouchableWithoutFeedback
-              onPress={() => handleRoleSelect("organizer")}
-            >
-              <View
-                style={[
-                  styles.roleOption,
-                  {
-                    borderColor:
-                      selectedRole === "organizer" ? "#00FF94" : "#0C4D2E",
-                  },
-                ]}
-              >
-                <View className="flex flex-row gap-[9px]">
-                  <BallIcon />
-                  <View className="flex flex-col gap-[4px] flex-1">
-                    <ThemedText
-                      lightColor={theme.text}
-                      darkColor={theme.text}
-                      className="text-[16px] font-[600]"
-                    >
-                      As an Organizer / Admin
+                  <View style={{ flex: 1, gap: 4 }}>
+                    <ThemedText style={{ fontSize: 15, fontWeight: "600" }}>
+                      {role.title}
                     </ThemedText>
                     <ThemedText
-                      lightColor={theme.text}
-                      darkColor={theme.text}
-                      className="max-w-[280px] leading-[15px] text-[12px] font-[400] text-[#00000080]"
+                      lightColor="#6C757D"
+                      darkColor="#9BA1A6"
+                      style={{ fontSize: 12, lineHeight: 17 }}
                     >
-                      Ideal for those who want to organize games, schedule and
-                      recruit players!
+                      {role.description}
                     </ThemedText>
                   </View>
+
                   <View
-                    style={[
-                      styles.radioCircle,
-                      selectedRole === "organizer" &&
-                        styles.radioCircleSelected,
-                    ]}
+                    style={{
+                      width: 22,
+                      height: 22,
+                      borderRadius: 11,
+                      borderWidth: 1.5,
+                      borderColor: isSelected
+                        ? accent
+                        : isDark
+                          ? "#444"
+                          : "#ccc",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
                   >
-                    {selectedRole === "organizer" && (
-                      <View style={styles.radioInnerCircle} />
+                    {isSelected && (
+                      <View
+                        style={{
+                          width: 10,
+                          height: 10,
+                          borderRadius: 5,
+                          backgroundColor: accent,
+                        }}
+                      />
                     )}
                   </View>
-                </View>
-              </View>
-            </TouchableWithoutFeedback>
+                </TouchableOpacity>
+              );
+            })}
           </View>
         </View>
 
-        {/* Continue Button */}
-        <View>
+        {/* Continue button */}
+        <View style={{ marginTop: 40 }}>
           <CustomButton
             primary
-            title="Start Using the App"
+            title="Continue"
             onPress={handleContinue}
             disabled={!selectedRole}
           />
+          <TouchableOpacity
+            onPress={() => router.back()}
+            style={{ alignItems: "center", paddingVertical: 14 }}
+          >
+            <ThemedText
+              lightColor="#999"
+              darkColor="#666"
+              style={{ fontSize: 13 }}
+            >
+              Already have an account?{" "}
+              <ThemedText
+                lightColor="#46BB1C"
+                darkColor="#00FF94"
+                style={{ fontWeight: "600" }}
+              >
+                Sign In
+              </ThemedText>
+            </ThemedText>
+          </TouchableOpacity>
         </View>
       </ScrollView>
     </SafeAreaScreen>
   );
 }
-
-const styles = StyleSheet.create({
-  roleOption: {
-    height: 92,
-    borderRadius: 10,
-    borderWidth: 1,
-    padding: 16,
-    borderColor: "#0C4D2E",
-  },
-  radioCircle: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: "#0C4D2E",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  radioCircleSelected: {
-    borderColor: "#00FF94",
-  },
-  radioInnerCircle: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: "#00FF94",
-  },
-});
