@@ -6,6 +6,7 @@ import {
   AsyncThunkConfig,
   forgotPasswordPayload,
   LoginPayload,
+  RegisterOwnerPayload,
   RegisterPayload,
   verifyOtpPayload,
 } from "@/components/typings/api";
@@ -47,6 +48,18 @@ export const register = createAsyncThunk<
 >("user/register", async (payload, thunkAPI) => {
   return apiCall(
     axiosInstance.post("/i-one/user/register", payload),
+    thunkAPI,
+    "auth",
+  );
+});
+
+export const registerOwner = createAsyncThunk<
+  RegisterResponse,
+  RegisterOwnerPayload,
+  AsyncThunkConfig
+>("user/registerOwner", async (payload, thunkAPI) => {
+  return apiCall(
+    axiosInstance.post("/i-one/user/register-owner", payload),
     thunkAPI,
     "auth",
   );

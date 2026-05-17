@@ -5,11 +5,15 @@ import CustomButton from "@/components/ui/CustomButton";
 import CustomCheckbox from "@/components/CustomCheckbox";
 import TermsCheckbox from "@/components/ui/TermsCheckbox";
 import { Icon } from "@/components/ui/Icon";
-import { register } from "@/api/authThunks";
+import GeolocationComponent from "@/components/GeoLocation";
+import Loader from "@/components/loader";
+import { registerOwner } from "@/api/authThunks";
 import { useAppDispatch } from "@/redux/store";
 import { Entypo } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Toast } from "toastify-react-native";
+import { Formik } from "formik";
+import * as Yup from "yup";
 import React, { useState } from "react";
 import {
   KeyboardAvoidingView,
@@ -23,8 +27,25 @@ import {
   View,
 } from "react-native";
 
-const TIER_OPTIONS = ["Standard", "Premium", "Elite", "VIP"];
-const PRICING_OPTIONS = ["Per Game", "Per Hour", "Per Month", "Per Session"];
+const TIER_OPTIONS = ["free", "paid"];
+const PRICING_OPTIONS = ["hourly", "daily", "monthly", "session"];
+
+const schema = Yup.object({
+  pitchMax: Yup.string().required("Required"),
+  pitchSize: Yup.string().required("Required"),
+  openingHour: Yup.string().required("Required"),
+  closingHour: Yup.string().required("Required"),
+  tier: Yup.string().required("Required"),
+  pricingOption: Yup.string().required("Required"),
+  paymentPerPersonHourly: Yup.string().required("Required"),
+  bankCode: Yup.string().required("Required"),
+  bankName: Yup.string().required("Required"),
+  accountNumber: Yup.string().required("Required"),
+  termsAccepted: Yup.boolean().oneOf(
+    [true],
+    "Please accept the Terms and Conditions",
+  ),
+});
 
 function StepBar({ step }: { step: 1 | 2 }) {
   return (
@@ -193,85 +214,17 @@ export default function AdminSignup2() {
   const params = useLocalSearchParams<{
     firstName: string;
     lastName: string;
-    role: string;
     pitchName: string;
-    location: string;
+    address: string;
     email: string;
     phoneNumber: string;
     password: string;
   }>();
 
-  const [pitchMax, setPitchMax] = useState("");
-  const [pitchSize, setPitchSize] = useState("");
-  const [timeFrame, setTimeFrame] = useState("");
-  const [tier, setTier] = useState("");
-  const [pricingOption, setPricingOption] = useState("");
-  const [paymentPerHour, setPaymentPerHour] = useState("");
-  const [paymentPerPerson, setPaymentPerPerson] = useState("");
-  const [bank, setBank] = useState("");
-  const [accountNumber, setAccountNumber] = useState("");
-  const [acceptedTerms, setAcceptedTerms] = useState(false);
-  const [newsletter, setNewsletter] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [coordinates, setCoordinates] = useState<[number, number]>([0, 0]);
   const [tierModalVisible, setTierModalVisible] = useState(false);
   const [pricingModalVisible, setPricingModalVisible] = useState(false);
-  const [errors, setErrors] = useState<Record<string, string>>({});
-
-  const validate = () => {
-    const e: Record<string, string> = {};
-    if (!pitchMax.trim()) e.pitchMax = "Required";
-    if (!pitchSize.trim()) e.pitchSize = "Required";
-    if (!timeFrame.trim()) e.timeFrame = "Required";
-    if (!tier) e.tier = "Required";
-    if (!pricingOption) e.pricingOption = "Required";
-    if (!paymentPerHour.trim()) e.paymentPerHour = "Required";
-    if (!bank.trim()) e.bank = "Required";
-    if (!accountNumber.trim()) e.accountNumber = "Required";
-    if (!acceptedTerms) e.terms = "Please accept the Terms and Conditions";
-    setErrors(e);
-    return Object.keys(e).length === 0;
-  };
-
-  const handleSubmit = () => {
-    if (!validate()) return;
-    setLoading(true);
-    const payload = {
-      firstName: params.firstName,
-      lastName: params.lastName,
-      email: params.email,
-      password: params.password,
-      phoneNumber: params.phoneNumber,
-      address: params.location,
-      isOwner: true,
-      pitchName: params.pitchName,
-      role: params.role,
-      pitchMax: Number(pitchMax),
-      pitchSize,
-      timeFrame,
-      tier,
-      pricingOption,
-      paymentPerHour: Number(paymentPerHour),
-      paymentPerPerson: Number(paymentPerPerson),
-      bank,
-      accountNumber,
-      location: { type: "Point", coordinates: [0, 0] },
-    };
-    dispatch(register(payload as any))
-      .unwrap()
-      .then((res) => {
-        Toast.show({
-          type: "success",
-          text1: "Account created!",
-          text2: res.message || "Please sign in.",
-        });
-        router.replace("/(onboarding)/signin");
-      })
-      .catch((err) => {
-        const msg = err?.msg?.message || err?.msg || "Registration failed";
-        Toast.show({ type: "error", text1: "Error", text2: msg });
-      })
-      .finally(() => setLoading(false));
-  };
+  const [loading, setLoading] = useState(false);
 
   const chevronColor = isDark ? "#777" : "#aaa";
 
@@ -279,230 +232,358 @@ export default function AdminSignup2() {
     <SafeAreaScreen
       style={{ flex: 1, backgroundColor: isDark ? "#000" : "#fff" }}
     >
+      <Loader visible={loading} />
+
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={{ flex: 1 }}
         keyboardVerticalOffset={Platform.OS === "ios" ? 20 : 0}
       >
-        <ScrollView
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 48 }}
-          keyboardShouldPersistTaps="handled"
+        <Formik
+          initialValues={{
+            pitchMax: "",
+            pitchSize: "",
+            openingHour: "",
+            closingHour: "",
+            tier: "",
+            pricingOption: "",
+            paymentPerPersonHourly: "",
+            bankCode: "",
+            bankName: "",
+            accountNumber: "",
+            termsAccepted: false,
+            newsletterOptIn: false,
+          }}
+          validationSchema={schema}
+          onSubmit={(values) => {
+            setLoading(true);
+            const payload = {
+              user: {
+                firstName: params.firstName,
+                lastName: params.lastName,
+                email: params.email,
+                phoneNumber: params.phoneNumber,
+                password: params.password,
+                role: "Manager",
+              },
+              location: {
+                name: params.pitchName,
+                address: params.address,
+                openingHour: values.openingHour,
+                closingHour: values.closingHour,
+                pitchMax: values.pitchMax,
+                pitchSize: values.pitchSize,
+                tier: values.tier,
+                pricingOption: values.pricingOption,
+                paymentPerPersonHourly: Number(values.paymentPerPersonHourly),
+                location: { coordinates },
+              },
+              payout: {
+                bankCode: values.bankCode,
+                bankName: values.bankName,
+                accountNumber: values.accountNumber,
+              },
+              termsAccepted: values.termsAccepted,
+              newsletterOptIn: values.newsletterOptIn,
+            };
+            dispatch(registerOwner(payload))
+              .unwrap()
+              .then((res) => {
+                Toast.show({
+                  type: "success",
+                  text1: "Account created!",
+                  text2: res.message || "Please sign in.",
+                });
+                router.replace("/(onboarding)/signin");
+              })
+              .catch((err) => {
+                const msg =
+                  err?.msg?.message || err?.msg || "Registration failed";
+                Toast.show({ type: "error", text1: "Error", text2: msg });
+              })
+              .finally(() => setLoading(false));
+          }}
         >
-          {/* Header */}
-          <View
-            style={{
-              flexDirection: "row",
-              alignItems: "flex-end",
-              justifyContent: "space-between",
-              marginTop: 28,
-              marginBottom: 6,
-            }}
-          >
-            <View>
-              <ThemedText
-                lightColor="#999"
-                darkColor="#666"
-                style={{ fontSize: 12, marginBottom: 4 }}
+          {({
+            handleChange,
+            handleBlur,
+            handleSubmit,
+            setFieldValue,
+            values,
+            errors,
+            touched,
+          }) => (
+            <>
+              <ScrollView
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={{
+                  paddingHorizontal: 24,
+                  paddingBottom: 48,
+                }}
+                keyboardShouldPersistTaps="handled"
               >
-                Admin Registration
-              </ThemedText>
-              <ThemedText style={{ fontSize: 22, fontWeight: "700" }}>
-                Create An Account
-              </ThemedText>
-            </View>
-            <Icon />
-          </View>
+                {/* Header */}
+                <View
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "flex-end",
+                    justifyContent: "space-between",
+                    marginTop: 28,
+                    marginBottom: 6,
+                  }}
+                >
+                  <View>
+                    <ThemedText
+                      lightColor="#999"
+                      darkColor="#666"
+                      style={{ fontSize: 12, marginBottom: 4 }}
+                    >
+                      Admin Registration
+                    </ThemedText>
+                    <ThemedText style={{ fontSize: 22, fontWeight: "700" }}>
+                      Create An Account
+                    </ThemedText>
+                  </View>
+                  <Icon />
+                </View>
 
-          <View style={{ marginTop: 20 }}>
-            <StepBar step={2} />
-          </View>
+                <View style={{ marginTop: 20 }}>
+                  <StepBar step={2} />
+                </View>
 
-          {/* Pitch Details */}
-          <SectionCard title="Pitch Details" isDark={isDark}>
-            <View style={{ flexDirection: "row", gap: 12 }}>
-              <View style={{ flex: 1 }}>
-                <InputField
-                  label="Max Players"
-                  placeholder="5 x 5"
-                  value={pitchMax}
-                  onChangeText={setPitchMax}
-                  keyboardType="numeric"
-                  errorMessage={errors.pitchMax}
-                />
-              </View>
-              <View style={{ flex: 1 }}>
-                <InputField
-                  label="Pitch Size (M)"
-                  placeholder="175m x 180m"
-                  value={pitchSize}
-                  onChangeText={setPitchSize}
-                  errorMessage={errors.pitchSize}
-                />
-              </View>
-            </View>
-            <View style={{ flexDirection: "row", gap: 12 }}>
-              <View style={{ flex: 1 }}>
-                <InputField
-                  label="Time Frame"
-                  placeholder="9am – 12pm"
-                  value={timeFrame}
-                  onChangeText={setTimeFrame}
-                  errorMessage={errors.timeFrame}
-                />
-              </View>
-              <View style={{ flex: 1 }}>
-                <InputField
-                  label="Tier"
-                  selectPicker
-                  placeholder="Select"
-                  value={tier}
-                  pickerPressed={() => setTierModalVisible(true)}
-                  rightIcon={
-                    <Entypo
-                      name="chevron-down"
-                      size={14}
-                      color={chevronColor}
-                    />
-                  }
-                  errorMessage={errors.tier}
-                />
-              </View>
-            </View>
-          </SectionCard>
+                {/* Pitch Details */}
+                <SectionCard title="Pitch Details" isDark={isDark}>
+                  <View style={{ flexDirection: "row", gap: 12 }}>
+                    <View style={{ flex: 1 }}>
+                      <InputField
+                        label="Max Players"
+                        placeholder="5 x 5"
+                        value={values.pitchMax}
+                        onChangeText={handleChange("pitchMax")}
+                        onBlur={handleBlur("pitchMax")}
+                        errorMessage={
+                          touched.pitchMax ? errors.pitchMax : undefined
+                        }
+                      />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <InputField
+                        label="Pitch Size (M)"
+                        placeholder="175m x 180m"
+                        value={values.pitchSize}
+                        onChangeText={handleChange("pitchSize")}
+                        onBlur={handleBlur("pitchSize")}
+                        errorMessage={
+                          touched.pitchSize ? errors.pitchSize : undefined
+                        }
+                      />
+                    </View>
+                  </View>
+                  <View style={{ flexDirection: "row", gap: 12 }}>
+                    <View style={{ flex: 1 }}>
+                      <InputField
+                        label="Opening Hour"
+                        placeholder="09:00"
+                        value={values.openingHour}
+                        onChangeText={handleChange("openingHour")}
+                        onBlur={handleBlur("openingHour")}
+                        errorMessage={
+                          touched.openingHour ? errors.openingHour : undefined
+                        }
+                      />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <InputField
+                        label="Closing Hour"
+                        placeholder="22:00"
+                        value={values.closingHour}
+                        onChangeText={handleChange("closingHour")}
+                        onBlur={handleBlur("closingHour")}
+                        errorMessage={
+                          touched.closingHour ? errors.closingHour : undefined
+                        }
+                      />
+                    </View>
+                  </View>
+                  <View style={{ flexDirection: "row", gap: 12 }}>
+                    <View style={{ flex: 1 }}>
+                      <InputField
+                        label="Tier"
+                        selectPicker
+                        placeholder="Select"
+                        value={values.tier}
+                        pickerPressed={() => setTierModalVisible(true)}
+                        rightIcon={
+                          <Entypo
+                            name="chevron-down"
+                            size={14}
+                            color={chevronColor}
+                          />
+                        }
+                        errorMessage={touched.tier ? errors.tier : undefined}
+                      />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <InputField
+                        label="Pricing Model"
+                        selectPicker
+                        placeholder="Select"
+                        value={values.pricingOption}
+                        pickerPressed={() => setPricingModalVisible(true)}
+                        rightIcon={
+                          <Entypo
+                            name="chevron-down"
+                            size={14}
+                            color={chevronColor}
+                          />
+                        }
+                        errorMessage={
+                          touched.pricingOption
+                            ? errors.pricingOption
+                            : undefined
+                        }
+                      />
+                    </View>
+                  </View>
+                  <InputField
+                    label="Price per Person / Hour (₦)"
+                    placeholder="2500"
+                    value={values.paymentPerPersonHourly}
+                    onChangeText={handleChange("paymentPerPersonHourly")}
+                    onBlur={handleBlur("paymentPerPersonHourly")}
+                    keyboardType="numeric"
+                    errorMessage={
+                      touched.paymentPerPersonHourly
+                        ? errors.paymentPerPersonHourly
+                        : undefined
+                    }
+                  />
+                </SectionCard>
 
-          {/* Pricing */}
-          <SectionCard title="Pricing" isDark={isDark}>
-            <View style={{ flexDirection: "row", gap: 12 }}>
-              <View style={{ flex: 1 }}>
-                <InputField
-                  label="Pricing Model"
-                  selectPicker
-                  placeholder="Select"
-                  value={pricingOption}
-                  pickerPressed={() => setPricingModalVisible(true)}
-                  rightIcon={
-                    <Entypo
-                      name="chevron-down"
-                      size={14}
-                      color={chevronColor}
-                    />
-                  }
-                  errorMessage={errors.pricingOption}
-                />
-              </View>
-              <View style={{ flex: 1 }}>
-                <InputField
-                  label="Per Hour (₦)"
-                  placeholder="0.00"
-                  value={paymentPerHour}
-                  onChangeText={setPaymentPerHour}
-                  keyboardType="numeric"
-                  errorMessage={errors.paymentPerHour}
-                />
-              </View>
-            </View>
-            <InputField
-              label="Per Person Monthly (₦)"
-              placeholder="0.00"
-              value={paymentPerPerson}
-              onChangeText={setPaymentPerPerson}
-              keyboardType="numeric"
-            />
-          </SectionCard>
+                {/* Location */}
+                <SectionCard title="Location" isDark={isDark}>
+                  <GeolocationComponent
+                    setCoordinates={setCoordinates}
+                    label="Pitch Coordinates"
+                  />
+                </SectionCard>
 
-          {/* Bank Details */}
-          <SectionCard title="Company Account" isDark={isDark}>
-            <View style={{ flexDirection: "row", gap: 12 }}>
-              <View style={{ flex: 1 }}>
-                <InputField
-                  label="Bank"
-                  placeholder="Bank Name"
-                  value={bank}
-                  onChangeText={setBank}
-                  errorMessage={errors.bank}
-                />
-              </View>
-              <View style={{ flex: 1 }}>
-                <InputField
-                  label="Account No."
-                  placeholder="22******54"
-                  value={accountNumber}
-                  onChangeText={setAccountNumber}
-                  keyboardType="numeric"
-                  errorMessage={errors.accountNumber}
-                />
-              </View>
-            </View>
-          </SectionCard>
+                {/* Bank Details */}
+                <SectionCard title="Company Account" isDark={isDark}>
+                  <View style={{ flexDirection: "row", gap: 12 }}>
+                    <View style={{ flex: 1 }}>
+                      <InputField
+                        label="Bank Name"
+                        placeholder="GTBank"
+                        value={values.bankName}
+                        onChangeText={handleChange("bankName")}
+                        onBlur={handleBlur("bankName")}
+                        errorMessage={
+                          touched.bankName ? errors.bankName : undefined
+                        }
+                      />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <InputField
+                        label="Bank Code"
+                        placeholder="058"
+                        value={values.bankCode}
+                        onChangeText={handleChange("bankCode")}
+                        onBlur={handleBlur("bankCode")}
+                        keyboardType="numeric"
+                        errorMessage={
+                          touched.bankCode ? errors.bankCode : undefined
+                        }
+                      />
+                    </View>
+                  </View>
+                  <InputField
+                    label="Account Number"
+                    placeholder="0123456789"
+                    value={values.accountNumber}
+                    onChangeText={handleChange("accountNumber")}
+                    onBlur={handleBlur("accountNumber")}
+                    keyboardType="numeric"
+                    errorMessage={
+                      touched.accountNumber ? errors.accountNumber : undefined
+                    }
+                  />
+                </SectionCard>
 
-          {/* Terms error */}
-          {errors.terms ? (
-            <ThemedText
-              style={{
-                color: "#FF4D4F",
-                fontSize: 12,
-                marginBottom: 10,
-                marginLeft: 2,
-              }}
-            >
-              {errors.terms}
-            </ThemedText>
-          ) : null}
+                {/* Terms error */}
+                {touched.termsAccepted && errors.termsAccepted ? (
+                  <ThemedText
+                    style={{
+                      color: "#FF4D4F",
+                      fontSize: 12,
+                      marginBottom: 10,
+                      marginLeft: 2,
+                    }}
+                  >
+                    {errors.termsAccepted}
+                  </ThemedText>
+                ) : null}
 
-          {/* Checkboxes */}
-          <View style={{ gap: 12, marginBottom: 28 }}>
-            <TermsCheckbox
-              checked={acceptedTerms}
-              onToggle={() => setAcceptedTerms(!acceptedTerms)}
-            />
-            <CustomCheckbox
-              checked={newsletter}
-              onToggle={() => setNewsletter(!newsletter)}
-              label="Receive Emails From Our Newsletter"
-              required={false}
-            />
-          </View>
+                {/* Checkboxes */}
+                <View style={{ gap: 12, marginBottom: 28 }}>
+                  <TermsCheckbox
+                    checked={values.termsAccepted}
+                    onToggle={() =>
+                      setFieldValue("termsAccepted", !values.termsAccepted)
+                    }
+                  />
+                  <CustomCheckbox
+                    checked={values.newsletterOptIn}
+                    onToggle={() =>
+                      setFieldValue("newsletterOptIn", !values.newsletterOptIn)
+                    }
+                    label="Receive Emails From Our Newsletter"
+                    required={false}
+                  />
+                </View>
 
-          {/* Buttons */}
-          <View style={{ gap: 12 }}>
-            <CustomButton
-              primary
-              title={loading ? "Creating Account..." : "Create An Account"}
-              onPress={handleSubmit}
-              disabled={loading}
-              loading={loading}
-            />
-            <TouchableOpacity
-              onPress={() => router.back()}
-              style={{ alignItems: "center", paddingVertical: 12 }}
-            >
-              <ThemedText
-                lightColor="#999"
-                darkColor="#666"
-                style={{ fontSize: 13 }}
-              >
-                ← Back to Step 1
-              </ThemedText>
-            </TouchableOpacity>
-          </View>
-        </ScrollView>
+                {/* Buttons */}
+                <View style={{ gap: 12 }}>
+                  <CustomButton
+                    primary
+                    title="Create An Account"
+                    onPress={() => handleSubmit()}
+                    disabled={loading}
+                    loading={loading}
+                  />
+                  <TouchableOpacity
+                    onPress={() => router.back()}
+                    style={{ alignItems: "center", paddingVertical: 12 }}
+                  >
+                    <ThemedText
+                      lightColor="#999"
+                      darkColor="#666"
+                      style={{ fontSize: 13 }}
+                    >
+                      ← Back to Step 1
+                    </ThemedText>
+                  </TouchableOpacity>
+                </View>
+              </ScrollView>
+
+              <DropdownModal
+                visible={tierModalVisible}
+                options={TIER_OPTIONS}
+                onSelect={(v) => setFieldValue("tier", v)}
+                onClose={() => setTierModalVisible(false)}
+                isDark={isDark}
+              />
+              <DropdownModal
+                visible={pricingModalVisible}
+                options={PRICING_OPTIONS}
+                onSelect={(v) => setFieldValue("pricingOption", v)}
+                onClose={() => setPricingModalVisible(false)}
+                isDark={isDark}
+              />
+            </>
+          )}
+        </Formik>
       </KeyboardAvoidingView>
-
-      <DropdownModal
-        visible={tierModalVisible}
-        options={TIER_OPTIONS}
-        onSelect={setTier}
-        onClose={() => setTierModalVisible(false)}
-        isDark={isDark}
-      />
-      <DropdownModal
-        visible={pricingModalVisible}
-        options={PRICING_OPTIONS}
-        onSelect={setPricingOption}
-        onClose={() => setPricingModalVisible(false)}
-        isDark={isDark}
-      />
     </SafeAreaScreen>
   );
 }
