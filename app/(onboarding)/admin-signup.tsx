@@ -3,6 +3,8 @@ import SafeAreaScreen from "@/components/SafeAreaScreen";
 import { ThemedText } from "@/components/ThemedText";
 import CustomButton from "@/components/ui/CustomButton";
 import { Icon } from "@/components/ui/Icon";
+import SectionCard from "@/components/ui/SectionCard";
+import StepBar from "@/components/ui/StepBar";
 import { useRouter } from "expo-router";
 import { Formik } from "formik";
 import * as Yup from "yup";
@@ -25,72 +27,10 @@ const schema = Yup.object({
   password: Yup.string().min(6, "Min 6 characters").required("Required"),
 });
 
-function StepBar({ step }: { step: 1 | 2 }) {
-  return (
-    <View
-      style={{
-        flexDirection: "row",
-        alignItems: "center",
-        gap: 6,
-        marginBottom: 28,
-      }}
-    >
-      {[1, 2].map((s, i) => (
-        <View
-          key={s}
-          style={{ flexDirection: "row", alignItems: "center", gap: 6 }}
-        >
-          <View
-            style={{
-              width: 28,
-              height: 28,
-              borderRadius: 14,
-              backgroundColor: s <= step ? "#00FF94" : "transparent",
-              borderWidth: 1.5,
-              borderColor: s <= step ? "#00FF94" : "#ccc",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <ThemedText
-              style={{
-                fontSize: 12,
-                fontWeight: "700",
-                color: s <= step ? "#000" : "#aaa",
-              }}
-            >
-              {s}
-            </ThemedText>
-          </View>
-          {i === 0 && (
-            <View
-              style={{
-                width: 32,
-                height: 1.5,
-                backgroundColor: step >= 2 ? "#00FF94" : "#ddd",
-              }}
-            />
-          )}
-        </View>
-      ))}
-      <ThemedText
-        lightColor="#999"
-        darkColor="#666"
-        style={{ fontSize: 12, marginLeft: 4 }}
-      >
-        Step {step} of 2
-      </ThemedText>
-    </View>
-  );
-}
-
 export default function AdminSignup() {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
   const router = useRouter();
-
-  const sectionBg = isDark ? "#111" : "#F9FAFB";
-  const sectionBorder = isDark ? "#222" : "#F0F0F0";
 
   return (
     <SafeAreaScreen
@@ -135,7 +75,6 @@ export default function AdminSignup() {
               }}
               keyboardShouldPersistTaps="handled"
             >
-              {/* Header */}
               <View
                 style={{
                   flexDirection: "row",
@@ -160,36 +99,11 @@ export default function AdminSignup() {
                 <Icon />
               </View>
 
-              <View style={{ marginTop: 20 }}>
+              <View style={{ marginTop: 20, marginBottom: -8 }}>
                 <StepBar step={1} />
               </View>
 
-              {/* Personal Info */}
-              <View
-                style={{
-                  backgroundColor: sectionBg,
-                  borderRadius: 14,
-                  borderWidth: 1,
-                  borderColor: sectionBorder,
-                  padding: 16,
-                  gap: 4,
-                  marginBottom: 16,
-                }}
-              >
-                <ThemedText
-                  lightColor="#555"
-                  darkColor="#aaa"
-                  style={{
-                    fontSize: 11,
-                    fontWeight: "600",
-                    textTransform: "uppercase",
-                    letterSpacing: 0.8,
-                    marginBottom: 8,
-                  }}
-                >
-                  Personal Info
-                </ThemedText>
-
+              <SectionCard title="Personal Info">
                 <View style={{ flexDirection: "row", gap: 12 }}>
                   <View style={{ flex: 1 }}>
                     <InputField
@@ -249,34 +163,9 @@ export default function AdminSignup() {
                   onBlur={handleBlur("address")}
                   errorMessage={touched.address ? errors.address : undefined}
                 />
-              </View>
+              </SectionCard>
 
-              {/* Account Details */}
-              <View
-                style={{
-                  backgroundColor: sectionBg,
-                  borderRadius: 14,
-                  borderWidth: 1,
-                  borderColor: sectionBorder,
-                  padding: 16,
-                  gap: 4,
-                  marginBottom: 24,
-                }}
-              >
-                <ThemedText
-                  lightColor="#555"
-                  darkColor="#aaa"
-                  style={{
-                    fontSize: 11,
-                    fontWeight: "600",
-                    textTransform: "uppercase",
-                    letterSpacing: 0.8,
-                    marginBottom: 8,
-                  }}
-                >
-                  Account Details
-                </ThemedText>
-
+              <SectionCard title="Account Details" style={{ marginBottom: 24 }}>
                 <InputField
                   label="Email Address"
                   placeholder="johndoe123@gmail.com"
@@ -307,7 +196,7 @@ export default function AdminSignup() {
                   password
                   errorMessage={touched.password ? errors.password : undefined}
                 />
-              </View>
+              </SectionCard>
 
               <CustomButton
                 primary

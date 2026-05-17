@@ -5,6 +5,9 @@ import CustomButton from "@/components/ui/CustomButton";
 import CustomCheckbox from "@/components/CustomCheckbox";
 import TermsCheckbox from "@/components/ui/TermsCheckbox";
 import { Icon } from "@/components/ui/Icon";
+import SectionCard from "@/components/ui/SectionCard";
+import StepBar from "@/components/ui/StepBar";
+import DropdownModal from "@/components/ui/DropdownModal";
 import GeolocationComponent from "@/components/GeoLocation";
 import Loader from "@/components/loader";
 import { registerOwner } from "@/api/authThunks";
@@ -17,11 +20,8 @@ import * as Yup from "yup";
 import React, { useState } from "react";
 import {
   KeyboardAvoidingView,
-  Modal,
   Platform,
-  Pressable,
   ScrollView,
-  Text,
   TouchableOpacity,
   useColorScheme,
   View,
@@ -46,165 +46,6 @@ const schema = Yup.object({
     "Please accept the Terms and Conditions",
   ),
 });
-
-function StepBar({ step }: { step: 1 | 2 }) {
-  return (
-    <View
-      style={{
-        flexDirection: "row",
-        alignItems: "center",
-        gap: 6,
-        marginBottom: 28,
-      }}
-    >
-      {[1, 2].map((s, i) => (
-        <View
-          key={s}
-          style={{ flexDirection: "row", alignItems: "center", gap: 6 }}
-        >
-          <View
-            style={{
-              width: 28,
-              height: 28,
-              borderRadius: 14,
-              backgroundColor: s <= step ? "#00FF94" : "transparent",
-              borderWidth: 1.5,
-              borderColor: s <= step ? "#00FF94" : "#ccc",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <Text
-              style={{
-                fontSize: 12,
-                fontWeight: "700",
-                color: s <= step ? "#000" : "#aaa",
-              }}
-            >
-              {s}
-            </Text>
-          </View>
-          {i === 0 && (
-            <View
-              style={{
-                width: 32,
-                height: 1.5,
-                backgroundColor: step >= 2 ? "#00FF94" : "#ddd",
-              }}
-            />
-          )}
-        </View>
-      ))}
-      <ThemedText
-        lightColor="#999"
-        darkColor="#666"
-        style={{ fontSize: 12, marginLeft: 4 }}
-      >
-        Step {step} of 2
-      </ThemedText>
-    </View>
-  );
-}
-
-function DropdownModal({
-  visible,
-  options,
-  onSelect,
-  onClose,
-  isDark,
-}: {
-  visible: boolean;
-  options: string[];
-  onSelect: (v: string) => void;
-  onClose: () => void;
-  isDark: boolean;
-}) {
-  return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="fade"
-      onRequestClose={onClose}
-    >
-      <Pressable
-        style={{
-          flex: 1,
-          backgroundColor: "rgba(0,0,0,0.4)",
-          justifyContent: "center",
-          paddingHorizontal: 32,
-        }}
-        onPress={onClose}
-      >
-        <Pressable
-          style={{
-            backgroundColor: isDark ? "#1a1a1a" : "#fff",
-            borderRadius: 16,
-            overflow: "hidden",
-          }}
-          onPress={() => {}}
-        >
-          {options.map((opt, i) => (
-            <TouchableOpacity
-              key={opt}
-              onPress={() => {
-                onSelect(opt);
-                onClose();
-              }}
-              style={{
-                paddingVertical: 15,
-                paddingHorizontal: 20,
-                borderBottomWidth: i < options.length - 1 ? 1 : 0,
-                borderBottomColor: isDark ? "#2a2a2a" : "#f2f2f2",
-              }}
-            >
-              <Text style={{ fontSize: 14, color: isDark ? "#fff" : "#111" }}>
-                {opt}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </Pressable>
-      </Pressable>
-    </Modal>
-  );
-}
-
-function SectionCard({
-  title,
-  children,
-  isDark,
-}: {
-  title: string;
-  children: React.ReactNode;
-  isDark: boolean;
-}) {
-  return (
-    <View
-      style={{
-        backgroundColor: isDark ? "#111" : "#F9FAFB",
-        borderRadius: 14,
-        borderWidth: 1,
-        borderColor: isDark ? "#222" : "#F0F0F0",
-        padding: 16,
-        marginBottom: 16,
-      }}
-    >
-      <ThemedText
-        lightColor="#555"
-        darkColor="#aaa"
-        style={{
-          fontSize: 11,
-          fontWeight: "600",
-          textTransform: "uppercase",
-          letterSpacing: 0.8,
-          marginBottom: 12,
-        }}
-      >
-        {title}
-      </ThemedText>
-      {children}
-    </View>
-  );
-}
 
 export default function AdminSignup2() {
   const colorScheme = useColorScheme();
@@ -322,7 +163,6 @@ export default function AdminSignup2() {
                 }}
                 keyboardShouldPersistTaps="handled"
               >
-                {/* Header */}
                 <View
                   style={{
                     flexDirection: "row",
@@ -347,12 +187,11 @@ export default function AdminSignup2() {
                   <Icon />
                 </View>
 
-                <View style={{ marginTop: 20 }}>
+                <View style={{ marginTop: 20, marginBottom: -8 }}>
                   <StepBar step={2} />
                 </View>
 
-                {/* Pitch Details */}
-                <SectionCard title="Pitch Details" isDark={isDark}>
+                <SectionCard title="Pitch Details">
                   <View style={{ flexDirection: "row", gap: 12 }}>
                     <View style={{ flex: 1 }}>
                       <InputField
@@ -460,16 +299,14 @@ export default function AdminSignup2() {
                   />
                 </SectionCard>
 
-                {/* Location */}
-                <SectionCard title="Location" isDark={isDark}>
+                <SectionCard title="Location">
                   <GeolocationComponent
                     setCoordinates={setCoordinates}
                     label="Pitch Coordinates"
                   />
                 </SectionCard>
 
-                {/* Bank Details */}
-                <SectionCard title="Company Account" isDark={isDark}>
+                <SectionCard title="Company Account">
                   <View style={{ flexDirection: "row", gap: 12 }}>
                     <View style={{ flex: 1 }}>
                       <InputField
@@ -510,7 +347,6 @@ export default function AdminSignup2() {
                   />
                 </SectionCard>
 
-                {/* Terms error */}
                 {touched.termsAccepted && errors.termsAccepted ? (
                   <ThemedText
                     style={{
@@ -524,7 +360,6 @@ export default function AdminSignup2() {
                   </ThemedText>
                 ) : null}
 
-                {/* Checkboxes */}
                 <View style={{ gap: 12, marginBottom: 28 }}>
                   <TermsCheckbox
                     checked={values.termsAccepted}
@@ -542,7 +377,6 @@ export default function AdminSignup2() {
                   />
                 </View>
 
-                {/* Buttons */}
                 <View style={{ gap: 12 }}>
                   <CustomButton
                     primary
@@ -571,14 +405,12 @@ export default function AdminSignup2() {
                 options={TIER_OPTIONS}
                 onSelect={(v) => setFieldValue("tier", v)}
                 onClose={() => setTierModalVisible(false)}
-                isDark={isDark}
               />
               <DropdownModal
                 visible={pricingModalVisible}
                 options={PRICING_OPTIONS}
                 onSelect={(v) => setFieldValue("pricingOption", v)}
                 onClose={() => setPricingModalVisible(false)}
-                isDark={isDark}
               />
             </>
           )}

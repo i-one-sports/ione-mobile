@@ -2,11 +2,8 @@ import { Formik } from "formik";
 import * as React from "react";
 import {
   KeyboardAvoidingView,
-  Modal,
   Platform,
-  Pressable,
   ScrollView,
-  Text,
   TouchableOpacity,
   useColorScheme,
   View,
@@ -20,6 +17,8 @@ import SafeAreaScreen from "@/components/SafeAreaScreen";
 import { ThemedText } from "@/components/ThemedText";
 import CustomButton from "@/components/ui/CustomButton";
 import { Icon } from "@/components/ui/Icon";
+import SectionCard from "@/components/ui/SectionCard";
+import DropdownModal from "@/components/ui/DropdownModal";
 import CustomCheckbox from "@/components/CustomCheckbox";
 import TermsCheckbox from "@/components/ui/TermsCheckbox";
 import { useAppDispatch } from "@/redux/store";
@@ -30,106 +29,6 @@ import { Image } from "expo-image";
 import { Entypo, Ionicons } from "@expo/vector-icons";
 
 const POSITIONS = ["GK", "DF", "MF", "ST"];
-
-function SectionCard({
-  title,
-  children,
-  isDark,
-}: {
-  title: string;
-  children: React.ReactNode;
-  isDark: boolean;
-}) {
-  return (
-    <View
-      style={{
-        backgroundColor: isDark ? "#111" : "#F9FAFB",
-        borderRadius: 14,
-        borderWidth: 1,
-        borderColor: isDark ? "#222" : "#F0F0F0",
-        padding: 16,
-        marginBottom: 16,
-      }}
-    >
-      <ThemedText
-        lightColor="#555"
-        darkColor="#aaa"
-        style={{
-          fontSize: 11,
-          fontWeight: "600",
-          textTransform: "uppercase",
-          letterSpacing: 0.8,
-          marginBottom: 12,
-        }}
-      >
-        {title}
-      </ThemedText>
-      {children}
-    </View>
-  );
-}
-
-function DropdownModal({
-  visible,
-  options,
-  onSelect,
-  onClose,
-  isDark,
-}: {
-  visible: boolean;
-  options: string[];
-  onSelect: (v: string) => void;
-  onClose: () => void;
-  isDark: boolean;
-}) {
-  return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="fade"
-      onRequestClose={onClose}
-    >
-      <Pressable
-        style={{
-          flex: 1,
-          backgroundColor: "rgba(0,0,0,0.4)",
-          justifyContent: "center",
-          paddingHorizontal: 32,
-        }}
-        onPress={onClose}
-      >
-        <Pressable
-          style={{
-            backgroundColor: isDark ? "#1a1a1a" : "#fff",
-            borderRadius: 16,
-            overflow: "hidden",
-          }}
-          onPress={() => {}}
-        >
-          {options.map((opt, i) => (
-            <TouchableOpacity
-              key={opt}
-              onPress={() => {
-                onSelect(opt);
-                onClose();
-              }}
-              style={{
-                paddingVertical: 15,
-                paddingHorizontal: 20,
-                borderBottomWidth: i < options.length - 1 ? 1 : 0,
-                borderBottomColor: isDark ? "#2a2a2a" : "#f2f2f2",
-              }}
-            >
-              <Text style={{ fontSize: 14, color: isDark ? "#fff" : "#111" }}>
-                {opt}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </Pressable>
-      </Pressable>
-    </Modal>
-  );
-}
 
 export default function SignUp() {
   const colorScheme = useColorScheme();
@@ -385,7 +284,7 @@ export default function SignUp() {
                 </View>
 
                 {/* Personal Info */}
-                <SectionCard title="Personal Info" isDark={isDark}>
+                <SectionCard title="Personal Info">
                   <View style={{ flexDirection: "row", gap: 12 }}>
                     <View style={{ flex: 1 }}>
                       <InputField
@@ -429,7 +328,7 @@ export default function SignUp() {
                 </SectionCard>
 
                 {/* Player Details */}
-                <SectionCard title="Player Details" isDark={isDark}>
+                <SectionCard title="Player Details">
                   <View style={{ flexDirection: "row", gap: 12 }}>
                     <View style={{ flex: 1 }}>
                       <InputField
@@ -494,7 +393,7 @@ export default function SignUp() {
                 </SectionCard>
 
                 {/* Location */}
-                <SectionCard title="Location" isDark={isDark}>
+                <SectionCard title="Location">
                   <InputField
                     label="Address"
                     placeholder="No 11, Trinity Estate, Awoyaya"
@@ -512,7 +411,7 @@ export default function SignUp() {
                 </SectionCard>
 
                 {/* Account Details */}
-                <SectionCard title="Account Details" isDark={isDark}>
+                <SectionCard title="Account Details">
                   <InputField
                     label="Email Address"
                     placeholder="johndoe@gmail.com"
@@ -580,7 +479,6 @@ export default function SignUp() {
                 options={POSITIONS}
                 onSelect={(v) => setFieldValue("position", v)}
                 onClose={() => setPositionModalVisible(false)}
-                isDark={isDark}
               />
               <CustomDatePicker
                 isVisible={isDatePickerVisible}
