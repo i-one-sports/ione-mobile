@@ -135,8 +135,8 @@ export default function AdminSignup() {
                   <View style={{ flex: 1 }}>
                     <InputField
                       label="Role"
-                      placeholder="Manager"
-                      value="Manager"
+                      placeholder="Admin"
+                      value="Admin"
                       editable={false}
                       onChangeText={() => {}}
                     />

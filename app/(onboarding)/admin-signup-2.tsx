@@ -28,7 +28,7 @@ import {
 } from "react-native";
 
 const TIER_OPTIONS = ["free", "paid"];
-const PRICING_OPTIONS = ["hourly", "daily", "monthly", "session"];
+const PRICING_OPTIONS = ["hourly", "monthly"];
 
 const schema = Yup.object({
   pitchMax: Yup.string().required("Required"),
@@ -36,8 +36,16 @@ const schema = Yup.object({
   openingHour: Yup.string().required("Required"),
   closingHour: Yup.string().required("Required"),
   tier: Yup.string().required("Required"),
-  pricingOption: Yup.string().required("Required"),
-  paymentPerPersonHourly: Yup.string().required("Required"),
+  pricingOption: Yup.string().when("tier", {
+    is: "paid",
+    then: (schema) => schema.required("Required"),
+    otherwise: (schema) => schema.notRequired(),
+  }),
+  paymentPerPersonHourly: Yup.string().when("tier", {
+    is: "paid",
+    then: (schema) => schema.required("Required"),
+    otherwise: (schema) => schema.notRequired(),
+  }),
   bankCode: Yup.string().required("Required"),
   bankName: Yup.string().required("Required"),
   accountNumber: Yup.string().required("Required"),
@@ -105,7 +113,7 @@ export default function AdminSignup2() {
                 email: params.email,
                 phoneNumber: params.phoneNumber,
                 password: params.password,
-                role: "Manager",
+                role: "Admin",
               },
               location: {
                 name: params.pitchName,
@@ -263,40 +271,44 @@ export default function AdminSignup2() {
                       />
                     </View>
                     <View style={{ flex: 1 }}>
-                      <InputField
-                        label="Pricing Model"
-                        selectPicker
-                        placeholder="Select"
-                        value={values.pricingOption}
-                        pickerPressed={() => setPricingModalVisible(true)}
-                        rightIcon={
-                          <Entypo
-                            name="chevron-down"
-                            size={14}
-                            color={chevronColor}
-                          />
-                        }
-                        errorMessage={
-                          touched.pricingOption
-                            ? errors.pricingOption
-                            : undefined
-                        }
-                      />
+                      {values.tier === "paid" && (
+                        <InputField
+                          label="Pricing Model"
+                          selectPicker
+                          placeholder="Select"
+                          value={values.pricingOption}
+                          pickerPressed={() => setPricingModalVisible(true)}
+                          rightIcon={
+                            <Entypo
+                              name="chevron-down"
+                              size={14}
+                              color={chevronColor}
+                            />
+                          }
+                          errorMessage={
+                            touched.pricingOption
+                              ? errors.pricingOption
+                              : undefined
+                          }
+                        />
+                      )}
                     </View>
                   </View>
-                  <InputField
-                    label="Price per Person / Hour (₦)"
-                    placeholder="2500"
-                    value={values.paymentPerPersonHourly}
-                    onChangeText={handleChange("paymentPerPersonHourly")}
-                    onBlur={handleBlur("paymentPerPersonHourly")}
-                    keyboardType="numeric"
-                    errorMessage={
-                      touched.paymentPerPersonHourly
-                        ? errors.paymentPerPersonHourly
-                        : undefined
-                    }
-                  />
+                  {values.tier === "paid" && (
+                    <InputField
+                      label="Price per Person / Hour (₦)"
+                      placeholder="2500"
+                      value={values.paymentPerPersonHourly}
+                      onChangeText={handleChange("paymentPerPersonHourly")}
+                      onBlur={handleBlur("paymentPerPersonHourly")}
+                      keyboardType="numeric"
+                      errorMessage={
+                        touched.paymentPerPersonHourly
+                          ? errors.paymentPerPersonHourly
+                          : undefined
+                      }
+                    />
+                  )}
                 </SectionCard>
 
                 <SectionCard title="Location">
