@@ -1,5 +1,5 @@
 import { allSessions } from "@/api/sessions";
-import CalendarIcon from "@/assets/svg/CalendarIcon";
+import CustomDatePicker from "@/components/modals/CustomDatePicker";
 import PlusIcon from "@/assets/svg/PlusIcon";
 import { CalendarPolygon } from "@/components/sessions/CalendarPolygon";
 import { SessionMatchCard } from "@/components/sessions/SessionMatchCard";
@@ -17,6 +17,7 @@ import { ThemedText } from "@/components/ThemedText";
 import { Colors } from "@/constants/Colors";
 import { useAppDispatch, useAppSelector } from "@/redux/store";
 import { router } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   ScrollView,
@@ -49,6 +50,7 @@ export default function Schedule({
   const colorScheme = useColorScheme();
   const theme = Colors[colorScheme ?? "light"];
   const scrollViewRef = useRef<ScrollView>(null);
+  const [isCalendarVisible, setCalendarVisible] = useState(false);
 
   const dispatch = useAppDispatch();
   const { user } = useAppSelector((state) => state.auth);
@@ -267,7 +269,19 @@ export default function Schedule({
                 >
                   {title}
                 </ThemedText>
-                <CalendarIcon />
+                <TouchableOpacity onPress={() => setCalendarVisible(true)}>
+                  <Ionicons
+                    name="calendar-outline"
+                    size={28}
+                    color={theme.icon}
+                  />
+                </TouchableOpacity>
+                <CustomDatePicker
+                  date={date}
+                  isVisible={isCalendarVisible}
+                  onClose={() => setCalendarVisible(false)}
+                  onChange={(newDate) => setDate(newDate)}
+                />
               </View>
 
               <ScrollView

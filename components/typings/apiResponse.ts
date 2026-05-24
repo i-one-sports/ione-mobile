@@ -180,7 +180,7 @@ export interface UpcomingSession {
   timeDuration: number;
 }
 
-export interface Player {
+export interface Playera {
   _id: string;
   name: string;
 }
@@ -190,7 +190,7 @@ export interface Teamm {
   session: string;
   createdAt: string;
   updatedAt: string;
-  players: Player[];
+  players: Playera[];
 }
 export interface LastMatch {
   _id: string;
@@ -398,4 +398,23 @@ export interface SessionByIdResponse {
   _id: string;
   paymentRequired: boolean;
   members: Members[];
+}
+
+export interface TournamentLocationResponse {
+  id: string;
+  name: string;
+  status: "registration" | "ongoing" | "completed";
+  maxTeams: number;
+  registeredTeams: string[];
+  startDate: string;
+  endDate: string;
+  registrationDeadline: string;
+  prizeMoney: number;
+  registrationFee: number;
+  code: string;
+  winner: string | null;
+}
+
+export interface CreateTournamentResponse {
+  name: string;
 }

@@ -104,3 +104,7 @@ export interface RegisterOwnerPayload {
   termsAccepted: boolean;
   newsletterOptIn: boolean;
 }
+
+export interface CreateTournamentPayload {
+  name: string;
+}

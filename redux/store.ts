@@ -18,6 +18,7 @@ import matchDetailsReducer from "./reducers/matchDetails";
 import ownerDashboardReducer from "./reducers/ownerDashboard";
 import sessionReducer from "./reducers/sessions";
 import walletReducer from "./reducers/wallet";
+import tournamentReducer from "./reducers/tournaments";
 
 const authPersistConfig = {
   key: "main",
@@ -39,6 +40,7 @@ const reducers = combineReducers({
   wallet: walletReducer,
   ownerDashboard: ownerDashboardReducer,
   matchDetails: matchDetailsReducer,
+  tournament: tournamentReducer,
 });
 
 const store = configureStore({
