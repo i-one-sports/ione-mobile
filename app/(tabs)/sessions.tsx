@@ -46,6 +46,7 @@ export default function Schedule({
   });
   const [dates, setDates] = useState<DateItem[]>([]);
   const [activeTab, setActiveTab] = useState<SessionTab>(initialTab);
+  const [date, setDate] = useState(new Date());
 
   const colorScheme = useColorScheme();
   const theme = Colors[colorScheme ?? "light"];
