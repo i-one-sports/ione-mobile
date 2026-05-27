@@ -308,14 +308,21 @@ export default function Schedule({
           </View>
 
           {/* New game button */}
+
           <View className="mt-[18px] px-[32px]">
             <TouchableOpacity
               className="flex w-full flex-row items-center justify-between rounded-[5px] border border-[#7D7D7D] px-[21px] py-[15px]"
               onPress={() => {
                 const tabId = TAB_ROUTE_MAP[activeTab];
-                router.push(
-                  (tabId ? `/${tabId}` : "/screens/newsession") as any,
-                );
+
+                router.push({
+                  pathname: (tabId
+                    ? `/${tabId}`
+                    : "/screens/newsession") as any,
+                  params: {
+                    locationId: formattedMatches[0].sessionId,
+                  },
+                });
               }}
             >
               <Text className="text-base text-[#696969]">New game? </Text>
@@ -326,28 +333,26 @@ export default function Schedule({
           {/* Tab bar + content */}
           <View className="mt-[13px] w-full px-[32px]">
             <View className="mb-4 flex w-full flex-row justify-between gap-2">
-              {(["all", "tournaments", "friendlies", "sets"] as const).map(
-                (tab) => (
-                  <TouchableWithoutFeedback
-                    key={tab}
-                    onPress={() => setActiveTab(tab)}
+              {(["all", "tournaments", "friendlies"] as const).map((tab) => (
+                <TouchableWithoutFeedback
+                  key={tab}
+                  onPress={() => setActiveTab(tab)}
+                >
+                  <View
+                    className={`rounded px-4 py-[9px] ${
+                      activeTab === tab ? "bg-[#00FF94]" : "bg-[#ECECEC]"
+                    }`}
                   >
-                    <View
-                      className={`rounded px-4 py-[9px] ${
-                        activeTab === tab ? "bg-[#00FF94]" : "bg-[#ECECEC]"
+                    <Text
+                      className={`text-sm font-[600] ${
+                        activeTab === tab ? "text-black" : "text-[#929292]"
                       }`}
                     >
-                      <Text
-                        className={`text-sm font-[600] ${
-                          activeTab === tab ? "text-black" : "text-[#929292]"
-                        }`}
-                      >
-                        {tab.charAt(0).toUpperCase() + tab.slice(1)}
-                      </Text>
-                    </View>
-                  </TouchableWithoutFeedback>
-                ),
-              )}
+                      {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                    </Text>
+                  </View>
+                </TouchableWithoutFeedback>
+              ))}
             </View>
 
             <View className="mt-[33px] flex-1">{renderTabContent()}</View>

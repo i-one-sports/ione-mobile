@@ -92,7 +92,7 @@ export default function Friendly() {
       tournamentName: Yup.string().required("Tournament name is required"),
       timeDuration: Yup.string().required("Total minutes is required"),
       startTime: Yup.string().required("Start time is required"),
-      endTime: Yup.string().required("Start time is required"),
+      endTime: Yup.string().required("End time is required"),
     }),
     onSubmit: async (values) => {
       const payload = {
@@ -175,8 +175,13 @@ export default function Friendly() {
             >
               New Session
             </ThemedText>
-
-            <Text className="text-[16px] font-[500] text-[#0C4D2E]">Next</Text>
+            <Pressable onPress={() => formik.handleSubmit()} disabled={loading}>
+              <Text
+                className={`text-[16px] font-[500] ${loading ? "text-gray-400" : "text-[#0C4D2E]"}`}
+              >
+                {loading ? "Creating..." : "Next"}
+              </Text>
+            </Pressable>
           </View>
 
           {/* Captain Info */}

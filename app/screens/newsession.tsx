@@ -26,8 +26,6 @@ export default function NewSession() {
   const params = useLocalSearchParams();
   const sessionId = params.locationId as string;
   const dispatch = useAppDispatch();
-  console.log("All params:", params);
-  console.log(sessionId);
   const colorScheme = useColorScheme();
   const theme = Colors[colorScheme ?? "light"];
   const [loading, setLoading] = useState(false);
@@ -266,8 +264,8 @@ export default function NewSession() {
                 autoCapitalize="none"
                 placeholder="Number of Players per Team"
                 value={formik.values.playersPerTeam}
-                onChangeText={formik.handleChange("players")}
-                onBlur={formik.handleBlur("players")}
+                onChangeText={formik.handleChange("playersPerTeam")}
+                onBlur={formik.handleBlur("playersPerTeam")}
                 errorMessage={
                   formik.touched.playersPerTeam && formik.errors.playersPerTeam
                     ? formik.errors.playersPerTeam
@@ -281,8 +279,8 @@ export default function NewSession() {
                 autoCapitalize="none"
                 placeholder="Number Of per Teams"
                 value={formik.values.setNumber}
-                onChangeText={formik.handleChange("rounds")}
-                onBlur={formik.handleBlur("rounds")}
+                onChangeText={formik.handleChange("setNumber")}
+                onBlur={formik.handleBlur("setNumber")}
                 errorMessage={
                   formik.touched.setNumber && formik.errors.setNumber
                     ? formik.errors.setNumber
