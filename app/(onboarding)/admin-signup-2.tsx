@@ -8,7 +8,7 @@ import { Icon } from "@/components/ui/Icon";
 import SectionCard from "@/components/ui/SectionCard";
 import StepBar from "@/components/ui/StepBar";
 import DropdownModal from "@/components/ui/DropdownModal";
-import GeolocationComponent from "@/components/GeoLocation";
+import MapLocationPicker from "@/components/MapLocationPicker";
 import Loader from "@/components/loader";
 import { registerOwner } from "@/api/authThunks";
 import { useAppDispatch } from "@/redux/store";
@@ -300,9 +300,9 @@ export default function AdminSignup2() {
                 </SectionCard>
 
                 <SectionCard title="Location">
-                  <GeolocationComponent
+                  <MapLocationPicker
                     setCoordinates={setCoordinates}
-                    label="Pitch Coordinates"
+                    label="Pitch Location"
                   />
                 </SectionCard>
 
