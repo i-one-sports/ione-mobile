@@ -1,3 +1,7 @@
+import { getTournamentsByLocation } from "@/api/tournamentThunk";
+import { nearByLocation } from "@/api/sessions";
+import { getLocation } from "@/api/ownerDashboardThunk";
+import { useAppDispatch, useAppSelector } from "@/redux/store";
 import CalendarIcon from "@/assets/svg/CalendarIcon";
 import CloseIcon from "@/assets/svg/CloseIcon";
 import LocationIcon from "@/assets/svg/LocationIcon";
@@ -8,7 +12,7 @@ import SafeAreaScreen from "@/components/SafeAreaScreen";
 import { ThemedText } from "@/components/ThemedText";
 import { Colors } from "@/constants/Colors";
 import { router } from "expo-router";
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import {
   Image,
   Pressable,
@@ -30,7 +34,33 @@ export default function TournamentScreen() {
   const colorScheme = useColorScheme();
   const theme = Colors[colorScheme ?? "light"];
   const [isExpanded, setIsExpanded] = useState(true);
+  const dispatch = useAppDispatch();
+  const { user } = useAppSelector((state) => state.auth);
+  const { pitches } = useAppSelector((state) => state.sessions);
+  const { location } = useAppSelector((state) => state.ownerDashboard);
 
+  const { tournamentsByLocation } = useAppSelector((state) => state.tournament);
+
+  useEffect(() => {
+    if (!user?.location?.coordinates) return;
+    const [lng, lat] = user.location.coordinates;
+
+    dispatch(nearByLocation({ lat, lng }));
+  }, [dispatch, user?.location?.coordinates]);
+
+  useEffect(() => {
+    if (!pitches || pitches.length === 0) return;
+    const nearestLocationId = pitches[0]._id;
+
+    dispatch(getTournamentsByLocation(nearestLocationId));
+  }, [dispatch, pitches]);
+
+  useEffect(() => {
+    dispatch(getLocation());
+  }, [dispatch]);
+
+  console.log("location", location);
+  console.log("result", tournamentsByLocation);
   const dates = useMemo<DateItem[]>(() => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -331,7 +361,7 @@ export default function TournamentScreen() {
                     <Text className="text-xs font-bold text-white">VI</Text>
                   </View>
                   <Text className="text-lg font-semibold text-black">
-                    Victoria Island
+                    Victoria Island Cup
                   </Text>
                 </View>
 
