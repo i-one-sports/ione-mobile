@@ -141,7 +141,8 @@ export const ownerDashboardSlice = createSlice({
     });
     builder.addCase(getLocation.rejected, (state, action) => {
       state.loadingLocation = false;
-      action.error.message || "Failed to fetch user location";
+      state.errorLocation =
+        action.error.message || "Failed to fetch user location";
     });
 
     // get dashboard summary

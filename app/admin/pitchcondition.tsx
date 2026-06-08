@@ -64,7 +64,6 @@ export default function AdminPitchConditionScreen() {
       dispatch(getSummary(location._id));
     }
   }, [dispatch, location?._id]);
-
   const handleUpdatePitch = async () => {
     if (!location?._id || !pitchCondition) return;
 

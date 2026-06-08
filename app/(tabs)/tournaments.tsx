@@ -1,17 +1,18 @@
+import { getTournamentsByLocation } from "@/api/tournamentThunk";
+import { nearByLocation } from "@/api/sessions";
+import { useAppDispatch, useAppSelector } from "@/redux/store";
 import CalendarIcon from "@/assets/svg/CalendarIcon";
-import CloseIcon from "@/assets/svg/CloseIcon";
 import LocationIcon from "@/assets/svg/LocationIcon";
-import OpenIcon from "@/assets/svg/OpenIcon";
 import PlusIcon from "@/assets/svg/PlusIcon";
 import TournamentIcon from "@/assets/svg/TournamentIcon";
 import SafeAreaScreen from "@/components/SafeAreaScreen";
 import { ThemedText } from "@/components/ThemedText";
 import { Colors } from "@/constants/Colors";
 import { router } from "expo-router";
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useEffect } from "react";
+import ChevronRight from "@/assets/svg/ChevronRight";
 import {
   Image,
-  Pressable,
   ScrollView,
   Text,
   TouchableOpacity,
@@ -29,8 +30,26 @@ type DateItem = {
 export default function TournamentScreen() {
   const colorScheme = useColorScheme();
   const theme = Colors[colorScheme ?? "light"];
-  const [isExpanded, setIsExpanded] = useState(true);
+  const dispatch = useAppDispatch();
+  const { user } = useAppSelector((state) => state.auth);
+  const { pitches } = useAppSelector((state) => state.sessions);
+  const { tournamentsByLocation } = useAppSelector((state) => state.tournament);
 
+  useEffect(() => {
+    if (!user?.location?.coordinates) return;
+    const [lng, lat] = user.location.coordinates;
+
+    dispatch(nearByLocation({ lat, lng }));
+  }, [dispatch, user?.location?.coordinates]);
+
+  useEffect(() => {
+    if (!pitches || pitches.length === 0) return;
+    const nearestLocationId = pitches[0]._id;
+
+    dispatch(getTournamentsByLocation(nearestLocationId));
+  }, [dispatch, pitches]);
+
+  console.log("result", tournamentsByLocation);
   const dates = useMemo<DateItem[]>(() => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -176,94 +195,6 @@ export default function TournamentScreen() {
       .slice(0, 2)
       .toUpperCase();
 
-  const formatTime = (dateString: string) =>
-    new Date(dateString).toLocaleTimeString("en-US", {
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: false,
-    });
-
-  const ScheduleMatchCard = ({
-    session,
-  }: {
-    session: (typeof tournamentSessions)[number];
-  }) => (
-    <TouchableOpacity
-      onPress={() => openTournament(session)}
-      className="items-center justify-center border-b border-gray-200 p-3"
-    >
-      <View className="mb-3 flex-row justify-between" />
-      <View className="mb-3 flex w-full flex-row items-center justify-between">
-        <Text className="origin-center rotate-[-90deg] text-sm font-medium">
-          {formatTime(session.startTime)}
-        </Text>
-        <View className="relative w-full flex-1 flex-col items-start gap-2 whitespace-nowrap border-l-[1px] border-[#DFDFDF] pl-4">
-          <View className="flex flex-row border-[0.1px] border-primary">
-            <ThemedText lightColor="#00FF94">
-              {session.location.name}
-            </ThemedText>
-          </View>
-          <View className="w-full flex-1 flex-row items-center justify-between pr-[23px]">
-            <View className="flex flex-row items-center gap-2">
-              <View className="h-8 w-8 items-center justify-center">
-                <Image
-                  source={require("@/assets/images/dropdownpolygon.png")}
-                  resizeMode="contain"
-                  className="h-full w-full"
-                />
-                <View className="absolute inset-0 items-center justify-center">
-                  <Text className="text-xs font-bold text-black">
-                    {getInitials(session.teams.teamOne)}
-                  </Text>
-                </View>
-              </View>
-              <View className="flex-1">
-                <Text className="text-sm font-medium">
-                  {session.teams.teamOne}
-                </Text>
-                <Text className="text-xs text-gray-500">
-                  {session.members.length}/{session.maxNumber} players
-                </Text>
-              </View>
-            </View>
-          </View>
-
-          <View className="absolute bottom-0 right-[50px] top-0 justify-center border-r-[1px] border-[#DFDFDF] px-3">
-            <Text className="text-sm font-medium text-black">0&apos;</Text>
-          </View>
-
-          <View className="w-full flex-1 flex-row items-center justify-between pr-[23px]">
-            <View className="flex flex-row items-center gap-2">
-              <View className="h-8 w-8 items-center justify-center">
-                <Image
-                  source={require("@/assets/images/dropdownpolygon.png")}
-                  resizeMode="contain"
-                  className="h-full w-full"
-                />
-                <View className="absolute inset-0 items-center justify-center">
-                  <Text className="text-xs font-bold text-black">
-                    {getInitials(session.teams.teamTwo)}
-                  </Text>
-                </View>
-              </View>
-              <Text className="flex-1 text-sm font-medium">
-                {session.teams.teamTwo}
-              </Text>
-            </View>
-          </View>
-        </View>
-        <TouchableOpacity
-          onPress={() => openTournament(session)}
-          className="absolute right-[5px] rounded-[5px] bg-[#00FF94] px-[5px] py-[20px] font-[400]"
-        >
-          <Text className="origin-center flex rotate-[-90deg] items-center justify-center text-center text-sm font-medium">
-            join
-          </Text>
-        </TouchableOpacity>
-      </View>
-    </TouchableOpacity>
-  );
-
   return (
     <SafeAreaScreen>
       <ScrollView
@@ -317,41 +248,49 @@ export default function TournamentScreen() {
               </View>
             </TouchableOpacity>
 
-            <View className="overflow-hidden rounded-md bg-[#ECFFF8]">
-              <Pressable
-                className={`relative flex-row items-center justify-between border-b-2 px-[21px] py-[23px] ${
-                  isExpanded
-                    ? "border-[#DFDFDF]"
-                    : "rounded-b-md border-[#00FF94]"
-                }`}
-                onPress={() => setIsExpanded((current) => !current)}
-              >
-                <View className="flex-row items-center gap-3">
-                  <View className="h-6 w-6 items-center justify-center rounded-full bg-[#00FF94]">
-                    <Text className="text-xs font-bold text-white">VI</Text>
-                  </View>
-                  <Text className="text-lg font-semibold text-black">
-                    Victoria Island
-                  </Text>
-                </View>
+            <View className="gap-3">
+              {tournamentsByLocation?.map((tournament) => (
+                <TouchableOpacity
+                  key={tournament._id}
+                  className="flex-row items-center justify-between border-b border-[#DFDFDF] px-[16px] py-[14px]"
+                  onPress={() =>
+                    router.push({
+                      pathname: "/",
+                      params: {
+                        tournamentId: tournament._id,
+                        tournamentName: tournament.name,
+                      },
+                    })
+                  }
+                >
+                  <View className="flex-row items-center gap-3">
+                    <View className="h-[40px] w-[40px] items-center justify-center">
+                      <View className="relative h-full w-full">
+                        <Image
+                          source={require("@/assets/images/activepolygon.png")}
+                          resizeMode="contain"
+                          className="h-full w-full"
+                        />
+                        <View className="absolute inset-0 items-center justify-center">
+                          <ThemedText className="text-sm">
+                            {getInitials(tournament.name)}{" "}
+                          </ThemedText>
+                        </View>
+                      </View>
+                    </View>
 
-                <View className="relative justify-center self-stretch pl-[21px]">
-                  <View className="absolute bottom-[-23px] left-0 top-[-23px] border-l-[1px] border-[#DFDFDF]" />
-                  <View className="p-1">
-                    <Text className="text-base text-gray-500">
-                      {isExpanded ? <CloseIcon /> : <OpenIcon />}
+                    <Text className="text-lg font-semibold text-black">
+                      {tournament.name}
                     </Text>
                   </View>
-                </View>
-              </Pressable>
 
-              {isExpanded && (
-                <View className="border-b-2 border-b-[#00FF94]">
-                  {tournamentSessions.map((session) => (
-                    <ScheduleMatchCard key={session._id} session={session} />
-                  ))}
-                </View>
-              )}
+                  <View className="flex-row items-center">
+                    <View className="h-12 w-[1.5px] bg-[#DFDFDF] mr-2" />
+
+                    <ChevronRight width={24} height={24} />
+                  </View>
+                </TouchableOpacity>
+              ))}
             </View>
           </View>
 

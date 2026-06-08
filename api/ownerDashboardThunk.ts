@@ -1,4 +1,4 @@
-import { AsyncThunkConfig, sessionPayload } from "@/components/typings/api";
+import { AsyncThunkConfig } from "@/components/typings/api";
 import {
   SessionByDateResponse,
   ChangePasswordPayload,

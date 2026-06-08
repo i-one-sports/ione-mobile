@@ -415,3 +415,78 @@ export interface SessionByIdResponse {
   paymentRequired: boolean;
   members: Members[];
 }
+
+export interface Tournament {
+  _id: string;
+  name: string;
+  status: "registration" | "ongoing" | "completed";
+  maxTeams: number;
+  registeredTeams: string[];
+  startDate: string;
+  endDate: string;
+  registrationDeadline: string;
+  prizeMoney: number;
+  registrationFee: number;
+  code: string;
+  winner: string | null;
+}
+
+export type TournamentLocationResponse = Tournament[];
+
+export interface CreateTournamentResponse {
+  name: string;
+}
+
+export type TournamentStatus = "pending" | "started" | "completed" | string;
+
+export type MatchSlot = "home" | "away";
+
+export interface TournamentTeamRef {
+  teamId: string;
+  name: string;
+  logo: string;
+}
+
+export interface TournamentMatch {
+  matchIndex: number;
+  round: number;
+  roundName: string;
+  home: TournamentTeamRef | null;
+  away: TournamentTeamRef | null;
+  homeScore: number | null;
+  awayScore: number | null;
+  winner: string | null;
+  completed: boolean;
+  scheduledTime: string | null;
+  nextMatchIndex: number | null;
+  nextMatchSlot: MatchSlot | null;
+}
+
+export interface RegisteredTeam {
+  _id: string;
+  name: string;
+  logo: string;
+  captain: string;
+}
+
+export interface Organizer {
+  _id: string;
+  firstName: string;
+  lastName: string;
+}
+
+export interface TournamentDetailsResponse {
+  _id: string;
+  name: string;
+  status: TournamentStatus;
+  maxTeams: number;
+  bracket: TournamentMatch[];
+  registeredTeams: RegisteredTeam[];
+  organizer: Organizer;
+  winner: string | null;
+}
+
+export interface StartTournamentResponse {
+  message: string;
+  bracket: TournamentMatch[];
+}

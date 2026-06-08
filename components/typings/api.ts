@@ -113,3 +113,14 @@ export interface RegisterOwnerPayload {
   termsAccepted: boolean;
   newsletterOptIn: boolean;
 }
+
+export interface CreateTournamentPayload {
+  name: string;
+}
+
+export interface CreateTournamentTeamPayload {
+  teamName: string;
+  logo: string;
+  captainId: string;
+  playerIds: string[];
+}
