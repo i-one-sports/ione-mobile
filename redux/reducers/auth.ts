@@ -36,13 +36,16 @@ export const authSlice = createSlice({
   },
   extraReducers(builder) {
     builder.addCase(getUser.fulfilled, (state, { payload }) => {
-      state.user = payload;
+      state.user = {
+        ...payload,
+        ownerOnboardingStatus: state.user?.ownerOnboardingStatus,
+      };
       state.isAuthenticated = true;
-      console.log("payload:", payload);
+      console.log("getUser payload:", payload);
     });
     builder.addCase(register.fulfilled, (state, { payload }) => {
       state.user = payload;
-      console.log("payload:", payload);
+      console.log("register payload:", payload);
       state.isRegistered = true;
     });
     builder
@@ -51,11 +54,8 @@ export const authSlice = createSlice({
         state.isVerified = false;
       })
       .addCase(login.fulfilled, (state, { payload }) => {
-        console.log("payload:", payload);
-        state.user = {
-          ...payload.user,
-          ownerOnboardingStatus: payload.ownerOnboardingStatus,
-        };
+        console.log("login payload:", payload);
+        state.user = { ...payload.user };
         state.isVerified = true;
         state.isAuthenticated = true;
       });

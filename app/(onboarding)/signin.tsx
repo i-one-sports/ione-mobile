@@ -48,8 +48,7 @@ export default function SignIn() {
       .then((response) => {
         Toast.show({
           type: "success",
-          text1: "Success",
-          text2: response.message || "Login successful",
+          text1: response.message || "Login successful",
         });
         // Keep loading=true — AppNavigator reads role from getUser() and routes to the
         // correct dashboard. This component unmounts on navigation; no need to reset.

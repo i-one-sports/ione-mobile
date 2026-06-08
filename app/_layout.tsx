@@ -1,13 +1,8 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-import { getUser } from "@/api/authThunks";
 import { Role } from "@/components/typings/apiResponse";
 import "@/globals.css";
 import { useColorScheme } from "@/hooks/useColorScheme";
-import store, {
-  persistor,
-  useAppDispatch,
-  useAppSelector,
-} from "@/redux/store";
+import store, { persistor, useAppSelector } from "@/redux/store";
 import { setupAxiosInterceptors } from "@/utils/SetUpAxiosInterceptors";
 import toastConfig from "@/utils/toast";
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
@@ -33,7 +28,6 @@ SplashScreen.preventAutoHideAsync();
 
 function AppNavigator() {
   const router = useRouter();
-  const dispatch = useAppDispatch();
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
   const { isAuthenticated, isRegistered, isVerified } = useAppSelector(
@@ -56,25 +50,32 @@ function AppNavigator() {
       return;
     }
 
-    // Fetch full user profile — route based on the fresh response,
-    // never on stale Redux state, to avoid role-mismatch flash.
-    dispatch(getUser())
-      .unwrap()
-      .then((userData: any) => {
-        if (userData?.role === Role.ADMIN) {
-          router.replace("/admin/(tabs)");
-        } else if (userData?.role === Role.USER) {
-          router.replace("/(tabs)");
-        } else if (isRegistered && !isVerified) {
-          router.replace("/(onboarding)/verify");
-        } else {
-          router.replace("/(onboarding)/signin");
-        }
-      })
-      .catch(() => {
+    const navigateByRole = (role?: string) => {
+      if (role === Role.ADMIN) {
+        router.replace("/admin/(tabs)");
+      } else if (role === Role.USER) {
+        router.replace("/(tabs)");
+      } else if (isRegistered && !isVerified) {
+        router.replace("/(onboarding)/verify");
+      } else {
         router.replace("/(onboarding)/signin");
-      })
-      .finally(hideSplash);
+      }
+    };
+
+    // Use the role stored from the login response directly.
+    // Unverified accounts get a 403 from /user/profile, so we cannot rely on
+    // getUser() for routing. The login response already contains role and
+    // ownerOnboardingStatus, which are persisted in Redux.
+    const storedRole = store.getState().auth.user?.role;
+
+    if (storedRole) {
+      navigateByRole(storedRole);
+      hideSplash();
+      return;
+    }
+
+    navigateByRole(undefined);
+    hideSplash();
   }, [isAuthenticated]);
 
   return (

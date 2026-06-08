@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 interface MapBottomPanelProps {
   previewAddress: string | null;
@@ -23,6 +24,12 @@ export default function MapBottomPanel({
   onLocate,
   onConfirm,
 }: MapBottomPanelProps) {
+  const insets = useSafeAreaInsets();
+  const bottomPadding =
+    Platform.OS === "ios"
+      ? Math.max(insets.bottom, 24)
+      : Math.max(insets.bottom, 16) + 8;
+
   return (
     <View
       style={{
@@ -35,7 +42,7 @@ export default function MapBottomPanel({
         borderTopRightRadius: 20,
         paddingHorizontal: 24,
         paddingTop: 20,
-        paddingBottom: Platform.OS === "ios" ? 40 : 24,
+        paddingBottom: bottomPadding,
         shadowColor: "#000",
         shadowOffset: { width: 0, height: -4 },
         shadowOpacity: 0.1,

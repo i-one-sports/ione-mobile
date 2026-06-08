@@ -87,6 +87,8 @@ export interface LoginResponse {
     lastName: string;
     email: string;
     token?: string;
+    role?: Role;
+    ownerOnboardingStatus?: string;
     hasRegisteredProduct: boolean;
   };
 }
