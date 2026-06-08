@@ -400,8 +400,8 @@ export interface SessionByIdResponse {
   members: Members[];
 }
 
-export interface TournamentLocationResponse {
-  id: string;
+export interface Tournament {
+  _id: string;
   name: string;
   status: "registration" | "ongoing" | "completed";
   maxTeams: number;
@@ -414,6 +414,8 @@ export interface TournamentLocationResponse {
   code: string;
   winner: string | null;
 }
+
+export type TournamentLocationResponse = Tournament[];
 
 export interface CreateTournamentResponse {
   name: string;

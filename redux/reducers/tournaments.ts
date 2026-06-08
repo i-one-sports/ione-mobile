@@ -7,7 +7,7 @@ import {
   generateTournamentBracket,
 } from "@/api/tournamentThunk";
 import {
-  TournamentLocationResponse,
+  Tournament,
   TournamentDetailsResponse,
   CreateTournamentResponse,
   StartTournamentResponse,
@@ -15,7 +15,7 @@ import {
 import { createSlice } from "@reduxjs/toolkit";
 
 interface State {
-  tournamentsByLocation: TournamentLocationResponse | null;
+  tournamentsByLocation: Tournament[] | null;
   tournamentsDetails: TournamentDetailsResponse | null;
   createTournamentInLocation: CreateTournamentResponse | null;
   createTournamentTeam: CreateTournamentResponse | null;
