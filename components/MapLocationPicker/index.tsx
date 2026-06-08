@@ -43,9 +43,14 @@ export default function MapLocationPicker({
   const [searching, setSearching] = useState(false);
 
   const centerRef = useRef<[number, number]>(DEFAULT_CENTER);
-   
+
   const cameraRef = useRef<any>(null);
   const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Returns true if coordinates are within Africa's bounding box.
+  // Prevents the iOS simulator's fake US location from overriding the Lagos default.
+  const isInAfrica = (lng: number, lat: number) =>
+    lng >= -18 && lng <= 52 && lat >= -35 && lat <= 38;
 
   // Get GPS fix before opening modal so Camera renders at the right place on frame 1
   const handleOpenMap = async () => {
@@ -56,12 +61,13 @@ export default function MapLocationPicker({
         const loc = await Location.getCurrentPositionAsync({
           accuracy: Location.Accuracy.Balanced,
         });
-        const coords: [number, number] = [
-          loc.coords.longitude,
-          loc.coords.latitude,
-        ];
-        setInitialCenter(coords);
-        centerRef.current = coords;
+        const { longitude, latitude } = loc.coords;
+        // Only use GPS if the device is actually in Africa — ignores simulator US location
+        if (isInAfrica(longitude, latitude)) {
+          const coords: [number, number] = [longitude, latitude];
+          setInitialCenter(coords);
+          centerRef.current = coords;
+        }
       }
     } catch {
       // GPS unavailable — Lagos default is used

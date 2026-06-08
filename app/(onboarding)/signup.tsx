@@ -85,8 +85,7 @@ export default function SignUp() {
         setAvatarUri(response.avatar);
         Toast.show({
           type: "success",
-          text1: "Success",
-          text2: "Avatar uploaded successfully",
+          text1: "Image uploaded successfully",
         });
       } catch (error: any) {
         Toast.show({

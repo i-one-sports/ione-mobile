@@ -21,14 +21,38 @@ import React, { useEffect, useState } from "react";
 import { Modal, ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-const CONDITION_EMOJI: Record<string, string> = {
-  excellent: "🌟",
-  good: "🌤️",
-  fair: "🌥️",
-  poor: "😬",
-  wet: "💧",
-  under_maintenance: "🚧",
+type ConditionIconConfig = {
+  library: "Ionicons" | "MaterialIcons";
+  name: string;
 };
+
+const CONDITION_ICON: Record<string, ConditionIconConfig> = {
+  excellent: { library: "Ionicons", name: "star" },
+  good: { library: "Ionicons", name: "sunny-outline" },
+  fair: { library: "Ionicons", name: "partly-sunny-outline" },
+  poor: { library: "Ionicons", name: "warning-outline" },
+  wet: { library: "Ionicons", name: "rainy-outline" },
+  under_maintenance: { library: "MaterialIcons", name: "construction" },
+};
+
+function PitchConditionIcon({
+  condition,
+  size,
+  color,
+}: {
+  condition?: string;
+  size: number;
+  color: string;
+}) {
+  const config = CONDITION_ICON[condition ?? ""];
+  if (!config)
+    return <Ionicons name="help-circle-outline" size={size} color={color} />;
+  if (config.library === "MaterialIcons")
+    return (
+      <MaterialIcons name={config.name as any} size={size} color={color} />
+    );
+  return <Ionicons name={config.name as any} size={size} color={color} />;
+}
 
 export default function AdminHomeScreen() {
   const dispatch = useAppDispatch();
@@ -56,11 +80,10 @@ export default function AdminHomeScreen() {
     }
   }, [dispatch, location?._id]);
 
-  const pitchEmoji =
-    CONDITION_EMOJI[dashboardSummary?.pitchCondition ?? ""] ?? "❓";
+  const { user } = useAppSelector((state) => state.auth);
   const accent = isDark ? "#00FF94" : "#00cc77";
-  // TODO: replace with user?.onboarding_complete once backend sends the field
-  const onboardingComplete = false;
+  const showOnboardingBanner =
+    user?.ownerOnboardingStatus === "PENDING_VERIFICATION";
 
   return (
     <View style={{ flex: 1, backgroundColor: isDark ? "#000" : "#fff" }}>
@@ -83,12 +106,22 @@ export default function AdminHomeScreen() {
             >
               <View
                 style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  gap: 6,
                   backgroundColor: "rgba(255,255,255,0.2)",
                   borderRadius: 20,
                   paddingHorizontal: 12,
                   paddingVertical: 7,
                 }}
               >
+                {!loadingSummmary && (
+                  <PitchConditionIcon
+                    condition={dashboardSummary?.pitchCondition}
+                    size={13}
+                    color="#fff"
+                  />
+                )}
                 <Text
                   style={{
                     fontFamily: "Poppins_600SemiBold",
@@ -98,7 +131,7 @@ export default function AdminHomeScreen() {
                 >
                   {loadingSummmary
                     ? "Loading..."
-                    : `${pitchEmoji}  ${formatPitchCondition(dashboardSummary?.pitchCondition)}`}
+                    : formatPitchCondition(dashboardSummary?.pitchCondition)}
                 </Text>
               </View>
 
@@ -121,7 +154,11 @@ export default function AdminHomeScreen() {
                     padding: 9,
                   }}
                 >
-                  <Text style={{ fontSize: 16 }}>{pitchEmoji}</Text>
+                  <PitchConditionIcon
+                    condition={dashboardSummary?.pitchCondition}
+                    size={18}
+                    color="#fff"
+                  />
                 </TouchableOpacity>
               </View>
             </View>
@@ -191,8 +228,7 @@ export default function AdminHomeScreen() {
           }}
           showsVerticalScrollIndicator={false}
         >
-          {/* Onboarding banner — hardcoded false until backend sends onboarding_complete */}
-          {!onboardingComplete && (
+          {showOnboardingBanner && (
             <TouchableOpacity
               onPress={() => router.push("/admin/onboarding")}
               style={{

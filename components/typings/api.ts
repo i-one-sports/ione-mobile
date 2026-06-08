@@ -75,6 +75,15 @@ export interface StartSessionRequest {
   locationId: string;
 }
 
+export interface SubmitVerificationPayload {
+  idType: "BVN" | "NIN" | "DRIVERS_LICENSE" | "PASSPORT";
+  idNumber: string;
+  address: string;
+  frontUrl: string;
+  backUrl: string;
+  locationPictures: string[];
+}
+
 export interface RegisterOwnerPayload {
   user: {
     firstName: string;

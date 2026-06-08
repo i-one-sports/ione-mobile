@@ -80,6 +80,7 @@ export interface LoginResponse {
   email_verified: boolean;
   phone_verified: boolean;
   profile: object;
+  ownerOnboardingStatus?: string;
   user: {
     id: string;
     firstName: string;
@@ -87,6 +88,21 @@ export interface LoginResponse {
     email: string;
     token?: string;
     hasRegisteredProduct: boolean;
+  };
+}
+
+export interface SubmitVerificationResponse {
+  message: string;
+  verification: {
+    _id: string;
+    userId: string;
+    idType: string;
+    idNumber: string;
+    address: string;
+    frontUrl: string;
+    backUrl: string;
+    locationPictures: string[];
+    status: string;
   };
 }
 
@@ -180,7 +196,7 @@ export interface UpcomingSession {
   timeDuration: number;
 }
 
-export interface Player {
+export interface TeamPlayer {
   _id: string;
   name: string;
 }
@@ -190,7 +206,7 @@ export interface Teamm {
   session: string;
   createdAt: string;
   updatedAt: string;
-  players: Player[];
+  players: TeamPlayer[];
 }
 export interface LastMatch {
   _id: string;

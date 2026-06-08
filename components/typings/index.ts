@@ -127,6 +127,7 @@ export interface User {
   address?: string;
   isCaptain?: boolean;
   avatar?: string;
+  ownerOnboardingStatus?: string;
 }
 
 export interface Order {

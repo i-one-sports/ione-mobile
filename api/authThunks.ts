@@ -8,6 +8,7 @@ import {
   LoginPayload,
   RegisterOwnerPayload,
   RegisterPayload,
+  SubmitVerificationPayload,
   verifyOtpPayload,
 } from "@/components/typings/api";
 import {
@@ -15,6 +16,7 @@ import {
   LoginResponse,
   logoutResponse,
   RegisterResponse,
+  SubmitVerificationResponse,
   UserResponse,
 } from "@/components/typings/apiResponse";
 import axiosInstance from "./axios";
@@ -31,14 +33,14 @@ export const uploadAvatar = createAsyncThunk<
     name: file.name,
   } as any);
 
-  return apiCall(
+  const result = await apiCall(
     axiosInstance.post("/i-one/user/avatar", formData, {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
+      headers: { "Content-Type": "multipart/form-data" },
     }),
     thunkAPI,
   );
+  console.log("[uploadAvatar] response:", result);
+  return result;
 });
 
 export const register = createAsyncThunk<
@@ -114,6 +116,18 @@ export const reset = createAsyncThunk<
   return apiCall(
     axiosInstance.post("/i-one/user/resetPassword", payload),
     thunkAPI,
+  );
+});
+
+export const submitVerification = createAsyncThunk<
+  SubmitVerificationResponse,
+  SubmitVerificationPayload,
+  AsyncThunkConfig
+>("user/submitVerification", async (payload, thunkAPI) => {
+  return apiCall(
+    axiosInstance.post("/i-one/verification/submit", payload),
+    thunkAPI,
+    "auth",
   );
 });
 

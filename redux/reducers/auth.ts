@@ -52,7 +52,10 @@ export const authSlice = createSlice({
       })
       .addCase(login.fulfilled, (state, { payload }) => {
         console.log("payload:", payload);
-        state.user = payload.user;
+        state.user = {
+          ...payload.user,
+          ownerOnboardingStatus: payload.ownerOnboardingStatus,
+        };
         state.isVerified = true;
         state.isAuthenticated = true;
       });
