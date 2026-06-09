@@ -128,13 +128,56 @@ export const reset = createAsyncThunk<
   );
 });
 
+// export const submitVerification = createAsyncThunk<
+//   SubmitVerificationResponse,
+//   SubmitVerificationPayload,
+//   AsyncThunkConfig
+// >("user/submitVerification", async (payload, thunkAPI) => {
+//   return apiCall(
+//     axiosInstance.post("/i-one/verification/submit", payload),
+//     thunkAPI,
+//     "auth",
+//   );
+// });
+//
+
 export const submitVerification = createAsyncThunk<
   SubmitVerificationResponse,
   SubmitVerificationPayload,
   AsyncThunkConfig
 >("user/submitVerification", async (payload, thunkAPI) => {
-  return apiCall(
-    axiosInstance.post("/i-one/verification/submit", payload),
+  const formData = new FormData();
+
+  formData.append("idType", payload.idType);
+  formData.append("idNumber", payload.idNumber);
+  formData.append("address", payload.address);
+
+  formData.append("frontPage", {
+    uri: payload.frontPage.uri,
+    name: payload.frontPage.name || "front.jpg",
+    type: payload.frontPage.type || "image/jpeg",
+  } as any);
+
+  formData.append("backPage", {
+    uri: payload.backPage.uri,
+    name: payload.backPage.name || "back.jpg",
+    type: payload.backPage.type || "image/jpeg",
+  } as any);
+
+  payload.locationPictures.forEach((file, index) => {
+    formData.append("locationPictures", {
+      uri: file.uri,
+      name: file.name || `location_${index}.jpg`,
+      type: file.type || "image/jpeg",
+    } as any);
+  });
+
+  return await apiCall(
+    axiosInstance.post("/i-one/verification/submit", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    }),
     thunkAPI,
     "auth",
   );
