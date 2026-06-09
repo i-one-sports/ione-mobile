@@ -19,23 +19,32 @@ import {
   SubmitVerificationResponse,
   UserResponse,
 } from "@/components/typings/apiResponse";
-import axiosInstance from "./axios";
+import axiosInstance, { uploadAxios } from "./axios";
+import { Platform } from "react-native";
 
 export const uploadAvatar = createAsyncThunk<
   { avatar: string },
   { file: { uri: string; type: string; name: string } },
   AsyncThunkConfig
 >("user/uploadAvatar", async ({ file }, thunkAPI) => {
+  // Android requires a proper file:// URI prefix
+  const uri =
+    Platform.OS === "android" && !file.uri.startsWith("file://")
+      ? `file://${file.uri}`
+      : file.uri;
+
+  const ext = uri.split(".").pop() || "jpg";
   const formData = new FormData();
   formData.append("file", {
-    uri: file.uri,
-    type: file.type,
-    name: file.name,
+    uri,
+    name: file.name || `upload_${Date.now()}.${ext}`,
+    type: file.type || `image/${ext === "jpg" ? "jpeg" : ext}`,
   } as any);
 
   const result = await apiCall(
-    axiosInstance.post("/i-one/user/avatar", formData, {
+    uploadAxios.post("/i-one/user/avatar", formData, {
       headers: { "Content-Type": "multipart/form-data" },
+      transformRequest: (data) => data,
     }),
     thunkAPI,
   );
