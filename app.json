@@ -50,8 +50,7 @@
       "expo-font",
       "expo-web-browser",
       "expo-secure-store",
-      "@rnmapbox/maps",
-      "react-native-bottom-tabs"
+      "@rnmapbox/maps"
     ],
     "experiments": {
       "typedRoutes": true

@@ -5,7 +5,7 @@ import MultiImageZone from "@/components/onboarding/MultiImageZone";
 import SingleImageZone from "@/components/onboarding/SingleImageZone";
 import SafeAreaScreen from "@/components/SafeAreaScreen";
 import { ThemedText } from "@/components/ThemedText";
-import { SubmitVerificationPayload } from "@/components/typings/api";
+import { SubmitVerificationPayload, ImageFile } from "@/components/typings/api";
 import CustomButton from "@/components/ui/CustomButton";
 import { Icon } from "@/components/ui/Icon";
 import { useAppDispatch, useAppSelector } from "@/redux/store";
@@ -15,6 +15,7 @@ import { useColorScheme } from "nativewind";
 import React, { useState } from "react";
 import { KeyboardAvoidingView, Platform, ScrollView, View } from "react-native";
 import { Toast } from "toastify-react-native";
+import { useRouter } from "expo-router";
 
 export default function AdminOnboarding() {
   const { colorScheme } = useColorScheme();
@@ -22,6 +23,7 @@ export default function AdminOnboarding() {
   const dispatch = useAppDispatch();
   const { user } = useAppSelector((state) => state.auth);
   const accent = isDark ? "#00FF94" : "#00cc77";
+  const router = useRouter();
 
   const [idType, setIdType] = useState<
     SubmitVerificationPayload["idType"] | ""
@@ -31,9 +33,9 @@ export default function AdminOnboarding() {
   const [idTypeModalVisible, setIdTypeModalVisible] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const [frontUrl, setFrontUrl] = useState<string | null>(null);
-  const [backUrl, setBackUrl] = useState<string | null>(null);
-  const [locationPictureUrls, setLocationPictureUrls] = useState<string[]>([]);
+  const [frontFile, setFrontFile] = useState<ImageFile | null>(null);
+  const [backFile, setBackFile] = useState<ImageFile | null>(null);
+  const [locationFiles, setLocationFiles] = useState<ImageFile[]>([]);
 
   const [frontPreview, setFrontPreview] = useState<string | null>(null);
   const [backPreview, setBackPreview] = useState<string | null>(null);
@@ -81,7 +83,7 @@ export default function AdminOnboarding() {
 
   const pickAndUploadSingle = async (
     setPreview: (uri: string) => void,
-    setUrl: (url: string) => void,
+    setFile: (file: ImageFile) => void,
     setUploading: (v: boolean) => void,
   ) => {
     if (!(await requestPermission())) return;
@@ -92,7 +94,14 @@ export default function AdminOnboarding() {
     });
     if (result.canceled || !result.assets[0]) return;
     const asset = result.assets[0];
+    const file: ImageFile = {
+      uri: asset.uri,
+      name: asset.fileName || "upload.jpg",
+      type: asset.mimeType || "image/jpeg",
+    };
     setPreview(asset.uri);
+
+    setFile(file);
     setUploading(true);
     try {
       const url = await uploadImage(
@@ -100,8 +109,6 @@ export default function AdminOnboarding() {
         asset.mimeType || "image/jpeg",
         asset.fileName || "upload.jpg",
       );
-      setUrl(url);
-      setPreview(url);
     } catch {
       setPreview(""); // uploadImage already toasted the error
     } finally {
@@ -125,29 +132,69 @@ export default function AdminOnboarding() {
       });
       return;
     }
+    const files: ImageFile[] = result?.assets.map((a) => ({
+      uri: a.uri,
+      name: a.fileName || "upload.jpg",
+      type: a.mimeType || "image/jpeg",
+    }));
     setLocationPreviews(result.assets.map((a) => a.uri));
+    setLocationFiles(files);
     setUploadingLocation(true);
     try {
       const urls = await Promise.all(
-        result.assets.map((a) =>
-          uploadImage(
-            a.uri,
-            a.mimeType || "image/jpeg",
-            a.fileName || "upload.jpg",
-          ),
-        ),
+        files.map((file) => uploadImage(file.uri, file.type, file.name)),
       );
-      setLocationPictureUrls(urls);
       setLocationPreviews(urls);
     } catch {
       setLocationPreviews([]); // uploadImage already toasted the error
+      setLocationFiles([]);
     } finally {
       setUploadingLocation(false);
     }
   };
 
+  // const handleSubmit = async () => {
+  //   if (!idType || !idNumber || !address || !frontUrl || !backUrl) {
+  //     Toast.show({
+  //       type: "error",
+  //       text1: "Incomplete",
+  //       text2: "Please fill all fields and upload required documents.",
+  //     });
+  //     return;
+  //   }
+  //   setLoading(true);
+  //   console.log("before dispatch");
+  //   try {
+  //     const response = await dispatch(
+  //       submitVerification({
+  //         idType,
+  //         idNumber,
+  //         address,
+  //         frontPage: frontUrl,
+  //         backPage: backUrl,
+  //         locationPictures: locationPictureUrls,
+  //       }),
+  //     ).unwrap();
+  //     console.log("after dispatch");
+  //     console.log("response", response);
+  //     Toast.show({
+  //       type: "success",
+  //       text1: "Submitted!",
+  //       text2: response.message || "Your documents are under review.",
+  //     });
+  //     console.log("onboarding", response);
+  //   } catch (err: any) {
+  //     const message =
+  //       err?.msg?.message || err?.msg || "Submission failed. Try again.";
+  //     Toast.show({ type: "error", text1: "Error", text2: message });
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
+  //
+
   const handleSubmit = async () => {
-    if (!idType || !idNumber || !address || !frontUrl || !backUrl) {
+    if (!idType || !idNumber || !address || !frontFile || !backFile) {
       Toast.show({
         type: "error",
         text1: "Incomplete",
@@ -156,15 +203,16 @@ export default function AdminOnboarding() {
       return;
     }
     setLoading(true);
+
     try {
       const response = await dispatch(
         submitVerification({
           idType,
           idNumber,
           address,
-          frontUrl,
-          backUrl,
-          locationPictures: locationPictureUrls,
+          frontPage: frontFile,
+          backPage: backFile,
+          locationPictures: locationFiles,
         }),
       ).unwrap();
       Toast.show({
@@ -172,10 +220,18 @@ export default function AdminOnboarding() {
         text1: "Submitted!",
         text2: response.message || "Your documents are under review.",
       });
+      router.replace({
+        pathname: "/admin/(tabs)",
+      });
     } catch (err: any) {
       const message =
         err?.msg?.message || err?.msg || "Submission failed. Try again.";
-      Toast.show({ type: "error", text1: "Error", text2: message });
+
+      Toast.show({
+        type: "error",
+        text1: "Error",
+        text2: message,
+      });
     } finally {
       setLoading(false);
     }
@@ -354,7 +410,7 @@ export default function AdminOnboarding() {
               onPress={() =>
                 pickAndUploadSingle(
                   setFrontPreview,
-                  setFrontUrl,
+                  setFrontFile,
                   setUploadingFront,
                 )
               }
@@ -369,7 +425,7 @@ export default function AdminOnboarding() {
               onPress={() =>
                 pickAndUploadSingle(
                   setBackPreview,
-                  setBackUrl,
+                  setBackFile,
                   setUploadingBack,
                 )
               }

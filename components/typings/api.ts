@@ -75,13 +75,19 @@ export interface StartSessionRequest {
   locationId: string;
 }
 
+export type ImageFile = {
+  uri: string;
+  name: string;
+  type: string;
+};
+
 export interface SubmitVerificationPayload {
   idType: "BVN" | "NIN" | "DRIVERS_LICENSE" | "PASSPORT";
   idNumber: string;
   address: string;
-  frontUrl: string;
-  backUrl: string;
-  locationPictures: string[];
+  frontPage: ImageFile;
+  backPage: ImageFile;
+  locationPictures: ImageFile[];
 }
 
 export interface RegisterOwnerPayload {
