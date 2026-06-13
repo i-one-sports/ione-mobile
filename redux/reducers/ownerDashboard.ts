@@ -2,6 +2,7 @@ import {
   changePassword,
   getLastMatches,
   getLocation,
+  getLocationDashboard,
   getRevenue,
   getSummary,
   getTransactionHistory,
@@ -33,6 +34,7 @@ import { createSlice } from "@reduxjs/toolkit";
 
 interface State {
   dashboardSummary: DashboardSummary | null;
+  locationDashboard: DashboardSummary | null;
   location: LocationResponse | null;
   visitorsCount: VisitorResponse | null;
   lastMatches: LastMatch[];
@@ -47,6 +49,7 @@ interface State {
   sessionByDate: SessionByDateResponse[];
   sessionById: SessionByIdResponse | null;
 
+  loadingLocationDashboard: boolean;
   loadingLocation: boolean;
   loadingVisitorCount: boolean;
   loadingSummmary: boolean;
@@ -61,6 +64,7 @@ interface State {
   loadingSessionByDate: boolean;
   loadingSessionById: boolean;
 
+  errorLocationDashboard: string | null;
   errorLocation: string | null;
   errorVisitorCount: string | null;
   errorSummary: string | null;
@@ -80,6 +84,7 @@ const initialState: State = {
   dashboardSummary: null,
   lastMatches: [],
   visitorsCount: null,
+  locationDashboard: null,
   location: null,
   upcomingSessions: [],
   revenueStats: null,
@@ -92,6 +97,7 @@ const initialState: State = {
   sessionByDate: [],
   sessionById: null,
 
+  loadingLocationDashboard: false,
   loadingLocation: false,
   loadingVisitorCount: false,
   loadingSummmary: false,
@@ -106,6 +112,7 @@ const initialState: State = {
   loadingSessionByDate: false,
   loadingSessionById: false,
 
+  errorLocationDashboard: null,
   errorLocation: null,
   errorVisitorCount: null,
   errorSummary: null,
@@ -158,6 +165,21 @@ export const ownerDashboardSlice = createSlice({
       state.loadingSummmary = false;
       state.errorSummary =
         action.error.message || "Failed to fetch dashboard summary";
+    });
+
+    // get location dashboard
+    builder.addCase(getLocationDashboard.pending, (state) => {
+      state.loadingLocationDashboard = true;
+      state.errorLocationDashboard = null;
+    });
+    builder.addCase(getLocationDashboard.fulfilled, (state, { payload }) => {
+      state.locationDashboard = payload;
+      state.loadingLocationDashboard = false;
+    });
+    builder.addCase(getLocationDashboard.rejected, (state, action) => {
+      state.loadingLocationDashboard = false;
+      state.errorLocationDashboard =
+        action.error.message || "Failed to fetch location dashboard";
     });
 
     // last matches

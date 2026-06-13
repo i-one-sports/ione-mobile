@@ -29,6 +29,17 @@ export const getLocation = createAsyncThunk<
   return apiCall(axiosInstance.get(`/i-one/location`), thunkAPI);
 });
 
+export const getLocationDashboard = createAsyncThunk<
+  DashboardSummary,
+  string,
+  AsyncThunkConfig
+>("location/getLocationDashboard", async (locationId, thunkAPI) => {
+  return apiCall(
+    axiosInstance.get(`/i-one/location/${locationId}/dashboard`),
+    thunkAPI,
+  );
+});
+
 export const getSummary = createAsyncThunk<
   DashboardSummary,
   string,

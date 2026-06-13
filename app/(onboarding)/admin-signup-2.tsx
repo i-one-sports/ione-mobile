@@ -46,9 +46,31 @@ const schema = Yup.object({
     then: (schema) => schema.required("Required"),
     otherwise: (schema) => schema.notRequired(),
   }),
-  bankCode: Yup.string().required("Required"),
-  bankName: Yup.string().required("Required"),
-  accountNumber: Yup.string().required("Required"),
+  coordinates: Yup.array()
+    .of(Yup.number().required())
+    .length(2, "Invalid coordinates")
+    .test("valid-location", "Please select a location", (value) => {
+      if (!value) return false;
+      const [lng, lat] = value;
+      return lng !== 0 && lat !== 0;
+    }),
+  bankCode: Yup.string().when("tier", {
+    is: "paid",
+    then: (schema) => schema.required("Required"),
+    otherwise: (schema) => schema.notRequired(),
+  }),
+
+  bankName: Yup.string().when("tier", {
+    is: "paid",
+    then: (schema) => schema.required("Required"),
+    otherwise: (schema) => schema.notRequired(),
+  }),
+
+  accountNumber: Yup.string().when("tier", {
+    is: "paid",
+    then: (schema) => schema.required("Required"),
+    otherwise: (schema) => schema.notRequired(),
+  }),
   termsAccepted: Yup.boolean().oneOf(
     [true],
     "Please accept the Terms and Conditions",
@@ -70,7 +92,6 @@ export default function AdminSignup2() {
     password: string;
   }>();
 
-  const [coordinates, setCoordinates] = useState<[number, number]>([0, 0]);
   const [tierModalVisible, setTierModalVisible] = useState(false);
   const [pricingModalVisible, setPricingModalVisible] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -95,6 +116,7 @@ export default function AdminSignup2() {
             openingHour: "",
             closingHour: "",
             tier: "",
+            coordinates: [0, 0] as [number, number],
             pricingOption: "",
             paymentPerPersonHourly: "",
             bankCode: "",
@@ -125,7 +147,7 @@ export default function AdminSignup2() {
                 tier: values.tier,
                 pricingOption: values.pricingOption,
                 paymentPerPersonHourly: Number(values.paymentPerPersonHourly),
-                location: { coordinates },
+                location: { coordinates: values.coordinates },
               },
               payout: {
                 bankCode: values.bankCode,
@@ -135,6 +157,7 @@ export default function AdminSignup2() {
               termsAccepted: values.termsAccepted,
               newsletterOptIn: values.newsletterOptIn,
             };
+            console.log(payload.location.location.coordinates);
             dispatch(registerOwner(payload))
               .unwrap()
               .then((res) => {
@@ -203,7 +226,7 @@ export default function AdminSignup2() {
                   <View style={{ flexDirection: "row", gap: 12 }}>
                     <View style={{ flex: 1 }}>
                       <InputField
-                        label="Max Players"
+                        label="Max Players (Per Side)"
                         placeholder="5 x 5"
                         value={values.pitchMax}
                         onChangeText={handleChange("pitchMax")}
@@ -215,7 +238,7 @@ export default function AdminSignup2() {
                     </View>
                     <View style={{ flex: 1 }}>
                       <InputField
-                        label="Pitch Size (M)"
+                        label="Pitch Size (M = meter)"
                         placeholder="175m x 180m"
                         value={values.pitchSize}
                         onChangeText={handleChange("pitchSize")}
@@ -313,51 +336,62 @@ export default function AdminSignup2() {
 
                 <SectionCard title="Location">
                   <MapLocationPicker
-                    setCoordinates={setCoordinates}
+                    setCoordinates={(coords) => {
+                      setFieldValue("coordinates", [...coords]);
+                    }}
                     label="Pitch Location"
                   />
+                  {touched.coordinates && errors.coordinates ? (
+                    <ThemedText
+                      style={{ color: "#FF4D4F", fontSize: 12, marginTop: 8 }}
+                    >
+                      {errors.coordinates}
+                    </ThemedText>
+                  ) : null}
                 </SectionCard>
 
-                <SectionCard title="Company Account">
-                  <View style={{ flexDirection: "row", gap: 12 }}>
-                    <View style={{ flex: 1 }}>
-                      <InputField
-                        label="Bank Name"
-                        placeholder="GTBank"
-                        value={values.bankName}
-                        onChangeText={handleChange("bankName")}
-                        onBlur={handleBlur("bankName")}
-                        errorMessage={
-                          touched.bankName ? errors.bankName : undefined
-                        }
-                      />
+                {values.tier === "paid" && (
+                  <SectionCard title="Company Account">
+                    <View style={{ flexDirection: "row", gap: 12 }}>
+                      <View style={{ flex: 1 }}>
+                        <InputField
+                          label="Bank Name"
+                          placeholder="GTBank"
+                          value={values.bankName}
+                          onChangeText={handleChange("bankName")}
+                          onBlur={handleBlur("bankName")}
+                          errorMessage={
+                            touched.bankName ? errors.bankName : undefined
+                          }
+                        />
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <InputField
+                          label="Bank Code"
+                          placeholder="058"
+                          value={values.bankCode}
+                          onChangeText={handleChange("bankCode")}
+                          onBlur={handleBlur("bankCode")}
+                          keyboardType="numeric"
+                          errorMessage={
+                            touched.bankCode ? errors.bankCode : undefined
+                          }
+                        />
+                      </View>
                     </View>
-                    <View style={{ flex: 1 }}>
-                      <InputField
-                        label="Bank Code"
-                        placeholder="058"
-                        value={values.bankCode}
-                        onChangeText={handleChange("bankCode")}
-                        onBlur={handleBlur("bankCode")}
-                        keyboardType="numeric"
-                        errorMessage={
-                          touched.bankCode ? errors.bankCode : undefined
-                        }
-                      />
-                    </View>
-                  </View>
-                  <InputField
-                    label="Account Number"
-                    placeholder="0123456789"
-                    value={values.accountNumber}
-                    onChangeText={handleChange("accountNumber")}
-                    onBlur={handleBlur("accountNumber")}
-                    keyboardType="numeric"
-                    errorMessage={
-                      touched.accountNumber ? errors.accountNumber : undefined
-                    }
-                  />
-                </SectionCard>
+                    <InputField
+                      label="Account Number"
+                      placeholder="0123456789"
+                      value={values.accountNumber}
+                      onChangeText={handleChange("accountNumber")}
+                      onBlur={handleBlur("accountNumber")}
+                      keyboardType="numeric"
+                      errorMessage={
+                        touched.accountNumber ? errors.accountNumber : undefined
+                      }
+                    />
+                  </SectionCard>
+                )}
 
                 {touched.termsAccepted && errors.termsAccepted ? (
                   <ThemedText

@@ -27,20 +27,12 @@ export default function AdminSettingsScreen() {
   const dispatch = useAppDispatch();
   const insets = useSafeAreaInsets();
 
-  const { dashboardSummary, location } = useAppSelector(
-    (state) => state.ownerDashboard,
-  );
+  const { location } = useAppSelector((state) => state.ownerDashboard);
   const { user } = useAppSelector((state) => state.auth);
 
-  useEffect(() => {
-    if (location?._id) {
-      dispatch(getSummary(location._id));
-    }
-  }, [dispatch, location?._id]);
-
   const openHours =
-    dashboardSummary?.openingHour && dashboardSummary?.closingHour
-      ? `${dashboardSummary.openingHour} – ${dashboardSummary.closingHour}`
+    location?.openingHour && location?.closingHour
+      ? `${location.openingHour} – ${location.closingHour}`
       : "8am – 10pm";
 
   const handleLogout = () => {
