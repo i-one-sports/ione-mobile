@@ -156,7 +156,7 @@ export default function AdminSignup() {
                 </View>
 
                 <InputField
-                  label="Address"
+                  label="Pitch Address"
                   placeholder="N0 11, Trinity Estate, Awoyaya"
                   value={values.address}
                   onChangeText={handleChange("address")}

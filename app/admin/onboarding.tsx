@@ -370,7 +370,7 @@ export default function AdminOnboarding() {
               onChangeText={setIdNumber}
             />
             <InputField
-              label="Address"
+              label="Admin Address"
               placeholder="2, tejuosho st, Lekki"
               value={address}
               onChangeText={setAddress}
