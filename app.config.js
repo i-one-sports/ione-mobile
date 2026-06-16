@@ -7,7 +7,10 @@ const plugins = baseConfig.expo.plugins.map((plugin) => {
   if (plugin === "@rnmapbox/maps") {
     return [
       "@rnmapbox/maps",
-      { RNMapboxMapsDownloadToken: process.env.MAPBOX_DOWNLOAD_TOKEN ?? "" },
+      {
+        RNMapboxMapsImpl: "mapbox",
+        RNMapboxMapsDownloadToken: process.env.RNMAPBOX_MAPS_DOWNLOAD_TOKEN,
+      },
     ];
   }
   return plugin;

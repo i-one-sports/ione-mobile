@@ -79,6 +79,7 @@ export type ImageFile = {
   uri: string;
   name: string;
   type: string;
+  isImage?: boolean;
 };
 
 export interface SubmitVerificationPayload {

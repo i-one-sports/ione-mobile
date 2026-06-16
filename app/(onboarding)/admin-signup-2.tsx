@@ -157,7 +157,6 @@ export default function AdminSignup2() {
               termsAccepted: values.termsAccepted,
               newsletterOptIn: values.newsletterOptIn,
             };
-            console.log(payload.location.location.coordinates);
             dispatch(registerOwner(payload))
               .unwrap()
               .then((res) => {

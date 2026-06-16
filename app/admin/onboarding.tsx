@@ -10,7 +10,7 @@ import CustomButton from "@/components/ui/CustomButton";
 import { Icon } from "@/components/ui/Icon";
 import { useAppDispatch, useAppSelector } from "@/redux/store";
 import { Entypo, MaterialIcons } from "@expo/vector-icons";
-import * as ImagePicker from "expo-image-picker";
+import * as DocumentPicker from "expo-document-picker";
 import { useColorScheme } from "nativewind";
 import React, { useState } from "react";
 import { KeyboardAvoidingView, Platform, ScrollView, View } from "react-native";
@@ -39,7 +39,7 @@ export default function AdminOnboarding() {
 
   const [frontPreview, setFrontPreview] = useState<string | null>(null);
   const [backPreview, setBackPreview] = useState<string | null>(null);
-  const [locationPreviews, setLocationPreviews] = useState<string[]>([]);
+  const [locationPreviews, setLocationPreviews] = useState<ImageFile[]>([]);
 
   const [uploadingFront, setUploadingFront] = useState(false);
   const [uploadingBack, setUploadingBack] = useState(false);
@@ -68,130 +68,177 @@ export default function AdminOnboarding() {
         throw err;
       });
 
-  const requestPermission = async () => {
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== "granted") {
-      Toast.show({
-        type: "error",
-        text1: "Permission required",
-        text2: "Allow photo access to upload.",
-      });
-      return false;
-    }
-    return true;
-  };
+  // const requestPermission = async () => {
+  //   const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+  //   if (status !== "granted") {
+  //     Toast.show({
+  //       type: "error",
+  //       text1: "Permission required",
+  //       text2: "Allow photo access to upload.",
+  //     });
+  //     return false;
+  //   }
+  //   return true;
+  // };
+  //
+  // const pickAndUploadSingle = async (
+  //   setPreview: (uri: string) => void,
+  //   setFile: (file: ImageFile) => void,
+  //   setUploading: (v: boolean) => void,
+  // ) => {
+  //   if (!(await requestPermission())) return;
+  //   const result = await ImagePicker.launchImageLibraryAsync({
+  //     mediaTypes: ImagePicker.MediaTypeOptions.All,
+  //     allowsEditing: false,
+  //     quality: 0.8,
+  //   });
+  //   if (result.canceled || !result.assets[0]) return;
+  //   const asset = result.assets[0];
+  //   const file: ImageFile = {
+  //     uri: asset.uri,
+  //     name: asset.fileName || "upload.jpg",
+  //     type: asset.mimeType || "image/jpeg",
+  //   };
+  //   setPreview(asset.uri);
+  //
+  //   setFile(file);
+  //   setUploading(true);
+  //   try {
+  //     const url = await uploadImage(
+  //       asset.uri,
+  //       asset.mimeType || "image/jpeg",
+  //       asset.fileName || "upload.jpg",
+  //     );
+  //   } catch {
+  //     setPreview(""); // uploadImage already toasted the error
+  //   } finally {
+  //     setUploading(false);
+  //   }
+  // };
+  //
 
   const pickAndUploadSingle = async (
     setPreview: (uri: string) => void,
     setFile: (file: ImageFile) => void,
     setUploading: (v: boolean) => void,
   ) => {
-    if (!(await requestPermission())) return;
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: false,
-      quality: 0.8,
+    const result = await DocumentPicker.getDocumentAsync({
+      type: "*/*", // or specific mime types
+      multiple: false,
+      copyToCacheDirectory: true,
     });
-    if (result.canceled || !result.assets[0]) return;
+
+    if (result.canceled || !result.assets?.[0]) return;
+
     const asset = result.assets[0];
+
     const file: ImageFile = {
       uri: asset.uri,
-      name: asset.fileName || "upload.jpg",
-      type: asset.mimeType || "image/jpeg",
+      name: asset.name || "upload",
+      type: asset.mimeType || "application/octet-stream",
+      isImage: asset.mimeType?.startsWith("image/") ?? false,
     };
+
     setPreview(asset.uri);
 
     setFile(file);
     setUploading(true);
+
     try {
-      const url = await uploadImage(
+      await uploadImage(
         asset.uri,
-        asset.mimeType || "image/jpeg",
-        asset.fileName || "upload.jpg",
+        asset.mimeType || "application/octet-stream",
+        asset.name || "upload",
       );
     } catch {
-      setPreview(""); // uploadImage already toasted the error
+      setPreview("");
     } finally {
       setUploading(false);
     }
   };
-
+  //
+  // const pickAndUploadMultiple = async () => {
+  //   if (!(await requestPermission())) return;
+  //   const result = await ImagePicker.launchImageLibraryAsync({
+  //     mediaTypes: ImagePicker.MediaTypeOptions.Images,
+  //     allowsMultipleSelection: true,
+  //     quality: 0.8,
+  //   });
+  //   if (result.canceled || result.assets.length === 0) return;
+  //   if (result.assets.length > 5) {
+  //     Toast.show({
+  //       type: "error",
+  //       text1: "Too many photos",
+  //       text2: "Maximum 5 location pictures allowed.",
+  //     });
+  //     return;
+  //   }
+  //   const files: ImageFile[] = result?.assets.map((a) => ({
+  //     uri: a.uri,
+  //     name: a.fileName || "upload.jpg",
+  //     type: a.mimeType || "image/jpeg",
+  //   }));
+  //   setLocationPreviews(result.assets.map((a) => a.uri));
+  //   setLocationFiles(files);
+  //   setUploadingLocation(true);
+  //   try {
+  //     const urls = await Promise.all(
+  //       files.map((file) => uploadImage(file.uri, file.type, file.name)),
+  //     );
+  //     setLocationPreviews(urls);
+  //   } catch {
+  //     setLocationPreviews([]); // uploadImage already toasted the error
+  //     setLocationFiles([]);
+  //   } finally {
+  //     setUploadingLocation(false);
+  //   }
+  // };
   const pickAndUploadMultiple = async () => {
-    if (!(await requestPermission())) return;
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsMultipleSelection: true,
-      quality: 0.8,
+    const result = await DocumentPicker.getDocumentAsync({
+      multiple: true,
+      copyToCacheDirectory: true,
+      type: "*/*",
     });
-    if (result.canceled || result.assets.length === 0) return;
-    if (result.assets.length > 5) {
+
+    if (result.canceled || !result.assets?.length) return;
+
+    const assets = result.assets;
+
+    if (assets.length > 5) {
       Toast.show({
         type: "error",
-        text1: "Too many photos",
-        text2: "Maximum 5 location pictures allowed.",
+        text1: "Too many files",
+        text2: "Maximum 5 files allowed.",
       });
       return;
     }
-    const files: ImageFile[] = result?.assets.map((a) => ({
+
+    const files: ImageFile[] = assets.map((a) => ({
       uri: a.uri,
-      name: a.fileName || "upload.jpg",
-      type: a.mimeType || "image/jpeg",
+      name: a.name ?? "upload",
+      type: a.mimeType ?? "application/octet-stream",
     }));
-    setLocationPreviews(result.assets.map((a) => a.uri));
+
+    setLocationPreviews(files);
     setLocationFiles(files);
     setUploadingLocation(true);
+
     try {
       const urls = await Promise.all(
         files.map((file) => uploadImage(file.uri, file.type, file.name)),
       );
-      setLocationPreviews(urls);
-    } catch {
-      setLocationPreviews([]); // uploadImage already toasted the error
-      setLocationFiles([]);
+
+      // ⚠️ only replace URIs if backend returns image URLs
+      setLocationPreviews(
+        files.map((f, i) => ({
+          ...f,
+          uri: urls[i] ?? f.uri,
+        })),
+      );
     } finally {
       setUploadingLocation(false);
     }
   };
-
-  // const handleSubmit = async () => {
-  //   if (!idType || !idNumber || !address || !frontUrl || !backUrl) {
-  //     Toast.show({
-  //       type: "error",
-  //       text1: "Incomplete",
-  //       text2: "Please fill all fields and upload required documents.",
-  //     });
-  //     return;
-  //   }
-  //   setLoading(true);
-  //   console.log("before dispatch");
-  //   try {
-  //     const response = await dispatch(
-  //       submitVerification({
-  //         idType,
-  //         idNumber,
-  //         address,
-  //         frontPage: frontUrl,
-  //         backPage: backUrl,
-  //         locationPictures: locationPictureUrls,
-  //       }),
-  //     ).unwrap();
-  //     console.log("after dispatch");
-  //     console.log("response", response);
-  //     Toast.show({
-  //       type: "success",
-  //       text1: "Submitted!",
-  //       text2: response.message || "Your documents are under review.",
-  //     });
-  //     console.log("onboarding", response);
-  //   } catch (err: any) {
-  //     const message =
-  //       err?.msg?.message || err?.msg || "Submission failed. Try again.";
-  //     Toast.show({ type: "error", text1: "Error", text2: message });
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
-  //
 
   const handleSubmit = async () => {
     if (!idType || !idNumber || !address || !frontFile || !backFile) {
@@ -406,6 +453,8 @@ export default function AdminOnboarding() {
               label="ID Front Image"
               sublabel="Upload a clear photo of the front of your ID"
               previewUri={frontPreview}
+              fileName={frontFile?.name ?? null}
+              fileType={frontFile?.type ?? null}
               uploading={uploadingFront}
               onPress={() =>
                 pickAndUploadSingle(
@@ -421,6 +470,8 @@ export default function AdminOnboarding() {
               label="ID Back Image"
               sublabel="Upload a clear photo of the back of your ID"
               previewUri={backPreview}
+              fileName={backFile?.name ?? null}
+              fileType={backFile?.type ?? null}
               uploading={uploadingBack}
               onPress={() =>
                 pickAndUploadSingle(

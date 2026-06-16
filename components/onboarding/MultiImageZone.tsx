@@ -6,14 +6,16 @@ import {
   ActivityIndicator,
   ScrollView,
   StyleSheet,
+  Text,
   TouchableOpacity,
   View,
 } from "react-native";
+import { ImageFile } from "../typings/api";
 
 interface Props {
   label: string;
   sublabel: string;
-  previewUris: string[];
+  previewUris: ImageFile[];
   uploading: boolean;
   onPress: () => void;
   isDark: boolean;
@@ -36,6 +38,7 @@ export default function MultiImageZone({
       <ThemedText style={{ fontSize: 13, fontWeight: "600", marginBottom: 2 }}>
         {label}
       </ThemedText>
+
       <ThemedText
         lightColor="#999"
         darkColor="#666"
@@ -44,6 +47,7 @@ export default function MultiImageZone({
         {sublabel}
       </ThemedText>
 
+      {/* PREVIEW LIST */}
       {hasImages && (
         <ScrollView
           horizontal
@@ -51,38 +55,82 @@ export default function MultiImageZone({
           style={{ marginBottom: 10 }}
           contentContainerStyle={{ gap: 8 }}
         >
-          {previewUris.map((uri, i) => (
-            <View
-              key={i}
-              style={{
-                width: 90,
-                height: 90,
-                borderRadius: 10,
-                overflow: "hidden",
-              }}
-            >
-              <Image
-                source={{ uri }}
-                style={{ width: 90, height: 90 }}
-                contentFit="cover"
-              />
-              {uploading && (
-                <View
-                  style={{
-                    ...StyleSheet.absoluteFillObject,
-                    backgroundColor: "rgba(0,0,0,0.45)",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  <ActivityIndicator color="#fff" size="small" />
-                </View>
-              )}
-            </View>
-          ))}
+          {previewUris.map((file, i) => {
+            const isImage = file.type?.startsWith("image/");
+
+            return (
+              <View
+                key={i}
+                style={{
+                  width: 90,
+                  height: 90,
+                  borderRadius: 10,
+                  overflow: "hidden",
+                  backgroundColor: isDark ? "#111" : "#f5f5f5",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                {isImage ? (
+                  <Image
+                    source={{ uri: file.uri }}
+                    style={{ width: 90, height: 90 }}
+                    contentFit="cover"
+                  />
+                ) : (
+                  <View
+                    style={{
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: 6,
+                    }}
+                  >
+                    <View
+                      style={{
+                        width: 44,
+                        height: 44,
+                        borderRadius: 10,
+                        backgroundColor: accent,
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
+                      <Feather name="file" size={20} color="#000" />
+                    </View>
+
+                    <Text
+                      numberOfLines={1}
+                      style={{
+                        fontSize: 10,
+                        color: isDark ? "#fff" : "#000",
+                        paddingHorizontal: 4,
+                        textAlign: "center",
+                      }}
+                    >
+                      {file.name ?? "Document"}
+                    </Text>
+                  </View>
+                )}
+
+                {uploading && (
+                  <View
+                    style={{
+                      ...StyleSheet.absoluteFillObject,
+                      backgroundColor: "rgba(0,0,0,0.45)",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <ActivityIndicator color="#fff" size="small" />
+                  </View>
+                )}
+              </View>
+            );
+          })}
         </ScrollView>
       )}
 
+      {/* UPLOAD BUTTON */}
       <TouchableOpacity
         onPress={onPress}
         activeOpacity={0.7}
@@ -112,20 +160,24 @@ export default function MultiImageZone({
             color={accent}
           />
         )}
+
         <ThemedText style={{ fontSize: 13, fontWeight: "600" }}>
           {uploading
             ? "Uploading..."
             : hasImages
-              ? `${previewUris.length} photo${previewUris.length > 1 ? "s" : ""} selected — tap to change`
-              : "Tap to upload photos"}
+              ? `${previewUris.length} file${
+                  previewUris.length > 1 ? "s" : ""
+                } selected — tap to change`
+              : "Tap to upload files"}
         </ThemedText>
+
         {!hasImages && !uploading && (
           <ThemedText
             lightColor="#bbb"
             darkColor="#555"
             style={{ fontSize: 11 }}
           >
-            Up to 5 photos
+            Images & documents supported
           </ThemedText>
         )}
       </TouchableOpacity>
