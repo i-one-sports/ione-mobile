@@ -16,6 +16,7 @@ import { Entypo } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Toast } from "toastify-react-native";
 import { Formik } from "formik";
+import TimePickerField from "@/components/TimePickerField";
 import * as Yup from "yup";
 import React, { useState } from "react";
 import {
@@ -250,24 +251,20 @@ export default function AdminSignup2() {
                   </View>
                   <View style={{ flexDirection: "row", gap: 12 }}>
                     <View style={{ flex: 1 }}>
-                      <InputField
+                      <TimePickerField
                         label="Opening Hour"
-                        placeholder="09:00"
                         value={values.openingHour}
-                        onChangeText={handleChange("openingHour")}
-                        onBlur={handleBlur("openingHour")}
+                        onChange={(time) => setFieldValue("openingHour", time)}
                         errorMessage={
                           touched.openingHour ? errors.openingHour : undefined
                         }
                       />
                     </View>
                     <View style={{ flex: 1 }}>
-                      <InputField
+                      <TimePickerField
                         label="Closing Hour"
-                        placeholder="22:00"
                         value={values.closingHour}
-                        onChangeText={handleChange("closingHour")}
-                        onBlur={handleBlur("closingHour")}
+                        onChange={(time) => setFieldValue("closingHour", time)}
                         errorMessage={
                           touched.closingHour ? errors.closingHour : undefined
                         }
