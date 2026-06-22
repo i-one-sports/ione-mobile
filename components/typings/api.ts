@@ -109,7 +109,8 @@ export interface RegisterOwnerPayload {
     pitchSize: string;
     tier: string;
     pricingOption: string;
-    paymentPerPersonHourly: number;
+    paymentPerPersonHourly?: number;
+    paymentPerPersonMonthly?: number;
     location: { coordinates: [number, number] };
   };
   payout: {

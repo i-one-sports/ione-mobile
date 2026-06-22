@@ -42,7 +42,7 @@ const schema = Yup.object({
     then: (schema) => schema.required("Required"),
     otherwise: (schema) => schema.notRequired(),
   }),
-  paymentPerPersonHourly: Yup.string().when("tier", {
+  price: Yup.string().when("tier", {
     is: "paid",
     then: (schema) => schema.required("Required"),
     otherwise: (schema) => schema.notRequired(),
@@ -119,7 +119,7 @@ export default function AdminSignup2() {
             tier: "",
             coordinates: [0, 0] as [number, number],
             pricingOption: "",
-            paymentPerPersonHourly: "",
+            price: "",
             bankCode: "",
             bankName: "",
             accountNumber: "",
@@ -147,8 +147,14 @@ export default function AdminSignup2() {
                 pitchSize: values.pitchSize,
                 tier: values.tier,
                 pricingOption: values.pricingOption,
-                paymentPerPersonHourly: Number(values.paymentPerPersonHourly),
                 location: { coordinates: values.coordinates },
+                ...(values.pricingOption === "hourly"
+                  ? {
+                      paymentPerPersonHourly: Number(values.price),
+                    }
+                  : {
+                      paymentPerPersonMonthly: Number(values.price),
+                    }),
               },
               payout: {
                 bankCode: values.bankCode,
@@ -315,17 +321,17 @@ export default function AdminSignup2() {
                   </View>
                   {values.tier === "paid" && (
                     <InputField
-                      label="Price per Person / Hour (₦)"
-                      placeholder="2500"
-                      value={values.paymentPerPersonHourly}
-                      onChangeText={handleChange("paymentPerPersonHourly")}
-                      onBlur={handleBlur("paymentPerPersonHourly")}
-                      keyboardType="numeric"
-                      errorMessage={
-                        touched.paymentPerPersonHourly
-                          ? errors.paymentPerPersonHourly
-                          : undefined
+                      label={
+                        values.pricingOption === "monthly"
+                          ? "Price per Person / Month (₦)"
+                          : "Price per Person / Hour (₦)"
                       }
+                      placeholder="2500"
+                      value={values.price}
+                      onChangeText={handleChange("price")}
+                      onBlur={handleBlur("price")}
+                      keyboardType="numeric"
+                      errorMessage={touched.price ? errors.price : undefined}
                     />
                   )}
                 </SectionCard>
