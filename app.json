@@ -23,7 +23,7 @@
         "android.permission.ACCESS_FINE_LOCATION"
       ],
       "package": "com.ione.mobile",
-      "versionCode": 6
+      "versionCode": 7
     },
     "web": {
       "bundler": "metro",
@@ -54,7 +54,7 @@
         "@rnmapbox/maps",
         {
           "RNMapboxMapsImpl": "mapbox",
-          "RNMapboxMapsVersion": "10.3.1"
+          "RNMapboxMapsVersion": "11.9.0"
         }
       ]
     ],

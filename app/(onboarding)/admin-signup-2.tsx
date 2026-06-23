@@ -242,18 +242,18 @@ export default function AdminSignup2() {
                         }
                       />
                     </View>
-                    <View style={{ flex: 1 }}>
-                      <InputField
-                        label="Pitch Size (M = meter)"
-                        placeholder="175m x 180m"
-                        value={values.pitchSize}
-                        onChangeText={handleChange("pitchSize")}
-                        onBlur={handleBlur("pitchSize")}
-                        errorMessage={
-                          touched.pitchSize ? errors.pitchSize : undefined
-                        }
-                      />
-                    </View>
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <InputField
+                      label="Pitch Size (M = meter)"
+                      placeholder="175m x 180m"
+                      value={values.pitchSize}
+                      onChangeText={handleChange("pitchSize")}
+                      onBlur={handleBlur("pitchSize")}
+                      errorMessage={
+                        touched.pitchSize ? errors.pitchSize : undefined
+                      }
+                    />
                   </View>
                   <View style={{ flexDirection: "row", gap: 12 }}>
                     <View style={{ flex: 1 }}>
@@ -277,8 +277,8 @@ export default function AdminSignup2() {
                       />
                     </View>
                   </View>
-                  <View style={{ flexDirection: "row", gap: 12 }}>
-                    <View style={{ flex: 1 }}>
+                  <View style={{ gap: 12, width: "100%" }}>
+                    <View style={{ flex: 1, width: "100%" }}>
                       <InputField
                         label="Tier"
                         selectPicker
@@ -295,7 +295,7 @@ export default function AdminSignup2() {
                         errorMessage={touched.tier ? errors.tier : undefined}
                       />
                     </View>
-                    <View style={{ flex: 1 }}>
+                    <View style={{ flex: 1, width: "100%" }}>
                       {values.tier === "paid" && (
                         <InputField
                           label="Pricing Model"

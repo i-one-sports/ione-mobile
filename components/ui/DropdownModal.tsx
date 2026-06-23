@@ -64,7 +64,13 @@ export default function DropdownModal({
                 borderBottomColor: isDark ? "#2a2a2a" : "#f2f2f2",
               }}
             >
-              <Text style={{ fontSize: 14, color: isDark ? "#fff" : "#111" }}>
+              <Text
+                style={{
+                  fontSize: 14,
+                  color: isDark ? "#fff" : "#111",
+                  textTransform: "capitalize",
+                }}
+              >
                 {opt}
               </Text>
             </TouchableOpacity>
