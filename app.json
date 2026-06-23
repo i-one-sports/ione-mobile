@@ -23,7 +23,7 @@
         "android.permission.ACCESS_FINE_LOCATION"
       ],
       "package": "com.ione.mobile",
-      "versionCode": 5
+      "versionCode": 6
     },
     "web": {
       "bundler": "metro",
