@@ -79,6 +79,7 @@ export type ImageFile = {
   uri: string;
   name: string;
   type: string;
+  isImage?: boolean;
 };
 
 export interface SubmitVerificationPayload {
@@ -108,7 +109,8 @@ export interface RegisterOwnerPayload {
     pitchSize: string;
     tier: string;
     pricingOption: string;
-    paymentPerPersonHourly: number;
+    paymentPerPersonHourly?: number;
+    paymentPerPersonMonthly?: number;
     location: { coordinates: [number, number] };
   };
   payout: {

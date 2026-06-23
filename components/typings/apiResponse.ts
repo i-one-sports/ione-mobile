@@ -108,6 +108,24 @@ export interface SubmitVerificationResponse {
   };
 }
 
+export interface BankResponse {
+  _id: string;
+  paystackId: number;
+  name: string;
+  slug: string;
+  code: string;
+  longcode: string;
+  gateway: string;
+  payWithBank: boolean;
+  supportsTransfer: boolean;
+  availableForDirectDebit: boolean;
+  active: boolean;
+  country: string;
+  currency: string;
+  type: string;
+  isDeleted: boolean;
+}
+
 export interface forgotPasswordResponse {
   success: boolean;
   message: string;

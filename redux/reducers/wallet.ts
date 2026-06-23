@@ -1,17 +1,27 @@
-import { getUserWallet } from "@/api/walletThunks";
-import { WalletResponse } from "@/components/typings/apiResponse";
+import { getUserWallet, getBank } from "@/api/walletThunks";
+import { WalletResponse, BankResponse } from "@/components/typings/apiResponse";
 import { createSlice } from "@reduxjs/toolkit";
 
 interface State {
   wallet: WalletResponse | null;
+  bank: BankResponse | null;
+
   loading: boolean;
+  loadingBank: boolean;
+
   error: string | null;
+  errorBank: string | null;
 }
 
 const initialState: State = {
   wallet: null,
+  bank: null,
+
   loading: false,
+  loadingBank: false,
+
   error: null,
+  errorBank: null,
 };
 
 export const walletSlice = createSlice({
@@ -36,6 +46,19 @@ export const walletSlice = createSlice({
       } else {
         state.error = action.error.message || "Failed";
       }
+
+      builder.addCase(getBank.pending, (state) => {
+        state.loadingBank = true;
+        state.errorBank = null;
+      });
+      builder.addCase(getBank.fulfilled, (state, { payload }) => {
+        state.bank = payload;
+        state.loadingBank = false;
+      });
+      builder.addCase(getBank.rejected, (state, action) => {
+        state.loadingBank = false;
+        state.errorBank = action.error.message || "Failed to fetch Bank";
+      });
     });
   },
 });

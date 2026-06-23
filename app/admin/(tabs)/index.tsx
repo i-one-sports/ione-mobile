@@ -3,6 +3,7 @@ import {
   getLocation,
   getSummary,
   getUpcomingSessions,
+  getLocationDashboard,
 } from "@/api/ownerDashboardThunk";
 import AdminNotificationIcon from "@/assets/svg/AdminNotificationIcon";
 import LocationIcon from "@/assets/svg/LocationIcon";
@@ -62,6 +63,7 @@ export default function AdminHomeScreen() {
   const [modalVisible, setModalVisible] = useState(false);
 
   const {
+    locationDashboard,
     dashboardSummary,
     loadingSummmary,
     location,
@@ -74,6 +76,7 @@ export default function AdminHomeScreen() {
   useEffect(() => {
     dispatch(getLocation());
     if (location?._id) {
+      dispatch(getLocationDashboard(location._id));
       dispatch(getSummary(location._id));
       dispatch(getLastMatches(location._id));
       dispatch(getUpcomingSessions(location._id));
@@ -85,6 +88,9 @@ export default function AdminHomeScreen() {
   const showOnboardingBanner =
     user?.ownerOnboardingStatus === "PENDING_VERIFICATION";
 
+  console.log("dashboardSummary", dashboardSummary);
+  console.log("location", location);
+  console.log("locationDashboard", locationDashboard);
   return (
     <View style={{ flex: 1, backgroundColor: isDark ? "#000" : "#fff" }}>
       {/* Hero image background */}
@@ -204,7 +210,7 @@ export default function AdminHomeScreen() {
                 >
                   {loadingLocation
                     ? "Loading..."
-                    : location?.name || "No Location"}
+                    : location?.name || "No Pitch Name"}
                 </Text>
               </TouchableOpacity>
             </View>
