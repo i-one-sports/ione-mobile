@@ -10,7 +10,7 @@ import StepBar from "@/components/ui/StepBar";
 import DropdownModal from "@/components/ui/DropdownModal";
 import MapLocationPicker from "@/components/MapLocationPicker";
 import Loader from "@/components/loader";
-import { registerOwner } from "@/api/authThunks";
+import { registerOwner, sendEmail } from "@/api/authThunks";
 import { useAppDispatch } from "@/redux/store";
 import { Entypo } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -166,13 +166,18 @@ export default function AdminSignup2() {
             };
             dispatch(registerOwner(payload))
               .unwrap()
-              .then((res) => {
+              .then(async (res) => {
+                await dispatch(
+                  sendEmail({
+                    email: payload.user.email,
+                  }),
+                ).unwrap();
                 Toast.show({
                   type: "success",
                   text1: "Account created!",
-                  text2: res.message || "Please sign in.",
+                  text2: res.message || "Please verify your email.",
                 });
-                router.replace("/(onboarding)/signin");
+                router.replace("/(onboarding)/verify-email");
               })
               .catch((err) => {
                 const msg =

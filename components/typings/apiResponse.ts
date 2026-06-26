@@ -135,6 +135,16 @@ export interface logoutResponse {
   message: string;
 }
 
+export interface ConfirmEmailResponse {
+  success: boolean;
+  message: string;
+}
+
+export interface SendEmailResponse {
+  success: boolean;
+  message: string;
+}
+
 export interface MatchSession {
   _id: string;
   session: string;

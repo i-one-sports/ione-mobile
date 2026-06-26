@@ -62,6 +62,15 @@ export interface verifyOtpPayload {
   email?: string;
   otp?: string;
 }
+
+export interface SendEmailOtpPayload {
+  email: string;
+}
+
+export interface ConfirmEmailOtpPayload {
+  email: string;
+  otp: number;
+}
 export interface ErrorResponse {
   msg: string;
   status: number;
