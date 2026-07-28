@@ -1,4 +1,9 @@
-import { joinSession } from "@/api/sessions";
+import {
+  allSessions,
+  getSession,
+  joinSession,
+  leaveSession,
+} from "@/api/sessions";
 import BackIcon from "@/assets/svg/BackIcon";
 import OpenIcon from "@/assets/svg/OpenIcon";
 import PitchIcon from "@/assets/svg/PitchSvg";
@@ -6,9 +11,10 @@ import SafeAreaScreen from "@/components/SafeAreaScreen";
 import { ThemedText } from "@/components/ThemedText";
 import { Colors } from "@/constants/Colors";
 import useMatchScore from "@/hooks/useMatchScore";
+import { clearActiveSession } from "@/redux/reducers/sessions";
 import { useAppDispatch, useAppSelector } from "@/redux/store";
 import { router, useLocalSearchParams } from "expo-router";
-import React, { useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Pressable,
@@ -26,57 +32,124 @@ export default function JoinSession() {
   const theme = Colors[colorScheme ?? "light"];
   const [showDetails, setShowDetails] = useState(false);
   const dispatch = useAppDispatch();
-  const [loading, setLoading] = useState(false);
-  const params = useLocalSearchParams();
-  const sessionData = params.session
-    ? JSON.parse(params.session as string)
-    : null;
+
+  // params only carries the sessionId + static display data (for the initial render skeleton)
+  const params = useLocalSearchParams<{
+    sessionId?: string;
+    session?: string;
+  }>();
+
+  // Support both a plain sessionId param and the legacy full-session JSON param
+  const staticSession = params.session ? JSON.parse(params.session) : null;
+  const sessionId: string = params.sessionId ?? staticSession?._id ?? "";
 
   const { user } = useAppSelector((state) => state.auth);
+  const { activeSession, loadingActiveSession, loadingJoin, loadingLeave } =
+    useAppSelector((state) => state.sessions);
 
-  // Connect to session stream to get live updates for all matches in this session
+  // Fetch fresh session data from server on mount
+  useEffect(() => {
+    if (sessionId) dispatch(getSession(sessionId));
+    return () => {
+      dispatch(clearActiveSession());
+    };
+  }, [sessionId, dispatch]);
+
+  // Derive everything from the server response — no manual state flags
+  const session = activeSession ?? staticSession;
+  const members = activeSession?.members ?? staticSession?.members ?? [];
+
+  const isMember = members.some((m: any) => m._id === user?._id);
+  const myMemberData = members.find((m: any) => m._id === user?._id);
+  const myPaymentStatus = myMemberData?.paymentStatus ?? null;
+
+  const paymentRequired = activeSession?.paymentRequired ?? false;
+
+  // Per docs: payment records are ONLY initialized when the session fills up.
+  // Only show Pay button when the backend has created a record (PENDING or FAILED).
+  // null = no record yet (session not full), PAID = done, NOT_REQUIRED = free.
+  const showPayButton =
+    isMember &&
+    paymentRequired &&
+    (myPaymentStatus === "PENDING" || myPaymentStatus === "FAILED");
+
+  const handleScoreUpdate = useCallback((data: any) => {
+    Toast.show({
+      type: "info",
+      text1: "Score Update",
+      text2: `${data.teamOne.name} ${data.teamOneScore} - ${data.teamTwoScore} ${data.teamTwo.name}`,
+    });
+  }, []);
+
   const sessionScore = useMatchScore({
-    sessionId: sessionData?._id,
-    onScoreUpdate: (data) => {
-      console.log("Live score update received:", data);
-      Toast.show({
-        type: "info",
-        text1: "Score Update",
-        text2: `${data.teamOne.name} ${data.teamOneScore} - ${data.teamTwoScore} ${data.teamTwo.name}`,
-      });
-    },
-    onError: (error) => {
-      console.error("SSE error:", error);
-      Toast.show({
-        type: "error",
-        text1: "SSE error",
-        text2: `${error}`,
-      });
-    },
+    sessionId,
+    onScoreUpdate: handleScoreUpdate,
   });
 
-  // Helper functions
-  const formatDate = (dateString: string) => {
+  const handleJoinSession = () => {
+    if (!sessionId) return;
+    dispatch(joinSession({ sessionId }))
+      .unwrap()
+      .then((response) => {
+        Toast.show({
+          type: "success",
+          text1: "Joined!",
+          text2: response.message,
+        });
+        // Re-fetch the session so member list + payment status reflect server state
+        dispatch(getSession(sessionId));
+        // Keep the sessions list fresh when user navigates back
+        if (user?.location?.coordinates) {
+          const [lat, lng] = user.location.coordinates;
+          dispatch(allSessions({ lat, lng }));
+        }
+      })
+      .catch((err) => {
+        Toast.show({ type: "error", text1: "Error", text2: err?.msg });
+      });
+  };
+
+  const handleLeaveSession = () => {
+    if (!sessionId) return;
+    dispatch(leaveSession(sessionId))
+      .unwrap()
+      .then((response) => {
+        Toast.show({
+          type: "success",
+          text1: "Left session",
+          text2: response.message,
+        });
+        dispatch(getSession(sessionId));
+        if (user?.location?.coordinates) {
+          const [lat, lng] = user.location.coordinates;
+          dispatch(allSessions({ lat, lng }));
+        }
+      })
+      .catch((err) => {
+        Toast.show({ type: "error", text1: "Error", text2: err?.msg });
+      });
+  };
+
+  // Helper formatters
+  const formatDate = (dateString?: string) => {
     if (!dateString) return "Date TBD";
-    const date = new Date(dateString);
-    return date.toLocaleDateString("en-US", {
+    return new Date(dateString).toLocaleDateString("en-US", {
       weekday: "short",
       month: "short",
       day: "numeric",
     });
   };
 
-  const formatTime = (dateString: string) => {
+  const formatTime = (dateString?: string) => {
     if (!dateString) return "Time TBD";
-    const date = new Date(dateString);
-    return date.toLocaleTimeString("en-US", {
+    return new Date(dateString).toLocaleTimeString("en-US", {
       hour: "2-digit",
       minute: "2-digit",
       hour12: true,
     });
   };
 
-  const getDuration = (timeDuration: number) => {
+  const getDuration = (timeDuration?: number) => {
     if (!timeDuration) return "TBD";
     const hours = Math.floor(timeDuration / 60);
     const minutes = timeDuration % 60;
@@ -85,67 +158,52 @@ export default function JoinSession() {
     return `${minutes} minutes`;
   };
 
-  const formatWinningDecider = (decider: string) => {
-    const deciderMap: { [key: string]: string } = {
+  const formatWinningDecider = (decider?: string) => {
+    const map: Record<string, string> = {
       penalties: "Shootout",
       highestGoals: "Highest Goals",
       goldenGoal: "Golden Goal",
       shootout: "Shootout",
     };
-    return deciderMap[decider] || decider || "TBD";
+    return (decider && map[decider]) || decider || "TBD";
   };
 
-  const getMatchDuration = (minsPerSet: number) => {
+  const getMatchDuration = (minsPerSet?: number) => {
     if (!minsPerSet) return "Golden Goal";
-    return `${minsPerSet} minutes per set`;
+    return `${minsPerSet} mins per set`;
   };
 
-  const handleJoinSession = async () => {
-    if (!sessionData?._id) {
-      Toast.show({
-        type: "error",
-        text1: "Error",
-        text2: "Session ID not found",
-      });
-      return;
+  const paymentStatusColor = (status?: string) => {
+    switch (status) {
+      case "PAID":
+        return "#00FF94";
+      case "PENDING":
+        return "#FFB800";
+      case "FAILED":
+        return "#FF4444";
+      case "REFUNDED":
+        return "#888";
+      default:
+        return "#888";
     }
-
-    setLoading(true);
-    dispatch(joinSession({ sessionId: sessionData._id }))
-      .unwrap()
-      .then((response) => {
-        setLoading(false);
-        Toast.show({
-          type: "success",
-          text1: "Success",
-          text2: response.message || "Successfully joined session",
-        });
-        router.back();
-      })
-      .catch((err) => {
-        setLoading(false);
-        const message =
-          err?.msg?.message || err?.msg || "Failed to join session";
-        Toast.show({
-          type: "error",
-          text1: "Error",
-          text2: message,
-        });
-      });
   };
 
-  const isMember = sessionData?.members?.some(
-    (member: any) => member._id === user?._id,
-  );
-
-  if (!sessionData) {
+  if (!sessionId) {
     return (
       <SafeAreaScreen>
-        <View className="flex-1 items-center justify-center">
-          <Text className="text-gray-500">No session data available</Text>
+        <View
+          style={{ flex: 1, alignItems: "center", justifyContent: "center" }}
+        >
+          <Text style={{ color: "#888" }}>No session data available</Text>
           <TouchableOpacity
             onPress={() => router.back()}
-            className="mt-4 bg-[#00FF94] px-6 py-3 rounded-[5px]"
+            style={{
+              marginTop: 16,
+              backgroundColor: "#00FF94",
+              paddingHorizontal: 24,
+              paddingVertical: 12,
+              borderRadius: 5,
+            }}
           >
             <Text>Go Back</Text>
           </TouchableOpacity>
@@ -159,37 +217,31 @@ export default function JoinSession() {
       <ScrollView
         className="mb-[40px] h-full flex-1 py-6"
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{
-          paddingBottom: 40,
-          flexGrow: 1,
-        }}
+        contentContainerStyle={{ paddingBottom: 40, flexGrow: 1 }}
       >
         <View className="flex flex-col gap-[31px]">
           <View className="mx-[32px] flex flex-col gap-[31px]">
-            {/* Session Status with Live Connection Indicator */}
+            {/* Session status bar + live indicator */}
             <View className="w-full rounded-[10px] border-[1px] border-[#43B75D] bg-[#ECF8EF] p-[16px]">
               <View className="flex flex-col gap-[4px]">
                 <View className="flex flex-row items-center justify-between">
                   <ThemedText
                     lightColor="#6C757D"
                     darkColor="#9BA1A6"
-                    className="text-[14px] font-[600] leading-[24px] text-black"
+                    className="text-[14px] font-[600] leading-[24px]"
                   >
-                    {sessionData.inProgress
+                    {session?.inProgress
                       ? "Match In Progress"
-                      : sessionData.finished
+                      : session?.finished
                         ? "Match Finished"
-                        : sessionData.isFull
+                        : session?.isFull
                           ? "Session Full"
                           : "Waiting For Players"}
                   </ThemedText>
 
-                  {/* Live Connection Status Indicator */}
                   <View className="flex flex-row items-center gap-1">
                     <View
-                      className={`w-2 h-2 rounded-full ${
-                        sessionScore.connected ? "bg-green-500" : "bg-red-500"
-                      }`}
+                      className={`w-2 h-2 rounded-full ${sessionScore.connected ? "bg-green-500" : "bg-red-500"}`}
                     />
                     <Text className="text-[10px] text-[#6D717F]">
                       {sessionScore.connected ? "Live" : "Offline"}
@@ -198,11 +250,9 @@ export default function JoinSession() {
                 </View>
 
                 <Text className="text-[11px] text-[#6D717F]">
-                  {sessionData.members?.length || 0} /{" "}
-                  {sessionData.maxNumber || 0} players joined
+                  {members.length} / {session?.maxNumber || 0} players joined
                 </Text>
 
-                {/* Show error if connection fails */}
                 {sessionScore.error && (
                   <Text className="text-[10px] text-red-500 mt-1">
                     {sessionScore.error}
@@ -211,23 +261,22 @@ export default function JoinSession() {
               </View>
             </View>
 
+            {/* Header row */}
             <View>
               <View className="flex flex-row items-center justify-between">
                 <TouchableOpacity onPress={() => router.back()}>
                   <BackIcon />
                 </TouchableOpacity>
 
-                <View>
-                  <ThemedText
-                    lightColor={theme.text}
-                    darkColor={theme.text}
-                    className="text-[20px] font-[600]"
-                  >
-                    {sessionData.captain?.firstName ||
-                      sessionData.captain?.username ||
-                      "Session"}
-                  </ThemedText>
-                </View>
+                <ThemedText
+                  lightColor={theme.text}
+                  darkColor={theme.text}
+                  className="text-[20px] font-[600]"
+                >
+                  {session?.captain?.firstName ||
+                    session?.captain?.username ||
+                    "Session"}
+                </ThemedText>
 
                 <TouchableOpacity
                   onPress={() => setShowDetails(!showDetails)}
@@ -237,64 +286,145 @@ export default function JoinSession() {
                 </TouchableOpacity>
               </View>
 
-              <View className="mt-[5px] flex w-full flex-col items-center justify-center gap-[2px] text-center">
+              <View className="mt-[5px] flex w-full flex-col items-center justify-center gap-[2px]">
                 <ThemedText
                   lightColor={theme.text}
                   darkColor={theme.text}
-                  className="text-[13px] font-[400] text-black"
+                  className="text-[13px] font-[400]"
                 >
-                  {sessionData.location?.name || "Location TBD"},{" "}
-                  {sessionData.location?.address || ""}
+                  {session?.location?.name || "Location TBD"},{" "}
+                  {session?.location?.address || ""}
                 </ThemedText>
                 <ThemedText
                   lightColor={theme.text}
                   darkColor={theme.text}
-                  className="text-[13px] font-[400] text-black"
+                  className="text-[13px] font-[400]"
                 >
-                  {formatDate(sessionData.startTime)} •{" "}
-                  {formatTime(sessionData.startTime)}
+                  {formatDate(session?.startTime)} •{" "}
+                  {formatTime(session?.startTime)}
                 </ThemedText>
               </View>
 
+              {/* Loading skeleton while fetching fresh data */}
+              {loadingActiveSession && !activeSession && (
+                <View style={{ alignItems: "center", marginTop: 20 }}>
+                  <ActivityIndicator color="#00FF94" size="small" />
+                </View>
+              )}
+
+              {/* Action buttons — derived purely from server data */}
               <View className="mx-auto mt-[45px]">
-                {sessionData.isFull ? (
+                {loadingActiveSession &&
+                !activeSession ? null : session?.isFull && !isMember ? (
                   <View className="flex w-[120px] items-center justify-center rounded-[5px] bg-gray-400 p-[10px]">
                     <Text className="text-[10px] font-[400]">Session Full</Text>
                   </View>
-                ) : sessionData.inProgress ? (
+                ) : session?.inProgress && !isMember ? (
                   <View className="flex w-[120px] items-center justify-center rounded-[5px] bg-yellow-400 p-[10px]">
                     <Text className="text-[10px] font-[400]">In Progress</Text>
                   </View>
-                ) : sessionData.finished ? (
+                ) : session?.finished && !isMember ? (
                   <View className="flex w-[120px] items-center justify-center rounded-[5px] bg-gray-600 p-[10px]">
                     <Text className="text-[10px] font-[400] text-white">
                       Match Ended
                     </Text>
                   </View>
                 ) : isMember ? (
-                  <TouchableOpacity
-                    className="flex w-[120px] items-center justify-center rounded-[5px] bg-primary p-[10px]"
-                    onPress={() =>
-                      router.push({
-                        pathname: "/assigned",
-                        params: {
-                          session: JSON.stringify(sessionData),
-                        },
-                      })
-                    }
-                  >
-                    <Text className="text-[10px] font-[400] text-white">
-                      Assign Sets
-                    </Text>
-                  </TouchableOpacity>
+                  <View className="flex flex-col items-center gap-[8px]">
+                    {/* Assign sets */}
+                    <TouchableOpacity
+                      className="flex w-[120px] items-center justify-center rounded-[5px] bg-primary p-[10px]"
+                      onPress={() =>
+                        router.push({
+                          pathname: "/assigned",
+                          params: { session: JSON.stringify(session) },
+                        })
+                      }
+                    >
+                      <Text className="text-[10px] font-[400] text-black">
+                        Assign Sets
+                      </Text>
+                    </TouchableOpacity>
+
+                    {/* Pay Fee — only shown when server says payment is required and unpaid */}
+                    {showPayButton && (
+                      <TouchableOpacity
+                        className="flex w-[120px] items-center justify-center rounded-[5px] bg-black p-[10px]"
+                        onPress={() =>
+                          router.push({
+                            pathname: "/payment-screens/session-payment",
+                            params: {
+                              sessionId,
+                              locationName: session?.location?.name ?? "",
+                              startTime: session?.startTime ?? "",
+                              matchType: session?.matchType ?? "",
+                            },
+                          })
+                        }
+                      >
+                        <Text className="text-[10px] font-[600] text-primary">
+                          Pay Fee
+                        </Text>
+                      </TouchableOpacity>
+                    )}
+
+                    {/* Payment status badge */}
+                    {paymentRequired && myPaymentStatus && (
+                      <View
+                        style={{
+                          flexDirection: "row",
+                          alignItems: "center",
+                          gap: 4,
+                          marginTop: 2,
+                        }}
+                      >
+                        <View
+                          style={{
+                            width: 6,
+                            height: 6,
+                            borderRadius: 3,
+                            backgroundColor:
+                              paymentStatusColor(myPaymentStatus),
+                          }}
+                        />
+                        <Text
+                          style={{
+                            fontSize: 10,
+                            color: paymentStatusColor(myPaymentStatus),
+                          }}
+                        >
+                          {myPaymentStatus === "NOT_REQUIRED"
+                            ? "Free"
+                            : myPaymentStatus}
+                        </Text>
+                      </View>
+                    )}
+
+                    {/* Leave session — only before match starts */}
+                    {!session?.inProgress && !session?.finished && (
+                      <TouchableOpacity
+                        onPress={handleLeaveSession}
+                        disabled={loadingLeave}
+                        style={{ marginTop: 4 }}
+                      >
+                        {loadingLeave ? (
+                          <ActivityIndicator size="small" color="#FF4444" />
+                        ) : (
+                          <Text style={{ fontSize: 10, color: "#FF4444" }}>
+                            Leave
+                          </Text>
+                        )}
+                      </TouchableOpacity>
+                    )}
+                  </View>
                 ) : (
                   <TouchableOpacity
                     className="flex w-[120px] items-center justify-center rounded-[5px] bg-primary p-[10px]"
                     onPress={handleJoinSession}
-                    disabled={loading}
+                    disabled={loadingJoin}
                   >
-                    {loading ? (
-                      <ActivityIndicator size="small" color="#000000" />
+                    {loadingJoin ? (
+                      <ActivityIndicator size="small" color="#000" />
                     ) : (
                       <Text className="text-[10px] font-[400]">
                         Join session
@@ -311,30 +441,35 @@ export default function JoinSession() {
               <ThemedText
                 lightColor={theme.text}
                 darkColor={theme.text}
-                className="text-[15px] font-[500] text-black"
+                className="text-[15px] font-[500]"
               >
                 Lineups
               </ThemedText>
               <ThemedText
                 lightColor={theme.text}
                 darkColor={theme.text}
-                className="text-[15px] font-[500] text-black"
+                className="text-[15px] font-[500]"
               >
                 Squad List
               </ThemedText>
             </View>
-            <View>
-              <PitchIcon />
-            </View>
+            <PitchIcon />
           </View>
 
-          {/* Player Cards */}
-          {sessionData.members && sessionData.members.length > 0 ? (
-            sessionData.members.map((member: any, index: number) => (
+          {/* Player list — from server response, includes paymentStatus badges */}
+          {loadingActiveSession && members.length === 0 ? (
+            <View style={{ alignItems: "center", paddingVertical: 20 }}>
+              <ActivityIndicator color="#00FF94" />
+            </View>
+          ) : members.length > 0 ? (
+            members.map((member: any, index: number) => (
               <PlayerInfoCard
                 key={member._id || index}
                 name={
-                  member.firstName || member.username || `Player ${index + 1}`
+                  member.nickname || member.firstName || `Player ${index + 1}`
+                }
+                paymentStatus={
+                  paymentRequired ? member.paymentStatus : undefined
                 }
               />
             ))
@@ -346,7 +481,7 @@ export default function JoinSession() {
         </View>
       </ScrollView>
 
-      {/* Session Details Dropdown */}
+      {/* Session details dropdown */}
       {showDetails && (
         <>
           <Pressable
@@ -361,7 +496,6 @@ export default function JoinSession() {
               zIndex: 200,
             }}
           />
-
           <View
             style={{
               position: "absolute",
@@ -372,55 +506,30 @@ export default function JoinSession() {
             }}
             className="rounded-[10px] bg-[#F2F2F2] px-[31px] py-[40px] shadow-lg"
           >
-            <View className="mb-[17px] flex flex-row justify-between">
-              <Text className="text-[14px] text-[#2A2A2A]">Duration:</Text>
-              <Text className="text-[14px] font-[600] text-black">
-                {getDuration(sessionData.timeDuration)}
-              </Text>
-            </View>
-
-            <View className="mb-[17px] flex flex-row justify-between">
-              <Text className="text-[14px] text-[#2A2A2A]">
-                Duration per match:
-              </Text>
-              <Text className="text-[14px] font-[600] text-black">
-                {getMatchDuration(sessionData.minsPerSet)}
-              </Text>
-            </View>
-
-            <View className="mb-[17px] flex flex-row justify-between">
-              <Text className="text-[14px] text-[#2A2A2A]">Match type:</Text>
-              <Text className="text-[14px] font-[600] text-black capitalize">
-                {sessionData.matchType || "Friendly"}
-              </Text>
-            </View>
-
-            <View className="mb-[17px] flex flex-row justify-between">
-              <Text className="text-[14px] text-[#2A2A2A]">
-                Players per team:
-              </Text>
-              <Text className="text-[14px] font-[600] text-black">
-                {sessionData.playersPerTeam || "TBD"}
-              </Text>
-            </View>
-
-            <View className="mb-[17px] flex flex-row justify-between">
-              <Text className="text-[14px] text-[#2A2A2A]">
-                Number of sets:
-              </Text>
-              <Text className="text-[14px] font-[600] text-black">
-                {sessionData.setNumber || "TBD"}
-              </Text>
-            </View>
-
-            <View className="flex flex-row justify-between">
-              <Text className="text-[14px] text-[#2A2A2A]">
-                Winning decider:
-              </Text>
-              <Text className="text-[14px] font-[600] text-black">
-                {formatWinningDecider(sessionData.winningDecider)}
-              </Text>
-            </View>
+            {[
+              { label: "Duration", value: getDuration(session?.timeDuration) },
+              {
+                label: "Duration per match",
+                value: getMatchDuration(session?.minsPerSet),
+              },
+              { label: "Match type", value: session?.matchType || "Friendly" },
+              {
+                label: "Players per team",
+                value: session?.playersPerTeam ?? "TBD",
+              },
+              { label: "Number of sets", value: session?.setNumber ?? "TBD" },
+              {
+                label: "Winning decider",
+                value: formatWinningDecider(session?.winningDecider),
+              },
+            ].map((row, i) => (
+              <View key={i} className="mb-[17px] flex flex-row justify-between">
+                <Text className="text-[14px] text-[#2A2A2A]">{row.label}:</Text>
+                <Text className="text-[14px] font-[600] text-black capitalize">
+                  {String(row.value)}
+                </Text>
+              </View>
+            ))}
           </View>
         </>
       )}

@@ -11,10 +11,11 @@ interface Props {
 
 export function SessionMatchCard({ match, sessionData }: Props) {
   const handlePress = () => {
-    if (sessionData) {
+    const id = match.sessionId ?? sessionData?._id;
+    if (id) {
       router.push({
         pathname: "/joinsession",
-        params: { session: JSON.stringify(sessionData) },
+        params: { sessionId: id, session: JSON.stringify(sessionData) },
       });
     }
   };

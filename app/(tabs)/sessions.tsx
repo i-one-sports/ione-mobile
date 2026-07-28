@@ -1,4 +1,4 @@
-import { allSessions } from "@/api/sessions";
+import { allSessions, getMyCurrentSession } from "@/api/sessions";
 import CustomDatePicker from "@/components/modals/CustomDatePicker";
 import PlusIcon from "@/assets/svg/PlusIcon";
 import { CalendarPolygon } from "@/components/sessions/CalendarPolygon";
@@ -63,6 +63,7 @@ export default function Schedule({
     if (!user?.location?.coordinates) return;
     const [lat, lng] = user.location.coordinates;
     dispatch(allSessions({ lat, lng }));
+    dispatch(getMyCurrentSession());
   }, [dispatch, user]);
 
   useEffect(() => {

@@ -436,14 +436,36 @@ export interface Members {
   firstName: string;
   lastName: string;
   nickname: string;
-  avatar: string;
+  avatar: string | null;
   paymentStatus: "PAID" | "PENDING" | "FAILED" | "REFUNDED" | "NOT_REQUIRED";
 }
 
 export interface SessionByIdResponse {
   _id: string;
   paymentRequired: boolean;
+  paymentAmount?: number;
   members: Members[];
+  // full session fields
+  captain?: {
+    _id: string;
+    firstName?: string;
+    username?: string;
+    nickname?: string;
+  };
+  location?: { _id: string; name: string; address: string };
+  startTime?: string;
+  stopTime?: string;
+  matchType?: string;
+  isFull?: boolean;
+  finished?: boolean;
+  inProgress?: boolean;
+  maxNumber?: number;
+  timeDuration?: number;
+  minsPerSet?: number;
+  winningDecider?: string;
+  playersPerTeam?: number;
+  setNumber?: number;
+  status?: string;
 }
 
 export interface Tournament {
