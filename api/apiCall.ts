@@ -57,10 +57,30 @@ async function apiCall(
       return thunkAPI.rejectWithValue({ msg: "Network Error", status: 500 });
     }
     if (error?.response?.status === 500) {
-      return thunkAPI.rejectWithValue({ msg: "Server Error", status: 500 });
+      console.log(
+        "🔴 [apiCall] 500 Server Error — raw response:",
+        JSON.stringify(error?.response?.data, null, 2),
+      );
+      const rawMsg: string =
+        error?.response?.data?.message ||
+        error?.response?.data?.error ||
+        "Server error";
+      // Backend sometimes wraps a downstream 4xx as a 500 — surface the status code
+      const serverMsg = /request failed with status code \d+/i.test(rawMsg)
+        ? `Server rejected the request (${rawMsg.match(/\d+/)?.[0] ?? "400"}). Please try again or contact support.`
+        : rawMsg;
+      return thunkAPI.rejectWithValue({ msg: serverMsg, status: 500 });
     }
     const responseData = error.response.data;
-    const errorMsg = responseData?.error || responseData || "An error occurred";
+    console.log(
+      `🔴 [apiCall] ${error?.response?.status} Error — raw response:`,
+      JSON.stringify(responseData, null, 2),
+    );
+    const errorMsg =
+      responseData?.error ||
+      responseData?.message ||
+      responseData ||
+      "An error occurred";
 
     return thunkAPI.rejectWithValue({
       msg: errorMsg,

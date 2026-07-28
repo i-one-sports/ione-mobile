@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import EventSource from 'react-native-sse';
+import { useState, useEffect, useRef } from "react";
+import EventSource from "react-native-sse";
 
 interface TeamScore {
   id: string;
@@ -27,12 +27,26 @@ interface UseMatchScoreOptions {
 }
 
 const useMatchScore = (options: UseMatchScoreOptions) => {
-  const { matchId, sessionId, globalStream = false, onScoreUpdate, onError } = options;
-  
+  const {
+    matchId,
+    sessionId,
+    globalStream = false,
+    onScoreUpdate,
+    onError,
+  } = options;
+
+  // Stable refs for callbacks — changing these never re-triggers the SSE effect
+  const onScoreUpdateRef = useRef(onScoreUpdate);
+  const onErrorRef = useRef(onError);
+  useEffect(() => {
+    onScoreUpdateRef.current = onScoreUpdate;
+    onErrorRef.current = onError;
+  });
+
   const [scoreData, setScoreData] = useState<MatchScoreData>({
-    matchId: matchId || '',
-    teamOne: { id: '', name: 'Team One' },
-    teamTwo: { id: '', name: 'Team Two' },
+    matchId: matchId || "",
+    teamOne: { id: "", name: "Team One" },
+    teamTwo: { id: "", name: "Team Two" },
     teamOneScore: 0,
     teamTwoScore: 0,
     timestamp: Date.now(),
@@ -42,15 +56,13 @@ const useMatchScore = (options: UseMatchScoreOptions) => {
   const [lastHeartbeat, setLastHeartbeat] = useState<number>(Date.now());
 
   useEffect(() => {
-    // Don't connect if no valid stream type is provided
     if (!matchId && !sessionId && !globalStream) {
       return;
     }
 
-    // Build the appropriate URL based on stream type
-    let streamUrl = '';
-    const baseUrl = 'https://i-one-server-v1.onrender.com';
-    
+    let streamUrl = "";
+    const baseUrl = "https://i-one-server-v1.onrender.com";
+
     if (globalStream) {
       streamUrl = `${baseUrl}/i-one/matches/stream`;
     } else if (sessionId) {
@@ -59,46 +71,35 @@ const useMatchScore = (options: UseMatchScoreOptions) => {
       streamUrl = `${baseUrl}/i-one/matches/stream/${matchId}`;
     }
 
-    console.log('🔌 Connecting to SSE:', streamUrl);
+    console.log("🔌 Connecting to SSE:", streamUrl);
 
-    // 🍪 Cookie-based authentication - matches your axios config
     const eventSource = new EventSource(streamUrl, {
-      withCredentials: true, // Sends cookies automatically (same as your axios)
+      withCredentials: true,
       headers: {
-        'Content-Type': 'text/event-stream',
+        "Content-Type": "text/event-stream",
       },
     });
 
-    // Connection opened
-    eventSource.addEventListener('open', () => {
-      console.log('SSE connection established');
-      setScoreData(prev => ({ ...prev, connected: true, error: undefined }));
+    eventSource.addEventListener("open", () => {
+      console.log("SSE connection established");
+      setScoreData((prev) => ({ ...prev, connected: true, error: undefined }));
       setLastHeartbeat(Date.now());
     });
 
-    // Message received
-    eventSource.addEventListener('message', (event) => {
+    eventSource.addEventListener("message", (event) => {
       try {
-        const data = JSON.parse(event.data || '{}');
-        console.log('SSE message received:', data.type);
+        const data = JSON.parse(event.data || "{}");
 
         switch (data.type) {
-          case 'connected':
-            console.log('Connected to stream:', data.message);
+          case "connected":
             setLastHeartbeat(Date.now());
             break;
 
-          case 'heartbeat':
-            console.log('💓 Heartbeat received');
+          case "heartbeat":
             setLastHeartbeat(Date.now());
             break;
 
-          case 'score-update':
-            console.log('⚽ Score update:', {
-              match: data.matchId,
-              score: `${data.teamOneScore} - ${data.teamTwoScore}`
-            });
-            
+          case "score-update": {
             const updatedData: MatchScoreData = {
               matchId: data.matchId,
               sessionId: data.sessionId,
@@ -109,68 +110,74 @@ const useMatchScore = (options: UseMatchScoreOptions) => {
               timestamp: data.timestamp || Date.now(),
               connected: true,
             };
-            
             setScoreData(updatedData);
             setLastHeartbeat(Date.now());
-            
-            // Call optional callback
-            if (onScoreUpdate) {
-              onScoreUpdate(updatedData);
-            }
+            onScoreUpdateRef.current?.(updatedData);
             break;
+          }
 
-          case 'error':
-            console.error('SSE error event:', data.message);
-            setScoreData(prev => ({ 
-              ...prev, 
+          case "error":
+            setScoreData((prev) => ({
+              ...prev,
               error: data.message,
-              connected: false 
+              connected: false,
             }));
-            if (onError) {
-              onError(data.message);
-            }
+            onErrorRef.current?.(data.message);
             break;
-
-          default:
-            console.log('Unknown event type:', data.type);
         }
-      } catch (err) {
-        console.error('Failed to parse SSE message:', err);
+      } catch {
+        // ignore parse errors
       }
     });
 
-    // Connection error
-    eventSource.addEventListener('error', (error) => {
-      console.error('SSE connection error:', error);
-      setScoreData(prev => ({ 
-        ...prev, 
-        connected: false,
-        error: 'Connection lost'
-      }));
-      if (onError) {
-        onError('Connection error occurred');
+    eventSource.addEventListener("error", (error) => {
+      const errorData = (error as any)?.data ?? "";
+      const isFatal =
+        typeof errorData === "string" &&
+        (errorData.includes("maximum connections") ||
+          errorData.includes("Maximum connections"));
+
+      if (isFatal) {
+        // Server explicitly rejected — stop immediately, don't retry
+        eventSource.close();
+        setScoreData((prev) => ({
+          ...prev,
+          connected: false,
+          error: "Too many connections",
+        }));
+        // Don't surface this as a user-facing error; it will self-resolve
+      } else {
+        setScoreData((prev) => ({
+          ...prev,
+          connected: false,
+          error: "Connection lost",
+        }));
+        onErrorRef.current?.("Connection error occurred");
       }
     });
 
-    // Cleanup on unmount
     return () => {
-      console.log('Closing SSE connection');
+      console.log("Closing SSE connection");
       eventSource.close();
     };
-  }, [matchId, sessionId, globalStream, onScoreUpdate, onError]);
+    // Callbacks intentionally excluded — they live in refs above
+     
+  }, [matchId, sessionId, globalStream]);
 
   // Monitor heartbeat health
   useEffect(() => {
     const heartbeatCheck = setInterval(() => {
       const timeSinceLastHeartbeat = Date.now() - lastHeartbeat;
-      
+
       // If no heartbeat for 60 seconds, mark as disconnected
       if (timeSinceLastHeartbeat > 60000 && scoreData.connected) {
-        console.warn('⚠️ No heartbeat received in 60s - connection may be stale');
-        setScoreData(prev => ({ 
-          ...prev, 
+        console.warn(
+          "⚠️ No heartbeat received in 60s - connection may be stale",
+        );
+        setScoreData((prev) => ({
+          ...prev,
           connected: false,
-          error: 'Connection timeout'
+          error: "Connection timeout",
         }));
       }
     }, 10000); // Check every 10 seconds
