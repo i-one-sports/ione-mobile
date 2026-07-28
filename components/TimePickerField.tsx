@@ -2,7 +2,6 @@ import React, { useMemo, useState } from "react";
 import { Modal, View, ScrollView, TouchableOpacity } from "react-native";
 import { Entypo } from "@expo/vector-icons";
 import InputField from "@/components/InputField";
-import CustomButton from "@/components/ui/CustomButton";
 import DropdownModal from "@/components/ui/DropdownModal";
 import { ThemedText } from "./ThemedText";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -87,7 +86,13 @@ export default function TimePickerField({
             <View style={{ flexDirection: "row", gap: 12 }}>
               {/* HOURS */}
               <View style={{ flex: 1 }}>
-                <ThemedText style={{ marginBottom: 8 }}>Hour</ThemedText>
+                <ThemedText
+                  lightColor="#6C757D"
+                  darkColor="#9BA1A6"
+                  style={{ marginBottom: 8 }}
+                >
+                  Hour
+                </ThemedText>
 
                 <ScrollView style={{ maxHeight: 200 }}>
                   {HOURS.map((h) => (
@@ -101,7 +106,9 @@ export default function TimePickerField({
                         borderRadius: 8,
                       }}
                     >
-                      <ThemedText>{h}</ThemedText>
+                      <ThemedText lightColor="#6C757D" darkColor="#9BA1A6">
+                        {h}
+                      </ThemedText>
                     </TouchableOpacity>
                   ))}
                 </ScrollView>
@@ -109,7 +116,13 @@ export default function TimePickerField({
 
               {/* MINUTES */}
               <View style={{ flex: 1 }}>
-                <ThemedText style={{ marginBottom: 8 }}>Minute</ThemedText>
+                <ThemedText
+                  lightColor="#6C757D"
+                  darkColor="#9BA1A6"
+                  style={{ marginBottom: 8 }}
+                >
+                  Minute
+                </ThemedText>
 
                 <ScrollView style={{ maxHeight: 200 }}>
                   {MINUTES.map((m) => (
@@ -123,7 +136,9 @@ export default function TimePickerField({
                         borderRadius: 8,
                       }}
                     >
-                      <ThemedText>{m}</ThemedText>
+                      <ThemedText lightColor="#6C757D" darkColor="#9BA1A6">
+                        {m}
+                      </ThemedText>
                     </TouchableOpacity>
                   ))}
                 </ScrollView>
@@ -142,7 +157,7 @@ export default function TimePickerField({
                 <ThemedText
                   className="text-center text-lg font-semibold"
                   lightColor="#fff"
-                  darkColor="#666"
+                  darkColor="#fff"
                 >
                   Done
                 </ThemedText>

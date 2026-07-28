@@ -177,7 +177,7 @@ export default function AdminSignup2() {
                   text1: "Account created!",
                   text2: res.message,
                 });
-                router.replace("/(onboarding)/signin");
+                router.replace("/(onboarding)/verify-email");
               })
               .catch((err) => {
                 const msg =

@@ -15,7 +15,7 @@ import SafeAreaScreen from "@/components/SafeAreaScreen";
 import { Colors } from "@/constants/Colors";
 import { Icon } from "@/components/ui/Icon";
 import { useAppDispatch, useAppSelector } from "@/redux/store";
-import { confirmEmail, getUser, sendEmail } from "@/api/authThunks";
+import { confirmEmail, sendEmail } from "@/api/authThunks";
 
 export default function VerifyEmail() {
   const colorScheme = useColorScheme();
@@ -84,8 +84,7 @@ export default function VerifyEmail() {
         text1: "Email verified",
         text2: "Your account has been verified successfully",
       });
-      await dispatch(getUser()).unwrap();
-      router.back();
+      router.push("/(onboarding)/signin");
     } catch (err: any) {
       Toast.show({
         type: "error",
@@ -212,8 +211,8 @@ export default function VerifyEmail() {
                     </ThemedText>
 
                     <ThemedText
-                      lightColor={countdown > 0 ? "#9CA3AF" : "#46BB1C"}
-                      darkColor={countdown > 0 ? "#6B7280" : "#46BB1C"}
+                      lightColor={countdown > 0 ? "#9CA3AF" : "#00FF94"}
+                      darkColor={countdown > 0 ? "#6B7280" : "#00FF94"}
                       className="ml-1 text-base font-semibold"
                     >
                       {countdown > 0
