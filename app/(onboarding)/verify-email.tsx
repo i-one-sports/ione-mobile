@@ -15,7 +15,7 @@ import SafeAreaScreen from "@/components/SafeAreaScreen";
 import { Colors } from "@/constants/Colors";
 import { Icon } from "@/components/ui/Icon";
 import { useAppDispatch, useAppSelector } from "@/redux/store";
-import { confirmEmail, sendEmail } from "@/api/authThunks";
+import { confirmEmail, getUser, sendEmail } from "@/api/authThunks";
 
 export default function VerifyEmail() {
   const colorScheme = useColorScheme();
@@ -26,9 +26,10 @@ export default function VerifyEmail() {
   const router = useRouter();
   const dispatch = useAppDispatch();
   const [countdown, setCountdown] = useState(60);
-  const { pendingVerificationEmail, loadingConfirmEmailOtp } = useAppSelector(
-    (state) => state.auth,
-  );
+  const { user, pendingVerificationEmail, loadingConfirmEmailOtp } =
+    useAppSelector((state) => state.auth);
+
+  const email = pendingVerificationEmail || user?.email;
 
   useEffect(() => {
     if (countdown <= 0) return;
@@ -42,7 +43,6 @@ export default function VerifyEmail() {
     setCountdown(60);
   };
 
-  console.log("pending email", pendingVerificationEmail);
   // ✅ Updated working auto-focus handler
   const handleCodeChange = (text: string, index: number) => {
     const numericText = text.replace(/[^0-9]/g, "");
@@ -70,12 +70,11 @@ export default function VerifyEmail() {
     setCode(["", "", "", "", ""]);
     inputRefs.current[0]?.focus();
   };
-  console.log(pendingVerificationEmail);
   const handleVerify = async () => {
     try {
       await dispatch(
         confirmEmail({
-          email: pendingVerificationEmail!,
+          email: email!,
           otp: Number(code.join("")),
         }),
       ).unwrap();
@@ -83,10 +82,10 @@ export default function VerifyEmail() {
       Toast.show({
         type: "success",
         text1: "Email verified",
-        text2: "Your account has been verified successfully. Please sign in.",
+        text2: "Your account has been verified successfully",
       });
-
-      router.replace("/(onboarding)/signin"); // or your login route
+      await dispatch(getUser()).unwrap();
+      router.back();
     } catch (err: any) {
       Toast.show({
         type: "error",
@@ -100,7 +99,7 @@ export default function VerifyEmail() {
     try {
       await dispatch(
         sendEmail({
-          email: pendingVerificationEmail!,
+          email: email!,
         }),
       ).unwrap();
 
@@ -150,7 +149,7 @@ export default function VerifyEmail() {
               darkColor="#9BA1A6"
               className="px-4 text-center text-base leading-6"
             >
-              A code has been sent to {pendingVerificationEmail}
+              A code has been sent to {email}
             </ThemedText>
           </View>
 
@@ -209,7 +208,7 @@ export default function VerifyEmail() {
                       darkColor="#9BA1A6"
                       className="text-base"
                     >
-                      Didn&apost receive any code?
+                      Didn&apos;t receive any code?
                     </ThemedText>
 
                     <ThemedText

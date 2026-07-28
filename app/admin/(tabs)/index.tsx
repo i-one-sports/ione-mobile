@@ -7,6 +7,7 @@ import {
 } from "@/api/ownerDashboardThunk";
 import AdminNotificationIcon from "@/assets/svg/AdminNotificationIcon";
 import LocationIcon from "@/assets/svg/LocationIcon";
+import ActionBanner from "@/components/ActionBanner";
 import MatchCardSkeleton from "@/components/MatchCardSkeleton";
 import Recent from "@/components/Recent";
 import SafeAreaScreen from "@/components/SafeAreaScreen";
@@ -87,6 +88,8 @@ export default function AdminHomeScreen() {
   const accent = isDark ? "#00FF94" : "#00cc77";
   const showOnboardingBanner =
     user?.ownerOnboardingStatus === "PENDING_VERIFICATION";
+
+  const showAdminEmailVerificationBanner = !user?.emailVerified;
 
   console.log("dashboardSummary", dashboardSummary);
   console.log("location", location);
@@ -234,6 +237,16 @@ export default function AdminHomeScreen() {
           }}
           showsVerticalScrollIndicator={false}
         >
+          {showAdminEmailVerificationBanner && (
+            <ActionBanner
+              title="Verify Your Email"
+              description="Verify your email to unlock all app features."
+              icon="mail-outline"
+              accent={accent}
+              isDark={isDark}
+              onPress={() => router.push("/verify-email")}
+            />
+          )}
           {showOnboardingBanner && (
             <TouchableOpacity
               onPress={() => router.push("/admin/onboarding")}

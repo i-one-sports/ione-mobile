@@ -7,11 +7,11 @@ import {
   confirmEmail,
 } from "@/api/authThunks";
 import { User } from "@/components/typings";
-import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import {
+import { UserResponse ,
   SendEmailResponse,
   ConfirmEmailResponse,
 } from "@/components/typings/apiResponse";
+import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
 interface State {
   user: User | null;
