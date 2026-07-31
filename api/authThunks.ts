@@ -10,6 +10,8 @@ import {
   RegisterPayload,
   SubmitVerificationPayload,
   verifyOtpPayload,
+  ConfirmEmailOtpPayload,
+  SendEmailOtpPayload,
 } from "@/components/typings/api";
 import {
   forgotPasswordResponse,
@@ -18,6 +20,9 @@ import {
   RegisterResponse,
   SubmitVerificationResponse,
   UserResponse,
+  ConfirmEmailResponse,
+  SendEmailResponse,
+  GetVerificationResponse,
 } from "@/components/typings/apiResponse";
 import axiosInstance, { uploadAxios } from "./axios";
 import { Platform } from "react-native";
@@ -106,6 +111,28 @@ export const forgotPassword = createAsyncThunk<
   );
 });
 
+export const sendEmail = createAsyncThunk<
+  SendEmailResponse,
+  SendEmailOtpPayload,
+  AsyncThunkConfig
+>("/users/send-verify-email", async (payload, thunkAPI) => {
+  return apiCall(
+    axiosInstance.post("/i-one/user/verify-email/send", payload),
+    thunkAPI,
+  );
+});
+
+export const confirmEmail = createAsyncThunk<
+  ConfirmEmailResponse,
+  ConfirmEmailOtpPayload,
+  AsyncThunkConfig
+>("/users/confirm-verify-email", async (payload, thunkAPI) => {
+  return apiCall(
+    axiosInstance.post("/i-one/user/verify-email/confirm", payload),
+    thunkAPI,
+  );
+});
+
 export const verifyOtp = createAsyncThunk<
   forgotPasswordResponse,
   verifyOtpPayload,
@@ -127,19 +154,6 @@ export const reset = createAsyncThunk<
     thunkAPI,
   );
 });
-
-// export const submitVerification = createAsyncThunk<
-//   SubmitVerificationResponse,
-//   SubmitVerificationPayload,
-//   AsyncThunkConfig
-// >("user/submitVerification", async (payload, thunkAPI) => {
-//   return apiCall(
-//     axiosInstance.post("/i-one/verification/submit", payload),
-//     thunkAPI,
-//     "auth",
-//   );
-// });
-//
 
 export const submitVerification = createAsyncThunk<
   SubmitVerificationResponse,
@@ -181,6 +195,15 @@ export const submitVerification = createAsyncThunk<
     thunkAPI,
     "auth",
   );
+});
+
+//this is used to display state of verification
+export const getVerification = createAsyncThunk<
+  GetVerificationResponse,
+  void,
+  AsyncThunkConfig
+>("user/getVerification", async (_, thunkAPI) => {
+  return apiCall(axiosInstance.get("/i-one/verification/me"), thunkAPI, "auth");
 });
 
 export const logOut = createAsyncThunk<logoutResponse, void, AsyncThunkConfig>(

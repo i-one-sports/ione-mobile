@@ -170,9 +170,9 @@ export default function AdminSignup2() {
                 Toast.show({
                   type: "success",
                   text1: "Account created!",
-                  text2: res.message || "Please sign in.",
+                  text2: res.message,
                 });
-                router.replace("/(onboarding)/signin");
+                router.replace("/(onboarding)/verify-email");
               })
               .catch((err) => {
                 const msg =
