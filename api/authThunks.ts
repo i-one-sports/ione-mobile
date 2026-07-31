@@ -22,6 +22,7 @@ import {
   UserResponse,
   ConfirmEmailResponse,
   SendEmailResponse,
+  GetVerificationResponse,
 } from "@/components/typings/apiResponse";
 import axiosInstance, { uploadAxios } from "./axios";
 import { Platform } from "react-native";
@@ -194,6 +195,15 @@ export const submitVerification = createAsyncThunk<
     thunkAPI,
     "auth",
   );
+});
+
+//this is used to display state of verification
+export const getVerification = createAsyncThunk<
+  GetVerificationResponse,
+  void,
+  AsyncThunkConfig
+>("user/getVerification", async (_, thunkAPI) => {
+  return apiCall(axiosInstance.get("/i-one/verification/me"), thunkAPI, "auth");
 });
 
 export const logOut = createAsyncThunk<logoutResponse, void, AsyncThunkConfig>(

@@ -5,16 +5,19 @@ import {
   registerOwner,
   sendEmail,
   confirmEmail,
+  getVerification,
 } from "@/api/authThunks";
 import { User } from "@/components/typings";
-import { UserResponse ,
+import {
   SendEmailResponse,
   ConfirmEmailResponse,
+  GetVerificationResponse,
 } from "@/components/typings/apiResponse";
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
 interface State {
   user: User | null;
+  verification: GetVerificationResponse | null;
   pendingVerificationEmail: string | null;
   sendEmailOtp: SendEmailResponse | null;
   confirmEmailOtp: ConfirmEmailResponse | null;
@@ -22,6 +25,7 @@ interface State {
 
   loadingSendEmailOtp: boolean;
   loadingConfirmEmailOtp: boolean;
+  loadingVerification: boolean;
   isRegistered: boolean;
   isAuthenticated: boolean;
   isVerified: boolean;
@@ -30,16 +34,19 @@ interface State {
 
   errorSendEmailOtp: string | null;
   errorConfirmEmailOtp: string | null;
+  errorVerification: string | null;
 }
 
 const initialState: State = {
   user: null,
+  verification: null,
   sendEmailOtp: null,
   confirmEmailOtp: null,
   profile: null,
   pendingVerificationEmail: null,
 
   loadingConfirmEmailOtp: false,
+  loadingVerification: false,
   loadingSendEmailOtp: false,
   isRegistered: false,
   isAuthenticated: false,
@@ -49,6 +56,7 @@ const initialState: State = {
 
   errorConfirmEmailOtp: null,
   errorSendEmailOtp: null,
+  errorVerification: null,
 };
 
 export const authSlice = createSlice({
@@ -64,13 +72,17 @@ export const authSlice = createSlice({
     logout: (state) => ({ ...initialState, isRegistered: state.isRegistered }),
   },
   extraReducers(builder) {
+    // builder.addCase(getUser.fulfilled, (state, { payload }) => {
+    //   state.user = {
+    //     ...payload,
+    //     ownerOnboardingStatus: state.user?.ownerOnboardingStatus,
+    //   };
+    //   state.isAuthenticated = true;
+    //   console.log("getUser payload:", payload);
+    // });
     builder.addCase(getUser.fulfilled, (state, { payload }) => {
-      state.user = {
-        ...payload,
-        ownerOnboardingStatus: state.user?.ownerOnboardingStatus,
-      };
+      state.user = payload;
       state.isAuthenticated = true;
-      console.log("getUser payload:", payload);
     });
     builder.addCase(register.fulfilled, (state, action) => {
       state.user = action.payload;
@@ -121,6 +133,22 @@ export const authSlice = createSlice({
       state.loadingConfirmEmailOtp = false;
       state.errorConfirmEmailOtp =
         action.error.message || "Failed to confirm Otp";
+    });
+
+    builder.addCase(getVerification.pending, (state) => {
+      state.loadingVerification = true;
+      state.errorVerification = null;
+    });
+    builder.addCase(getVerification.fulfilled, (state, { payload }) => {
+      console.log("verification payload:", payload);
+
+      state.verification = payload;
+      state.loadingVerification = false;
+    });
+    builder.addCase(getVerification.rejected, (state, action) => {
+      state.loadingVerification = false;
+      state.errorVerification =
+        action.error.message || "Failed to fetch verification";
     });
   },
 });

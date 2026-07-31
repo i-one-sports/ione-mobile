@@ -108,6 +108,21 @@ export interface SubmitVerificationResponse {
   };
 }
 
+export interface GetVerificationResponse {
+  _id: string;
+  userId: string;
+  idType: string;
+  idNumber: string;
+  address: string;
+  frontUrl: string;
+  backUrl: string;
+  locationPictures: string[];
+  rejectionReason: string | null;
+  status: "PENDING" | "APPROVED" | "REJECTED";
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface BankResponse {
   _id: string;
   paystackId: number;
@@ -200,6 +215,7 @@ export interface LocationResponse {
   friendly: boolean;
   tournament: boolean;
   tournamentFee: number;
+  status: string;
   owner?: string;
   tier: "free" | "paid";
   pricingOption: "hourly" | "monthly";

@@ -165,7 +165,7 @@ export default function AdminStatisticsScreen() {
                       shadowOpacity: 0.15,
                       shadowRadius: 8,
                       elevation: 8,
-                      overflow: "hidden",
+                      //   overflow: "hidden",
                     }}
                   >
                     {Object.entries(PERIOD_LABELS).map(
