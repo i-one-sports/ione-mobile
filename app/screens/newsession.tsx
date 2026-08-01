@@ -195,7 +195,7 @@ export default function NewSession() {
           <View className="mt-[19px] mb-[32px] flex w-full flex-col items-center gap-2 rounded-[4px] bg-[#03EA8926] px-[17px] py-[21px] text-center ">
             <ThemedText
               darkColor={theme.text}
-              className="text-[14px] text-[#0C4D2E]"
+              className="text-[14px] text-center text-[#0C4D2E]"
             >
               You are officially the captain of this ball session!
             </ThemedText>
