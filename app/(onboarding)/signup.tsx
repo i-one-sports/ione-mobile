@@ -161,7 +161,7 @@ export default function SignUp() {
           text1: "Success",
           text2: response.message || "Account created successfully",
         });
-        router.push("/(onboarding)/signin");
+        router.push("/(onboarding)/verify-email");
       })
       .catch((err) => {
         const message = err?.msg?.message || err?.msg || "Registration failed";

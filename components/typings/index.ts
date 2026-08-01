@@ -98,7 +98,7 @@ export interface User {
   city?: string;
   countryId?: number;
   zipCode?: string;
-  hasVerifiedEmail?: boolean;
+  emailVerified?: boolean;
   profilePhotoUrl?: string;
   state?: null | string;
   user?: {

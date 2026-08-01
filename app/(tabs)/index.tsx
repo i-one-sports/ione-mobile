@@ -16,6 +16,7 @@ import {
   View,
   useColorScheme,
 } from "react-native";
+import ActionBanner from "@/components/ActionBanner";
 
 export default function HomeScreen() {
   const colorScheme = useColorScheme();
@@ -31,6 +32,8 @@ export default function HomeScreen() {
     dispatch(nearBy({ lat, lng }));
     dispatch(nearByLocation({ lat, lng }));
   }, [dispatch, user]);
+
+  const showEmailVerificationBanner = !user?.emailVerified;
 
   const formattedPitches =
     pitches?.map((p: any) => ({
@@ -116,6 +119,17 @@ export default function HomeScreen() {
           />
           <FilterSvg />
         </View>
+
+        {showEmailVerificationBanner && (
+          <ActionBanner
+            title="Verify Your Email"
+            description="Verify your email to unlock all app features."
+            icon="mail-outline"
+            accent={accent}
+            isDark={isDark}
+            onPress={() => router.push("/verify-email")}
+          />
+        )}
 
         {/* Nearby Pitches */}
         <View style={{ gap: 12 }}>

@@ -1,4 +1,4 @@
-import { getSummary } from "@/api/ownerDashboardThunk";
+import React from "react";
 import AdminNotificationIcon from "@/assets/svg/AdminNotificationIcon";
 import { ThemedText } from "@/components/ThemedText";
 import { SettingsHeader } from "@/components/admin/settings/SettingsHeader";
@@ -9,7 +9,7 @@ import { persistor, useAppDispatch, useAppSelector } from "@/redux/store";
 import * as SecureStore from "expo-secure-store";
 import { useRouter } from "expo-router";
 import { useColorScheme } from "nativewind";
-import React, { useEffect } from "react";
+
 import {
   Alert,
   Platform,
@@ -123,7 +123,10 @@ export default function AdminSettingsScreen() {
               justifyContent: "center",
             }}
           >
-            <AdminNotificationIcon />
+            <AdminNotificationIcon
+              color={isDark ? "#FFFFFF" : "#2D264B"}
+              dotColor="#03EA89"
+            />
           </TouchableOpacity>
         </View>
 

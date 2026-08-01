@@ -70,6 +70,15 @@ export interface resetPasswordPayload {
   newPassword?: string;
   confirmNewPassword?: string;
 }
+
+export interface SendEmailOtpPayload {
+  email: string;
+}
+
+export interface ConfirmEmailOtpPayload {
+  email: string;
+  otp: number;
+}
 export interface ErrorResponse {
   msg: string;
   status: number;
