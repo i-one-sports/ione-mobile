@@ -3,11 +3,11 @@ import authReducer, {
   logout,
   success,
 } from "@/redux/reducers/auth";
-import { getUser, login, register } from "@/api/authThunks";
+import { getUser, login, register, updateProfile } from "@/api/authThunks";
 
 const initialState = {
-  user: {},
-  profile: {},
+  user: null,
+  profile: null,
   isRegistered: false,
   isAuthenticated: false,
   isVerified: false,
@@ -36,7 +36,12 @@ describe("auth reducer", () => {
       isVerified: true,
       isRegistered: true,
     };
-    expect(authReducer(loggedIn, logout())).toEqual(initialState);
+    const state = authReducer(loggedIn, logout());
+    expect(state.user).toEqual(null);
+    expect(state.profile).toEqual(null);
+    expect(state.isAuthenticated).toBe(false);
+    expect(state.isVerified).toBe(false);
+    expect(state.isRegistered).toBe(true);
   });
 
   it("success sets isVerified to true", () => {
@@ -66,6 +71,25 @@ describe("auth reducer", () => {
       expect(state.user).toEqual(payload);
       expect(state.isRegistered).toBe(true);
       expect(state.isAuthenticated).toBe(false);
+    });
+  });
+
+  describe("updateProfile", () => {
+    it("fulfilled merges the updated user data into state", () => {
+      const state = authReducer(initialState, {
+        type: updateProfile.fulfilled.type,
+        payload: {
+          firstName: "Ada",
+          lastName: "Lovelace",
+          email: "ada@test.com",
+        },
+      });
+
+      expect(state.user).toEqual({
+        firstName: "Ada",
+        lastName: "Lovelace",
+        email: "ada@test.com",
+      });
     });
   });
 

@@ -8,6 +8,7 @@ import {
   LoginPayload,
   RegisterOwnerPayload,
   RegisterPayload,
+  resetPasswordPayload,
   SubmitVerificationPayload,
   verifyOtpPayload,
 } from "@/components/typings/api";
@@ -99,12 +100,44 @@ export const forgotPassword = createAsyncThunk<
   forgotPasswordResponse,
   forgotPasswordPayload,
   AsyncThunkConfig
->("/users/forgot-password", async (payload, thunkAPI) => {
+>("/users/forget-password", async (payload, thunkAPI) => {
   return apiCall(
-    axiosInstance.post("/i-one/user/forgotPassword", payload),
+    axiosInstance.post("/i-one/user/forget-Password", payload),
     thunkAPI,
   );
 });
+
+const normalizeOtpPayload = (payload: verifyOtpPayload) => {
+  const normalizedOtp = payload.otp;
+
+  if (typeof normalizedOtp === "string") {
+    const trimmedOtp = normalizedOtp.trim();
+    if (trimmedOtp) {
+      return {
+        ...payload,
+        otp: Number(trimmedOtp),
+      };
+    }
+  }
+
+  return payload;
+};
+
+const normalizeResetPasswordPayload = (payload: resetPasswordPayload) => {
+  const {
+    otp: _otp,
+    password,
+    confirmPassword,
+    newPassword,
+    confirmNewPassword,
+  } = payload;
+
+  return {
+    email: payload.email,
+    newPassword: newPassword ?? password,
+    confirmPassword: confirmNewPassword ?? confirmPassword,
+  };
+};
 
 export const verifyOtp = createAsyncThunk<
   forgotPasswordResponse,
@@ -112,19 +145,45 @@ export const verifyOtp = createAsyncThunk<
   AsyncThunkConfig
 >("/users/verify-otp", async (payload, thunkAPI) => {
   return apiCall(
-    axiosInstance.post("/i-one/user/verifyOtp", payload),
+    axiosInstance.post("/i-one/user/verify-otp", normalizeOtpPayload(payload)),
     thunkAPI,
   );
 });
 
 export const reset = createAsyncThunk<
   forgotPasswordResponse,
-  verifyOtpPayload,
+  resetPasswordPayload,
   AsyncThunkConfig
 >("/users/reset-password", async (payload, thunkAPI) => {
   return apiCall(
-    axiosInstance.post("/i-one/user/resetPassword", payload),
+    axiosInstance.put(
+      "/i-one/user/reset-password",
+      normalizeResetPasswordPayload(payload),
+    ),
     thunkAPI,
+  );
+});
+
+export const updateProfile = createAsyncThunk<
+  UserResponse,
+  Partial<RegisterPayload> & {
+    firstName?: string;
+    lastName?: string;
+    nickname?: string;
+    avatar?: string;
+    address?: string;
+    phoneNumber?: string;
+    position?: string;
+    location?: { type: string; coordinates: [number, number] };
+    height?: number;
+    dateOfBirth?: string;
+  },
+  AsyncThunkConfig
+>("user/updateProfile", async (payload, thunkAPI) => {
+  return apiCall(
+    axiosInstance.patch("/i-one/user/profile", payload),
+    thunkAPI,
+    "auth",
   );
 });
 

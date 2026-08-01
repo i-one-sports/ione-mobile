@@ -1,4 +1,4 @@
-import { getUser, login, register } from "@/api/authThunks";
+import { getUser, login, register, updateProfile } from "@/api/authThunks";
 import { User } from "@/components/typings";
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
@@ -47,6 +47,15 @@ export const authSlice = createSlice({
       state.user = payload;
       console.log("register payload:", payload);
       state.isRegistered = true;
+    });
+    builder.addCase(updateProfile.fulfilled, (state, { payload }) => {
+      const nextUser =
+        (payload as { user?: User } | undefined)?.user ?? payload;
+      state.user = {
+        ...(state.user ?? {}),
+        ...(nextUser ?? {}),
+      } as User;
+      state.isAuthenticated = true;
     });
     builder
       .addCase(login.pending, (state) => {
