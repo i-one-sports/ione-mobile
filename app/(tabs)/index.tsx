@@ -23,15 +23,26 @@ export default function HomeScreen() {
   const isDark = colorScheme === "dark";
   const router = useRouter();
   const { user } = useAppSelector((state) => state.auth);
-  const { pitches, loadingPitches } = useAppSelector((state) => state.sessions);
+  const { pitches, loadingPitches, sessions } = useAppSelector(
+    (state) => state.sessions,
+  );
   const dispatch = useAppDispatch();
 
   useEffect(() => {
     if (!user?.location?.coordinates) return;
     const [lat, lng] = user.location.coordinates;
-    dispatch(nearBy({ lat, lng }));
-    dispatch(nearByLocation({ lat, lng }));
+    // dispatch(nearBy({ lat, lng }));
+    dispatch(
+      nearBy({
+        lat: 4.094,
+        lng: 6.41222,
+      }),
+    );
+    dispatch(nearByLocation({ lat: 6.45306, lng: 3.42158 }));
   }, [dispatch, user]);
+
+  // lng=6.41222&lat=4.094
+  //   console.log("[HomeScreen] pitches:", pitches);
 
   const showEmailVerificationBanner = !user?.emailVerified;
 

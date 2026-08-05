@@ -7,6 +7,8 @@ import {
   Pressable,
   Platform,
   KeyboardAvoidingView,
+  Modal,
+  TouchableOpacity,
 } from "react-native";
 import { useFormik } from "formik";
 import * as Yup from "yup";
@@ -21,6 +23,7 @@ import { createSession } from "@/api/sessions";
 import Toast from "react-native-toast-message";
 import Loader from "@/components/loader";
 import SectionCard from "@/components/ui/SectionCard";
+import TimePickerField from "@/components/TimePickerField";
 
 export default function NewSession() {
   const params = useLocalSearchParams();
@@ -30,41 +33,49 @@ export default function NewSession() {
   const theme = Colors[colorScheme ?? "light"];
   const [loading, setLoading] = useState(false);
 
-  const [showPicker, setShowPicker] = useState({
-    duration: false,
-    players: false,
-    rounds: false,
-  });
+  const [startTimeOfDay, setStartTimeOfDay] = useState("");
+  const [showDeciderModal, setShowDeciderModal] = useState(false);
 
-  // Options for each select input
-  const options = {
-    duration: Array.from({ length: 10 }, (_, i) => ({
-      value: (i + 1).toString(),
-    })),
-    players: Array.from({ length: 8 }, (_, i) => ({
-      value: (i + 2).toString(),
-    })),
-    rounds: Array.from({ length: 5 }, (_, i) => ({
-      value: (i + 1).toString(),
-    })),
+  const winningDeciderOptions = [
+    { label: "Penalty Shootout", value: "PENALTY" },
+    { label: "Highest Goals", value: "highestGoals" },
+    { label: "Golden Goal", value: "goldenGoal" },
+  ];
+
+  const getWinningDeciderLabel = (value: string) =>
+    winningDeciderOptions.find((o) => o.value === value)?.label ?? value;
+
+  const buildStartTime = (time: string) => {
+    if (!time) return "";
+    const [h, m] = time.split(":").map(Number);
+    const d = new Date();
+    d.setHours(h || 0, m || 0, 0, 0);
+    return d.toISOString();
+  };
+
+  const handleTimeChange = (time: string) => {
+    setStartTimeOfDay(time);
+    formik.setFieldValue("startTime", buildStartTime(time));
   };
 
   // Formik setup
   const formik = useFormik({
     initialValues: {
-      location: "",
-      tournamentName: "",
+      //   tournamentName: "",
+      startTime: "",
       timeDuration: "",
       playersPerTeam: "",
       setNumber: "",
-      minsPerSet: "10",
+      winningDecider: "",
+      minsPerSet: "",
     },
     validationSchema: Yup.object({
-      location: Yup.string().required("Location is required"),
-      tournamentName: Yup.string().required("Tournament name is required"),
+      //   tournamentName: Yup.string().required("Tournament name is required"),
+      startTime: Yup.string().required("Start date and time is required"),
       timeDuration: Yup.string().required("Total minutes is required"),
       playersPerTeam: Yup.string().required("Players per team is required"),
       setNumber: Yup.string().required("Number of teams is required"),
+      winningDecider: Yup.string().required("Winning decider is required"),
       minsPerSet: Yup.string().required("Minutes per set is required"),
     }),
     onSubmit: async (values) => {
@@ -75,8 +86,8 @@ export default function NewSession() {
           playersPerTeam: Number(values.playersPerTeam),
           timeDuration: Number(values.timeDuration),
           minsPerSet: Number(values.minsPerSet),
-          startTime: new Date().toISOString(),
-          winningDecider: "highestGoals",
+          startTime: values.startTime,
+          winningDecider: values.winningDecider,
         },
       };
       console.log(payload);
@@ -85,67 +96,101 @@ export default function NewSession() {
         .unwrap()
         .then((response) => {
           setLoading(false);
-          console.log(response);
-
+          console.log("responseee", response);
           Toast.show({
             type: "success",
-
-            text1: "Success",
-            text2: "Session created successfully",
+            props: {
+              title: "Success",
+              message: response.message || "Session created successfully",
+            },
           });
 
-          setTimeout(() => {
-            router.back();
-          }, 500);
+          router.replace({
+            pathname: "/joinsession",
+            params: {
+              sessionId: response._id,
+            },
+          });
         })
         .catch((err) => {
           setLoading(false);
-          console.log("error is", err);
           const message =
             err?.msg?.message || err?.msg || "Failed to create session";
-
           Toast.show({
             type: "error",
             props: {
               title: "Error",
-              message: message,
+              message,
             },
           });
         });
     },
   });
 
-  type PickerField = "duration" | "players" | "rounds";
-
-  const handleOptionSelect = (field: PickerField, value: string) => {
-    const fieldMap = {
-      duration: "timeDuration",
-      players: "playersPerTeam",
-      rounds: "setNumber",
-    };
-    formik.setFieldValue(fieldMap[field], value);
-    setShowPicker((prev) => ({
-      ...prev,
-      [field]: false,
-    }));
-  };
-
-  const togglePicker = (field: PickerField) => {
-    setShowPicker((prev) => ({
-      duration: false,
-      players: false,
-      rounds: false,
-      [field]: !prev[field],
-    }));
-  };
-
-  const CustomRightIcon: React.FC<{ value: string }> = ({ value }) => (
-    <View className="absolute right-2 flex-row items-center gap-2">
-      <View className="rounded-md border border-[#00000080] px-[10px] py-[7px]">
-        <Text className="text-[11px] font-medium text-black">{value}</Text>
-      </View>
-      <Ionicons name="chevron-down" size={16} color="gray" />
-    </View>
+  const SelectModal: React.FC<{
+    visible: boolean;
+    options: { label: string; value: string }[];
+    selectedValue?: string;
+    onSelect: (value: string) => void;
+    onClose: () => void;
+  }> = ({ visible, options, selectedValue, onSelect, onClose }) => (
+    <Modal
+      visible={visible}
+      transparent
+      animationType="fade"
+      onRequestClose={onClose}
+    >
+      <Pressable
+        style={{
+          flex: 1,
+          backgroundColor: "rgba(0,0,0,0.4)",
+          justifyContent: "center",
+          paddingHorizontal: 32,
+        }}
+        onPress={onClose}
+      >
+        <View
+          style={{
+            backgroundColor: colorScheme === "dark" ? "#1a1a1a" : "#fff",
+            borderRadius: 16,
+            overflow: "hidden",
+          }}
+        >
+          {options.map((opt, i) => {
+            const isSelected = opt.value === selectedValue;
+            return (
+              <TouchableOpacity
+                key={opt.value}
+                onPress={() => onSelect(opt.value)}
+                style={{
+                  paddingVertical: 15,
+                  paddingHorizontal: 20,
+                  borderBottomWidth: i < options.length - 1 ? 1 : 0,
+                  borderBottomColor:
+                    colorScheme === "dark" ? "#2a2a2a" : "#f2f2f2",
+                  flexDirection: "row",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                }}
+              >
+                <Text
+                  style={{
+                    fontSize: 14,
+                    fontWeight: isSelected ? "600" : "400",
+                    color: colorScheme === "dark" ? "#fff" : "#111",
+                  }}
+                >
+                  {opt.label}
+                </Text>
+                {isSelected && (
+                  <Ionicons name="checkmark-circle" size={18} color="#00C853" />
+                )}
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+      </Pressable>
+    </Modal>
   );
 
   return (
@@ -213,23 +258,9 @@ export default function NewSession() {
             </ThemedText>
           </View>
 
-          <SectionCard title="">
+          <SectionCard title="Session Details">
             <View>
-              <InputField
-                required
-                label="Location"
-                autoCapitalize="none"
-                placeholder="Location"
-                value={formik.values.location}
-                onChangeText={formik.handleChange("location")}
-                onBlur={formik.handleBlur("location")}
-                errorMessage={
-                  formik.touched.location && formik.errors.location
-                    ? formik.errors.location
-                    : ""
-                }
-              />
-              <InputField
+              {/* <InputField
                 required
                 label="Tournament Name"
                 autoCapitalize="none"
@@ -242,113 +273,122 @@ export default function NewSession() {
                     ? formik.errors.tournamentName
                     : ""
                 }
-              />
-              <InputField
-                required
-                label="Total Minutes per Match"
-                autoCapitalize="none"
-                placeholder="Total Minutes per Match"
-                value={formik.values.timeDuration}
-                onChangeText={formik.handleChange("timeDuration")}
-                onBlur={formik.handleBlur("timeDuration")}
-                errorMessage={
-                  formik.touched.timeDuration && formik.errors.timeDuration
-                    ? formik.errors.timeDuration
-                    : ""
-                }
-              />
+              /> */}
 
-              <InputField
-                required
-                label="Number Of Players per Team"
-                autoCapitalize="none"
-                placeholder="Number of Players per Team"
-                value={formik.values.playersPerTeam}
-                onChangeText={formik.handleChange("playersPerTeam")}
-                onBlur={formik.handleBlur("playersPerTeam")}
-                errorMessage={
-                  formik.touched.playersPerTeam && formik.errors.playersPerTeam
-                    ? formik.errors.playersPerTeam
-                    : ""
-                }
-              />
+              {/* Start Time & Total Minutes */}
+              <View className="flex-row gap-3">
+                <View className="flex-1">
+                  <TimePickerField
+                    label="Start Time"
+                    value={startTimeOfDay}
+                    onChange={handleTimeChange}
+                  />
+                </View>
+                <View className="flex-1">
+                  <InputField
+                    required
+                    label="Total Minutes"
+                    keyboardType="numeric"
+                    placeholder="e.g. 120"
+                    value={formik.values.timeDuration}
+                    onChangeText={formik.handleChange("timeDuration")}
+                    onBlur={formik.handleBlur("timeDuration")}
+                    errorMessage={
+                      formik.touched.timeDuration && formik.errors.timeDuration
+                        ? formik.errors.timeDuration
+                        : ""
+                    }
+                  />
+                </View>
+              </View>
 
-              <InputField
-                required
-                label="Number Of Teams"
-                autoCapitalize="none"
-                placeholder="Number Of per Teams"
-                value={formik.values.setNumber}
-                onChangeText={formik.handleChange("setNumber")}
-                onBlur={formik.handleBlur("setNumber")}
-                errorMessage={
-                  formik.touched.setNumber && formik.errors.setNumber
-                    ? formik.errors.setNumber
-                    : ""
-                }
-              />
+              {/* Players per Team & Number of Teams */}
+              <View className="flex-row gap-3">
+                <View className="flex-1">
+                  <InputField
+                    required
+                    label="Players / Team"
+                    keyboardType="numeric"
+                    placeholder="e.g. 5"
+                    value={formik.values.playersPerTeam}
+                    onChangeText={formik.handleChange("playersPerTeam")}
+                    onBlur={formik.handleBlur("playersPerTeam")}
+                    errorMessage={
+                      formik.touched.playersPerTeam &&
+                      formik.errors.playersPerTeam
+                        ? formik.errors.playersPerTeam
+                        : ""
+                    }
+                  />
+                </View>
+                <View className="flex-1">
+                  <InputField
+                    required
+                    label="Number of Teams"
+                    keyboardType="numeric"
+                    placeholder="e.g. 3"
+                    value={formik.values.setNumber}
+                    onChangeText={formik.handleChange("setNumber")}
+                    onBlur={formik.handleBlur("setNumber")}
+                    errorMessage={
+                      formik.touched.setNumber && formik.errors.setNumber
+                        ? formik.errors.setNumber
+                        : ""
+                    }
+                  />
+                </View>
+              </View>
 
-              {/* Rounds Select Input */}
-              {/* <View className=" relative"> */}
-              {/*   <InputField */}
-              {/*     selectPicker */}
-              {/*     required */}
-              {/*     label="Number Of Teams" */}
-              {/*     autoCapitalize="none" */}
-              {/*     placeholder="Number Of Teams" */}
-              {/*     value="" */}
-              {/*     pickerPressed={() => togglePicker("rounds")} */}
-              {/*     rightIcon={<CustomRightIcon value={formik.values.setNumber} />} */}
-              {/*     errorMessage={ */}
-              {/*       formik.touched.setNumber && formik.errors.setNumber */}
-              {/*         ? formik.errors.setNumber */}
-              {/*         : "" */}
-              {/*     } */}
-              {/*   /> */}
-              {/**/}
-              {/*   {showPicker.rounds && ( */}
-              {/*     <View className="absolute right-[30px] top-[50%] z-10 mt-7 max-h-40 w-[40px] rounded-lg border border-gray-300 bg-white shadow-lg"> */}
-              {/*       <ScrollView className="max-h-40"> */}
-              {/*         {options.rounds.map((option, index) => ( */}
-              {/*           <TouchableOpacity */}
-              {/*             key={option.value} */}
-              {/*             className={`px-2 py-2 ${ */}
-              {/*               index !== options.rounds.length - 1 */}
-              {/*                 ? "border-b border-gray-200" */}
-              {/*                 : "" */}
-              {/*             } ${formik.values.setNumber === option.value ? "bg-blue-50" : ""}`} */}
-              {/*             onPress={() => handleOptionSelect("rounds", option.value)} */}
-              {/*           > */}
-              {/*             <Text */}
-              {/*               className={`text-center ${ */}
-              {/*                 formik.values.setNumber === option.value */}
-              {/*                   ? "font-medium text-blue-600" */}
-              {/*                   : "text-gray-700" */}
-              {/*               }`} */}
-              {/*             > */}
-              {/*               {option.value} */}
-              {/*             </Text> */}
-              {/*           </TouchableOpacity> */}
-              {/*         ))} */}
-              {/*       </ScrollView> */}
-              {/*     </View> */}
-              {/*   )} */}
-              {/* </View> */}
-              {/**/}
               {/* Minutes Per Set */}
-              {/* <InputField */}
-              {/*   required */}
-              {/*   label="Minutes Per Set" */}
-              {/*   placeholder="10" */}
-              {/*   keyboardType="numeric" */}
-              {/*   value={formik.values.minsPerSet} */}
-              {/*   onChangeText={formik.handleChange('minsPerSet')} */}
-              {/*   onBlur={formik.handleBlur('minsPerSet')} */}
-              {/*   errorMessage={formik.touched.minsPerSet && formik.errors.minsPerSet ? formik.errors.minsPerSet : ''} */}
-              {/* /> */}
+              <InputField
+                required
+                label="Minutes Per Set"
+                keyboardType="numeric"
+                placeholder="e.g. 30"
+                value={formik.values.minsPerSet}
+                onChangeText={formik.handleChange("minsPerSet")}
+                onBlur={formik.handleBlur("minsPerSet")}
+                errorMessage={
+                  formik.touched.minsPerSet && formik.errors.minsPerSet
+                    ? formik.errors.minsPerSet
+                    : ""
+                }
+              />
+
+              {/* Winning Decider */}
+              <InputField
+                required
+                label="Winning Decider"
+                selectPicker
+                placeholder="Select decider"
+                value={
+                  formik.values.winningDecider
+                    ? getWinningDeciderLabel(formik.values.winningDecider)
+                    : ""
+                }
+                pickerPressed={() => setShowDeciderModal(true)}
+                rightIcon={
+                  <Ionicons name="chevron-down" size={16} color="gray" />
+                }
+                errorMessage={
+                  formik.touched.winningDecider && formik.errors.winningDecider
+                    ? formik.errors.winningDecider
+                    : ""
+                }
+              />
             </View>
           </SectionCard>
         </ScrollView>
+        <SelectModal
+          visible={showDeciderModal}
+          options={winningDeciderOptions}
+          selectedValue={formik.values.winningDecider}
+          onSelect={(value) => {
+            formik.setFieldValue("winningDecider", value);
+            setShowDeciderModal(false);
+          }}
+          onClose={() => setShowDeciderModal(false)}
+        />
         <Loader visible={loading} />
       </KeyboardAvoidingView>
     </SafeAreaScreen>
