@@ -1,56 +1,49 @@
-/* eslint-disable react/no-unescaped-entities */
-/* eslint-disable @typescript-eslint/no-unused-vars */
- 
- 
- 
- 
- 
-
 import {
-  Dimensions,
   View,
   TouchableWithoutFeedback,
   useColorScheme,
-  Image,
-  StyleSheet,
   ScrollView,
   TextInput,
 } from "react-native";
-import * as React from "react";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useLocalSearchParams, useRouter } from "expo-router";
-
+import { Toast } from "toastify-react-native";
+import React, { useState, useRef, useEffect } from "react";
+import { useRouter } from "expo-router";
 import Loader from "@/components/loader";
 import { ThemedText } from "@/components/ThemedText";
 import CustomButton from "@/components/ui/CustomButton";
 import SafeAreaScreen from "@/components/SafeAreaScreen";
 import { Colors } from "@/constants/Colors";
 import { Icon } from "@/components/ui/Icon";
-import { useAppDispatch } from "@/redux/store";
-import { forgotPassword, verifyOtp } from "@/api/authThunks";
-import { Toast } from "toastify-react-native";
-import { maskEmail } from "@/utils/maskEmail";
+import { useAppDispatch, useAppSelector } from "@/redux/store";
+import { confirmEmail, sendEmail } from "@/api/authThunks";
 
-const { width } = Dimensions.get("screen");
-
-export default function Verify() {
+export default function VerifyEmail() {
   const colorScheme = useColorScheme();
   const theme = Colors[colorScheme ?? "light"];
-  const { bottom } = useSafeAreaInsets();
-  const [loading, setLoading] = React.useState(false);
-  const [code, setCode] = React.useState(["", "", "", "", "", ""]);
-  const inputRefs = React.useRef<(TextInput | null)[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [code, setCode] = useState(["", "", "", "", "", ""]);
+  const inputRefs = useRef<(TextInput | null)[]>([]);
   const router = useRouter();
-  const params = useLocalSearchParams<{ email?: string }>();
   const dispatch = useAppDispatch();
-  const email = params.email ?? "";
+  const [countdown, setCountdown] = useState(60);
+  const { user, pendingVerificationEmail, loadingConfirmEmailOtp } =
+    useAppSelector((state) => state.auth);
 
-  React.useEffect(() => {
-    if (!email) {
-      router.replace("/forgottenpassword");
-    }
-  }, [email, router]);
+  const email = pendingVerificationEmail || user?.email;
 
+  useEffect(() => {
+    if (countdown <= 0) return;
+    const timer = setInterval(() => {
+      setCountdown((prev) => prev - 1);
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [countdown]);
+
+  const startCountdown = () => {
+    setCountdown(60);
+  };
+
+  // ✅ Updated working auto-focus handler
   const handleCodeChange = (text: string, index: number) => {
     const numericText = text.replace(/[^0-9]/g, "");
 
@@ -65,78 +58,72 @@ export default function Verify() {
     }
   };
 
+  // ✅ Backspace logic
   const handleKeyPress = (e: any, index: number) => {
     if (e.nativeEvent.key === "Backspace" && !code[index] && index > 0) {
       inputRefs.current[index - 1]?.focus();
     }
   };
 
+  // ✅ Clear Code
+  const clearCode = () => {
+    setCode(["", "", "", "", ""]);
+    inputRefs.current[0]?.focus();
+  };
   const handleVerify = async () => {
-    const otp = code.join("");
-
-    if (!email) {
-      Toast.show({
-        type: "error",
-        text1: "Email missing",
-        text2: "Please start from the forgot password screen.",
-      });
-      router.replace("/forgottenpassword");
-      return;
-    }
-
-    if (otp.length < 6) {
-      Toast.show({
-        type: "error",
-        text1: "Invalid code",
-        text2: "Please enter the full verification code.",
-      });
-      return;
-    }
-
-    setLoading(true);
     try {
-      await dispatch(verifyOtp({ email, otp })).unwrap();
-      Toast.show({ type: "success", text1: "Code verified" });
-      router.push({
-        pathname: "/(onboarding)/resetpassword",
-        params: { email, otp },
+      await dispatch(
+        confirmEmail({
+          email: email!,
+          otp: Number(code.join("")),
+        }),
+      ).unwrap();
+
+      Toast.show({
+        type: "success",
+        text1: "Email verified",
+        text2: "Your account has been verified successfully",
       });
-    } catch (error: any) {
-      const message =
-        error?.msg?.message || error?.msg || "Unable to verify code";
-      Toast.show({ type: "error", text1: "Error", text2: message });
-    } finally {
-      setLoading(false);
+      router.push("/(onboarding)/signin");
+    } catch (err: any) {
+      Toast.show({
+        type: "error",
+        text1: "Verification failed",
+        text2: err?.msg?.message || err?.msg || "Invalid verification code.",
+      });
     }
   };
 
-  const handleResend = async () => {
-    if (!email) {
-      router.replace("/forgottenpassword");
-      return;
-    }
-    setLoading(true);
+  const handleResendEmail = async () => {
     try {
-      await dispatch(forgotPassword({ email })).unwrap();
-      Toast.show({ type: "success", text1: "Verification code resent" });
-      setCode(["", "", "", "", ""]);
-      inputRefs.current[0]?.focus();
-    } catch (error: any) {
-      const message =
-        error?.msg?.message || error?.msg || "Unable to resend code";
-      Toast.show({ type: "error", text1: "Error", text2: message });
-    } finally {
-      setLoading(false);
+      await dispatch(
+        sendEmail({
+          email: email!,
+        }),
+      ).unwrap();
+
+      startCountdown();
+
+      Toast.show({
+        type: "success",
+        text1: "Verification code sent",
+        text2: "Please check your email for the verification code",
+      });
+    } catch (err: any) {
+      Toast.show({
+        type: "error",
+        text1: "Couldn't send verification code",
+        text2: err?.msg?.message || err?.msg || "Please try again in a moment",
+      });
     }
   };
-
   return (
     <SafeAreaScreen className="mt-[52px]">
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{
           paddingHorizontal: 21,
-          paddingBottom: bottom + 40,
+          paddingBottom: 40,
           flexGrow: 1,
           justifyContent: "space-between",
         }}
@@ -146,6 +133,7 @@ export default function Verify() {
             <Icon />
           </View>
 
+          {/* Header */}
           <View className="mb-8 flex flex-col items-center gap-[5px]">
             <ThemedText
               lightColor={theme.text}
@@ -160,12 +148,12 @@ export default function Verify() {
               darkColor="#9BA1A6"
               className="px-4 text-center text-base leading-6"
             >
-              A code has been sent to{" "}
-              {email ? maskEmail(email) : "your email address"}
+              A code has been sent to {email}
             </ThemedText>
           </View>
 
-          <View className="mb-8 mt-6 flex flex-row justify-center gap-[10px] px-4">
+          {/* ✅ FIXED OTP INPUTS */}
+          <View className="mb-8 mt-6 flex flex-row justify-between px-4">
             {[0, 1, 2, 3, 4, 5].map((index) => (
               <TextInput
                 key={index}
@@ -173,7 +161,7 @@ export default function Verify() {
                   inputRefs.current[index] = ref;
                 }}
                 style={{
-                  height: 60,
+                  height: 50,
                   width: 50,
                   borderWidth: 1,
                   borderRadius: 10,
@@ -188,43 +176,48 @@ export default function Verify() {
                 onChangeText={(text) => handleCodeChange(text, index)}
                 onKeyPress={(e) => handleKeyPress(e, index)}
                 keyboardType="number-pad"
-                autoCapitalize="none"
-                autoCorrect={false}
-                textContentType="oneTimeCode"
                 maxLength={1}
-                editable={!loading}
-                autoFocus={index === 0}
+                editable={true}
+                focusable={true}
+                selectTextOnFocus
+                blurOnSubmit={false}
               />
             ))}
           </View>
         </View>
-
-        <View>
+        {/* Buttons */}
+        <View className="">
           <View className="flex-1">
             <View className="flex flex-col gap-[10px]">
               <CustomButton
                 primary
-                title={loading ? "Verifying..." : "Verify Code"}
+                title={loadingConfirmEmailOtp ? "Verifying..." : "Verify Code"}
+                disabled={loadingConfirmEmailOtp}
                 onPress={handleVerify}
-                disabled={loading}
+                loading={loadingConfirmEmailOtp}
               />
 
               <View className="mt-3 items-center">
-                <TouchableWithoutFeedback onPress={handleResend}>
+                <TouchableWithoutFeedback
+                  onPress={countdown > 0 ? undefined : handleResendEmail}
+                >
                   <View className="flex-row items-center">
                     <ThemedText
                       lightColor="#6C757D"
                       darkColor="#9BA1A6"
                       className="text-base"
                     >
-                      Didn't receive any code?
+                      Didn&apos;t receive any code?
                     </ThemedText>
+
                     <ThemedText
-                      lightColor="#46BB1C"
-                      darkColor="#46BB1C"
+                      lightColor={countdown > 0 ? "#9CA3AF" : "#00FF94"}
+                      darkColor={countdown > 0 ? "#6B7280" : "#00FF94"}
                       className="ml-1 text-base font-semibold"
                     >
-                      Resend code
+                      {countdown > 0
+                        ? `Resend code in ${countdown}s`
+                        : "Resend code"}
                     </ThemedText>
                   </View>
                 </TouchableWithoutFeedback>
@@ -238,10 +231,3 @@ export default function Verify() {
     </SafeAreaScreen>
   );
 }
-
-const styles = StyleSheet.create({
-  logo: {
-    width: 130,
-    height: 60,
-  },
-});

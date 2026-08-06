@@ -2,7 +2,7 @@ import { ThemedText } from "@/components/ThemedText";
 import { Image } from "expo-image";
 import { useColorScheme } from "nativewind";
 import React from "react";
-import { Text, View } from "react-native";
+import { Text, TouchableOpacity, View } from "react-native";
 import { FormattedUserData } from "./types";
 
 interface Props {
@@ -10,9 +10,17 @@ interface Props {
   nickname?: string;
   firstName?: string;
   data: FormattedUserData;
+  onAvatarPress?: () => void;
+  uploadingAvatar?: boolean;
 }
 
-export function ProfileCard({ avatar, nickname, data }: Props) {
+export function ProfileCard({
+  avatar,
+  nickname,
+  data,
+  onAvatarPress,
+  uploadingAvatar,
+}: Props) {
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === "dark";
 
@@ -27,34 +35,40 @@ export function ProfileCard({ avatar, nickname, data }: Props) {
   return (
     <View style={{ alignItems: "center", paddingVertical: 28 }}>
       {/* Avatar circle */}
-      <View
-        style={{
-          width: 96,
-          height: 96,
-          borderRadius: 48,
-          backgroundColor: "#00FF94",
-          shadowColor: "#00FF94",
-          shadowOffset: { width: 0, height: 6 },
-          shadowOpacity: 0.45,
-          shadowRadius: 14,
-          elevation: 10,
-          alignItems: "center",
-          justifyContent: "center",
-          overflow: hasAvatar ? "hidden" : "visible",
-        }}
+      <TouchableOpacity
+        onPress={onAvatarPress}
+        disabled={!onAvatarPress || uploadingAvatar}
+        activeOpacity={0.8}
       >
-        {hasAvatar ? (
-          <Image
-            source={avatar}
-            style={{ width: 96, height: 96, borderRadius: 48 }}
-            contentFit="cover"
-          />
-        ) : (
-          <Text style={{ fontSize: 32, fontWeight: "800", color: "#000" }}>
-            {initials || "?"}
-          </Text>
-        )}
-      </View>
+        <View
+          style={{
+            width: 96,
+            height: 96,
+            borderRadius: 48,
+            backgroundColor: "#00FF94",
+            shadowColor: "#00FF94",
+            shadowOffset: { width: 0, height: 6 },
+            shadowOpacity: 0.45,
+            shadowRadius: 14,
+            elevation: 10,
+            alignItems: "center",
+            justifyContent: "center",
+            overflow: hasAvatar ? "hidden" : "visible",
+          }}
+        >
+          {hasAvatar ? (
+            <Image
+              source={avatar}
+              style={{ width: 96, height: 96, borderRadius: 48 }}
+              contentFit="cover"
+            />
+          ) : (
+            <Text style={{ fontSize: 32, fontWeight: "800", color: "#000" }}>
+              {initials || "?"}
+            </Text>
+          )}
+        </View>
+      </TouchableOpacity>
 
       {/* Name */}
       <ThemedText

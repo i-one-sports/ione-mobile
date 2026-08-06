@@ -321,22 +321,6 @@ export default function Schedule() {
             <View className="w-full border-t-[1px] border-[#464242]" />
           </View>
 
-          {/* New game button */}
-          <View className="mt-[18px] px-[32px]">
-            <TouchableOpacity
-              className="flex w-full flex-row items-center justify-between rounded-[5px] border border-[#7D7D7D] px-[21px] py-[15px]"
-              onPress={() => {
-                const tabId = TAB_ROUTE_MAP[activeTab];
-                router.push(
-                  (tabId ? `/${tabId}` : "/screens/newsession") as any,
-                );
-              }}
-            >
-              <Text className="text-base text-[#696969]">New game? </Text>
-              <PlusIcon />
-            </TouchableOpacity>
-          </View>
-
           {/* Tab bar + content */}
           <View className="mt-[13px] w-full px-[32px]">
             <View className="mb-4 flex w-full flex-row justify-between gap-2">

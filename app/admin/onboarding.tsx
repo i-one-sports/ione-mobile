@@ -11,9 +11,16 @@ import { Icon } from "@/components/ui/Icon";
 import { useAppDispatch, useAppSelector } from "@/redux/store";
 import { Entypo, MaterialIcons } from "@expo/vector-icons";
 import * as DocumentPicker from "expo-document-picker";
+import * as ImagePicker from "expo-image-picker";
 import { useColorScheme } from "nativewind";
 import React, { useState } from "react";
-import { KeyboardAvoidingView, Platform, ScrollView, View } from "react-native";
+import {
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  View,
+} from "react-native";
 import { Toast } from "toastify-react-native";
 import { useRouter } from "expo-router";
 
@@ -117,6 +124,60 @@ export default function AdminOnboarding() {
   // };
   //
 
+  const requestGalleryPermission = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== "granted") {
+      Toast.show({
+        type: "error",
+        text1: "Permission required",
+        text2: "Allow photo access to upload ID images.",
+      });
+      return false;
+    }
+    return true;
+  };
+
+  const pickAndUploadSingleFromGallery = async (
+    setPreview: (uri: string) => void,
+    setFile: (file: ImageFile) => void,
+    setUploading: (v: boolean) => void,
+  ) => {
+    if (!(await requestGalleryPermission())) return;
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: false,
+      quality: 0.8,
+    });
+
+    if (result.canceled || !result.assets?.[0]) return;
+
+    const asset = result.assets[0];
+    const file: ImageFile = {
+      uri: asset.uri,
+      name: asset.fileName || "upload.jpg",
+      type: asset.mimeType || "image/jpeg",
+      isImage: true,
+    };
+
+    setPreview(asset.uri);
+
+    setFile(file);
+    setUploading(true);
+
+    try {
+      await uploadImage(
+        asset.uri,
+        asset.mimeType || "image/jpeg",
+        asset.fileName || "upload.jpg",
+      );
+    } catch {
+      setPreview("");
+    } finally {
+      setUploading(false);
+    }
+  };
+
   const pickAndUploadSingle = async (
     setPreview: (uri: string) => void,
     setFile: (file: ImageFile) => void,
@@ -155,6 +216,25 @@ export default function AdminOnboarding() {
     } finally {
       setUploading(false);
     }
+  };
+
+  const promptIdUploadSource = (
+    setPreview: (uri: string) => void,
+    setFile: (file: ImageFile) => void,
+    setUploading: (v: boolean) => void,
+  ) => {
+    Alert.alert("Upload ID image", "Choose a source for your ID image", [
+      {
+        text: "Gallery",
+        onPress: () =>
+          pickAndUploadSingleFromGallery(setPreview, setFile, setUploading),
+      },
+      {
+        text: "Files",
+        onPress: () => pickAndUploadSingle(setPreview, setFile, setUploading),
+      },
+      { text: "Cancel", style: "cancel" },
+    ]);
   };
   //
   // const pickAndUploadMultiple = async () => {
@@ -238,6 +318,69 @@ export default function AdminOnboarding() {
     } finally {
       setUploadingLocation(false);
     }
+  };
+
+  const pickAndUploadMultipleFromGallery = async () => {
+    if (!(await requestGalleryPermission())) return;
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsMultipleSelection: true,
+      quality: 0.8,
+    });
+
+    if (result.canceled || !result.assets?.length) return;
+
+    const assets = result.assets;
+
+    if (assets.length > 5) {
+      Toast.show({
+        type: "error",
+        text1: "Too many files",
+        text2: "Maximum 5 files allowed.",
+      });
+      return;
+    }
+
+    const files: ImageFile[] = assets.map((asset, index) => ({
+      uri: asset.uri,
+      name: asset.fileName || `upload-${index + 1}.jpg`,
+      type: asset.mimeType || "image/jpeg",
+      isImage: true,
+    }));
+
+    setLocationPreviews(files);
+    setLocationFiles(files);
+    setUploadingLocation(true);
+
+    try {
+      const urls = await Promise.all(
+        files.map((file) => uploadImage(file.uri, file.type, file.name)),
+      );
+
+      setLocationPreviews(
+        files.map((f, i) => ({
+          ...f,
+          uri: urls[i] ?? f.uri,
+        })),
+      );
+    } finally {
+      setUploadingLocation(false);
+    }
+  };
+
+  const promptLocationUploadSource = () => {
+    Alert.alert("Upload location pictures", "Choose a source for your files", [
+      {
+        text: "Gallery",
+        onPress: pickAndUploadMultipleFromGallery,
+      },
+      {
+        text: "Files",
+        onPress: pickAndUploadMultiple,
+      },
+      { text: "Cancel", style: "cancel" },
+    ]);
   };
 
   const handleSubmit = async () => {
@@ -457,7 +600,7 @@ export default function AdminOnboarding() {
               fileType={frontFile?.type ?? null}
               uploading={uploadingFront}
               onPress={() =>
-                pickAndUploadSingle(
+                promptIdUploadSource(
                   setFrontPreview,
                   setFrontFile,
                   setUploadingFront,
@@ -474,7 +617,7 @@ export default function AdminOnboarding() {
               fileType={backFile?.type ?? null}
               uploading={uploadingBack}
               onPress={() =>
-                pickAndUploadSingle(
+                promptIdUploadSource(
                   setBackPreview,
                   setBackFile,
                   setUploadingBack,
@@ -488,7 +631,7 @@ export default function AdminOnboarding() {
               sublabel="House frontage, street view, user holding ID (max 5)"
               previewUris={locationPreviews}
               uploading={uploadingLocation}
-              onPress={pickAndUploadMultiple}
+              onPress={promptLocationUploadSource}
               isDark={isDark}
               accent={accent}
             />

@@ -212,6 +212,13 @@ export default function JoinSession() {
     );
   }
 
+  console.log(session?.location?.name);
+  console.log(session?.location?.address);
+  console.log("activeSession", activeSession);
+  console.log("staticSession", staticSession);
+  console.log("session", session);
+  console.log("location", session?.location);
+
   return (
     <SafeAreaScreen>
       <ScrollView

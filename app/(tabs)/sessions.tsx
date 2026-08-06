@@ -308,7 +308,7 @@ export default function Schedule({
             <View className="w-full border-t-[1px] border-[#464242]" />
           </View>
 
-          {/* New game button */}
+          {/* start a session button*/}
 
           <View className="mt-[18px] px-[32px]">
             <TouchableOpacity
@@ -326,7 +326,7 @@ export default function Schedule({
                 });
               }}
             >
-              <Text className="text-base text-[#696969]">New game? </Text>
+              <Text className="text-base text-[#696969]">New Game?</Text>
               <PlusIcon />
             </TouchableOpacity>
           </View>
