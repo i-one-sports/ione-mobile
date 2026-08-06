@@ -21,30 +21,16 @@ export const nearBy = createAsyncThunk<any[], sessionPayload, AsyncThunkConfig>(
     ),
 );
 
-// export const nearByLocation = createAsyncThunk<
-//   any[],
-//   sessionPayload,
-//   AsyncThunkConfig
-// >("/nearbyLocation", async (payload, thunkAPI) =>
-//   apiCall(
-//     axiosInstance.get("/i-one/location/nearby", { params: payload }),
-//     thunkAPI,
-//   ),
-// );
-
 export const nearByLocation = createAsyncThunk<
   any[],
   sessionPayload,
   AsyncThunkConfig
->("/nearbyLocation", async (payload, thunkAPI) => {
-  const response = await axiosInstance.get("/i-one/location/nearby", {
-    params: payload,
-  });
-
-  console.log("Nearby locations:", response.data);
-
-  return response.data;
-});
+>("/nearbyLocation", async (payload, thunkAPI) =>
+  apiCall(
+    axiosInstance.get("/i-one/location/nearby", { params: payload }),
+    thunkAPI,
+  ),
+);
 
 export const allSessions = createAsyncThunk<
   AllSessionsResponse,
