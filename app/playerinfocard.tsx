@@ -30,9 +30,10 @@ interface Props {
   image?: string;
   role?: string;
   paymentStatus?: PaymentStatus;
+  index?: number;
 }
 
-export default function PlayerInfoCard({ name, paymentStatus }: Props) {
+export default function PlayerInfoCard({ name, paymentStatus, index }: Props) {
   const initials = name ? name.slice(0, 2).toUpperCase() : "?";
 
   return (
@@ -40,7 +41,7 @@ export default function PlayerInfoCard({ name, paymentStatus }: Props) {
       <View className="flex flex-row items-center gap-[12px]">
         <View className="flex flex-row gap-[15px] items-center">
           <View>
-            <Text className="font-[600] text-[13px]">1</Text>
+            <Text className="font-[600] text-[13px]">{index}</Text>
           </View>
           <View className="h-[40px] w-[40px] rounded-full bg-black items-center justify-center">
             <Text style={{ color: "#fff", fontSize: 13, fontWeight: "700" }}>

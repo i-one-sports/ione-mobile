@@ -3,6 +3,7 @@ import CustomDatePicker from "@/components/modals/CustomDatePicker";
 import PlusIcon from "@/assets/svg/PlusIcon";
 import { CalendarPolygon } from "@/components/sessions/CalendarPolygon";
 import { SessionMatchCard } from "@/components/sessions/SessionMatchCard";
+import { SessionCard } from "@/components/sessions/session-card";
 import { TeamScheduleGroup } from "@/components/sessions/TeamScheduleGroup";
 import {
   DateItem,
@@ -18,6 +19,7 @@ import { Colors } from "@/constants/Colors";
 import { useAppDispatch, useAppSelector } from "@/redux/store";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import Toast from "react-native-toast-message";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   ScrollView,
@@ -85,56 +87,78 @@ export default function Schedule({
 
   const formattedMatches = useMemo(() => {
     if (!all || all.length === 0) return [];
+
     return all.map((session: any) => {
       const captainName =
-        session.captain?.firstName || session.captain?.username || "Unknown";
+        session.captain?.nickname ||
+        session.captain?.firstName ||
+        session.captain?.username ||
+        "Unknown";
+
       const locationName = session.location?.name || "Unknown Location";
+
       const hasJoined =
         session.members?.some(
           (member: any) =>
             member._id === user?._id || member.userId === user?._id,
         ) || false;
+
       const startTime = session.startTime
         ? new Date(session.startTime).toLocaleTimeString("en-US", {
             hour: "2-digit",
             minute: "2-digit",
-            hour12: false,
+            hour12: true,
           })
         : "TBD";
+
       let minute = "0'";
+
       if (session.inProgress && session.startTime) {
-        const diff = Math.floor(
-          (new Date().getTime() - new Date(session.startTime).getTime()) /
-            60000,
+        const diff = Math.max(
+          0,
+          Math.floor(
+            (new Date().getTime() - new Date(session.startTime).getTime()) /
+              60000,
+          ),
         );
+
         minute = `${diff}'`;
       }
+
       return {
-        teams: {
-          team1: {
-            initials: captainName.slice(0, 2).toUpperCase(),
-            name: captainName,
-            number: `${session.members?.length || 0}/${session.maxNumber || 0} players`,
-          },
-          team2: {
-            initials: locationName.slice(0, 2).toUpperCase(),
-            name: locationName,
-          },
-          matchType: session.matchType || "friendly",
-        },
+        sessionId: session._id,
+        locationId: session.location?._id,
+
+        captainName,
+        locationName,
+        matchType: session.matchType || "friendly",
+
         time: startTime,
         minute,
-        team1score: "?",
-        team2score: "?",
-        joined: !hasJoined,
-        sessionId: session._id,
-        inProgress: session.inProgress,
-        finished: session.finished,
-        isFull: session.isFull,
+
+        playerCount: session.members?.length || 0,
+        maxPlayers: session.maxNumber || 0,
+
+        paymentRequired: Boolean(session.paymentRequired),
+        paymentStatus: session.paymentStatus,
+        paymentAmount: session.paymentAmount || 0,
+        allPaymentsCompleted: Boolean(session.allPaymentsCompleted),
+
+        inProgress: Boolean(session.inProgress),
+        finished: Boolean(session.finished),
+        isFull: Boolean(session.isFull),
+
+        joined: hasJoined,
+
         sessionData: session,
       };
     });
   }, [all, user]);
+
+  const isCaptain = formattedMatches.some((m) => {
+    const captain = m.sessionData?.captain;
+    return captain?._id === user?._id || captain?.userId === user?._id;
+  });
 
   const groupedAll = [
     { teamName: "All Teams", teamInitials: "AT", matches: formattedMatches },
@@ -144,31 +168,37 @@ export default function Schedule({
       teamName: "Friendlies",
       teamInitials: "FR",
       matches: formattedMatches.filter(
-        (m) => m.teams.matchType.toLowerCase() === "friendly",
+        (m) => m.matchType.toLowerCase() === "friendly",
       ),
     },
   ];
+
   const groupedTournaments = [
     {
       teamName: "Tournaments",
       teamInitials: "TM",
       matches: formattedMatches.filter(
-        (m) => m.teams.matchType.toLowerCase() === "tournament",
+        (m) => m.matchType.toLowerCase() === "tournament",
       ),
     },
   ];
+
   const groupedSets = [
     {
       teamName: "Set Games",
       teamInitials: "ST",
       matches: formattedMatches.filter(
-        (m) => m.teams.matchType.toLowerCase() === "set",
+        (m) => m.matchType.toLowerCase() === "set",
       ),
     },
   ];
 
-  const renderMatchCard = (match: Match, idx: number) => (
-    <SessionMatchCard key={idx} match={match} sessionData={match.sessionData} />
+  const renderMatchCard = (match: any, idx: number) => (
+    <SessionCard
+      key={match.sessionId || idx}
+      match={match}
+      sessionData={match.sessionData}
+    />
   );
 
   const renderTabContent = () => {
@@ -252,10 +282,13 @@ export default function Schedule({
     );
   };
 
+  //   console.log("Schedule formattedMatches:", formattedMatches);
+  console.log("Schedule all:", all);
+
   return (
     <SafeAreaScreen>
       <ScrollView
-        className="mb-[40px] h-full flex-1"
+        className="h-full flex-1"
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 40, flexGrow: 1 }}
       >
@@ -308,32 +341,43 @@ export default function Schedule({
             <View className="w-full border-t-[1px] border-[#464242]" />
           </View>
 
-          {/* New game button */}
+          {/* start a session button*/}
 
           <View className="mt-[18px] px-[32px]">
             <TouchableOpacity
               className="flex w-full flex-row items-center justify-between rounded-[5px] border border-[#7D7D7D] px-[21px] py-[15px]"
               onPress={() => {
-                const tabId = TAB_ROUTE_MAP[activeTab];
+                if (isCaptain) {
+                  const tabId = TAB_ROUTE_MAP[activeTab];
 
-                router.push({
-                  pathname: (tabId
-                    ? `/${tabId}`
-                    : "/screens/newsession") as any,
-                  params: {
-                    locationId: formattedMatches[0].sessionId,
-                  },
-                });
+                  router.push({
+                    pathname: (tabId
+                      ? `/${tabId}`
+                      : "/screens/newsession") as any,
+                    params: {
+                      locationId: formattedMatches[0]?.locationId,
+                    },
+                  });
+                } else {
+                  Toast.show({
+                    type: "success",
+                    props: {
+                      title: "New Game",
+                      message: "Pick a pitch to create your new game",
+                    },
+                  });
+                  router.push("/");
+                }
               }}
             >
-              <Text className="text-base text-[#696969]">New game? </Text>
+              <Text className="text-base text-[#696969]">New Game?</Text>
               <PlusIcon />
             </TouchableOpacity>
           </View>
 
           {/* Tab bar + content */}
           <View className="mt-[13px] w-full px-[32px]">
-            <View className="mb-4 flex w-full flex-row justify-between gap-2">
+            <View className="flex w-full flex-row gap-2">
               {(["all", "tournaments", "friendlies"] as const).map((tab) => (
                 <TouchableWithoutFeedback
                   key={tab}
@@ -356,7 +400,7 @@ export default function Schedule({
               ))}
             </View>
 
-            <View className="mt-[33px] flex-1">{renderTabContent()}</View>
+            <View className="mt-[27px] w-full">{renderTabContent()}</View>
           </View>
         </View>
       </ScrollView>

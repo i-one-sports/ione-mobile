@@ -38,7 +38,7 @@ export function TeamScheduleGroup({
         </View>
       </Pressable>
       {isExpanded && (
-        <View className="border-b-2 border-b-[#00FF94]">
+        <View className="border-b-2 mt-4 border-b-[#00FF94]">
           {teamSchedule.matches.map((match, idx) => renderMatch(match, idx))}
         </View>
       )}

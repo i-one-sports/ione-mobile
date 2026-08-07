@@ -11,12 +11,29 @@ export type MatchTeams = {
 };
 
 export type Match = {
-  teams: MatchTeams;
+  sessionId: string;
+  locationId?: string;
+
+  captainName: string;
+  locationName: string;
+  matchType: string;
+
   time: string;
   minute: string;
-  team1score: number | string;
-  team2score: number | string;
+
+  playerCount: number;
+  maxPlayers: number;
+
+  paymentRequired: boolean;
+  paymentStatus?: string;
+  paymentAmount: number;
+  allPaymentsCompleted: boolean;
+
+  inProgress: boolean;
+  finished: boolean;
+  isFull: boolean;
   joined: boolean;
+
   sessionData?: any;
 };
 

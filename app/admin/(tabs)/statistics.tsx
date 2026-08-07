@@ -165,7 +165,7 @@ export default function AdminStatisticsScreen() {
                       shadowOpacity: 0.15,
                       shadowRadius: 8,
                       elevation: 8,
-                      overflow: "hidden",
+                      //   overflow: "hidden",
                     }}
                   >
                     {Object.entries(PERIOD_LABELS).map(
@@ -278,11 +278,11 @@ export default function AdminStatisticsScreen() {
           }}
         >
           {[
-            { icon: "star" as const, label: "Ratings", value: "245" },
+            { icon: "star" as const, label: "Ratings", value: "0" },
             {
               icon: "sports-soccer" as const,
               label: "Matches Played",
-              value: "12",
+              value: "0",
             },
           ].map((stat) => (
             <View
@@ -312,7 +312,7 @@ export default function AdminStatisticsScreen() {
               <ThemedText
                 lightColor={accent}
                 darkColor={accent}
-                style={{ fontSize: 28, fontWeight: "800", lineHeight: 34 }}
+                style={{ fontSize: 16, fontWeight: "800", lineHeight: 28 }}
               >
                 {stat.value}
               </ThemedText>

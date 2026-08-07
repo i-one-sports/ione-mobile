@@ -53,14 +53,31 @@ export interface LoginPayload {
   password: string;
 }
 export interface forgotPasswordPayload {
-  password?: string;
-  confirmPassword?: string;
-  pin?: string;
+  // password?: string;
+  // confirmPassword?: string;
+  // pin?: string;
   email?: string;
 }
 export interface verifyOtpPayload {
   email?: string;
-  otp?: string;
+  otp?: string | number;
+}
+export interface resetPasswordPayload {
+  email?: string;
+  otp?: string | number;
+  password?: string;
+  confirmPassword?: string;
+  newPassword?: string;
+  confirmNewPassword?: string;
+}
+
+export interface SendEmailOtpPayload {
+  email: string;
+}
+
+export interface ConfirmEmailOtpPayload {
+  email: string;
+  otp: number;
 }
 export interface ErrorResponse {
   msg: string;
