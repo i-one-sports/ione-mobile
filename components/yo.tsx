@@ -3,7 +3,6 @@ import CustomDatePicker from "@/components/modals/CustomDatePicker";
 import PlusIcon from "@/assets/svg/PlusIcon";
 import { CalendarPolygon } from "@/components/sessions/CalendarPolygon";
 import { SessionMatchCard } from "@/components/sessions/SessionMatchCard";
-import { SessionCard } from "@/components/sessions/session-card";
 import { TeamScheduleGroup } from "@/components/sessions/TeamScheduleGroup";
 import {
   DateItem,
@@ -87,69 +86,52 @@ export default function Schedule({
 
   const formattedMatches = useMemo(() => {
     if (!all || all.length === 0) return [];
-
     return all.map((session: any) => {
       const captainName =
-        session.captain?.nickname ||
-        session.captain?.firstName ||
-        session.captain?.username ||
-        "Unknown";
-
+        session.captain?.firstName || session.captain?.username || "Unknown";
       const locationName = session.location?.name || "Unknown Location";
-
       const hasJoined =
         session.members?.some(
           (member: any) =>
             member._id === user?._id || member.userId === user?._id,
         ) || false;
-
       const startTime = session.startTime
         ? new Date(session.startTime).toLocaleTimeString("en-US", {
             hour: "2-digit",
             minute: "2-digit",
-            hour12: true,
+            hour12: false,
           })
         : "TBD";
-
       let minute = "0'";
-
       if (session.inProgress && session.startTime) {
-        const diff = Math.max(
-          0,
-          Math.floor(
-            (new Date().getTime() - new Date(session.startTime).getTime()) /
-              60000,
-          ),
+        const diff = Math.floor(
+          (new Date().getTime() - new Date(session.startTime).getTime()) /
+            60000,
         );
-
         minute = `${diff}'`;
       }
-
       return {
-        sessionId: session._id,
-        locationId: session.location?._id,
-
-        captainName,
-        locationName,
-        matchType: session.matchType || "friendly",
-
+        teams: {
+          team1: {
+            initials: captainName.slice(0, 2).toUpperCase(),
+            name: captainName,
+            number: `${session.members?.length || 0}/${session.maxNumber || 0} players`,
+          },
+          team2: {
+            initials: locationName.slice(0, 2).toUpperCase(),
+            name: locationName,
+          },
+          matchType: session.matchType || "friendly",
+        },
         time: startTime,
         minute,
-
-        playerCount: session.members?.length || 0,
-        maxPlayers: session.maxNumber || 0,
-
-        paymentRequired: Boolean(session.paymentRequired),
-        paymentStatus: session.paymentStatus,
-        paymentAmount: session.paymentAmount || 0,
-        allPaymentsCompleted: Boolean(session.allPaymentsCompleted),
-
-        inProgress: Boolean(session.inProgress),
-        finished: Boolean(session.finished),
-        isFull: Boolean(session.isFull),
-
-        joined: hasJoined,
-
+        team1score: "?",
+        team2score: "?",
+        joined: !hasJoined,
+        sessionId: session._id,
+        inProgress: session.inProgress,
+        finished: session.finished,
+        isFull: session.isFull,
         sessionData: session,
       };
     });
@@ -168,37 +150,31 @@ export default function Schedule({
       teamName: "Friendlies",
       teamInitials: "FR",
       matches: formattedMatches.filter(
-        (m) => m.matchType.toLowerCase() === "friendly",
+        (m) => m.teams.matchType.toLowerCase() === "friendly",
       ),
     },
   ];
-
   const groupedTournaments = [
     {
       teamName: "Tournaments",
       teamInitials: "TM",
       matches: formattedMatches.filter(
-        (m) => m.matchType.toLowerCase() === "tournament",
+        (m) => m.teams.matchType.toLowerCase() === "tournament",
       ),
     },
   ];
-
   const groupedSets = [
     {
       teamName: "Set Games",
       teamInitials: "ST",
       matches: formattedMatches.filter(
-        (m) => m.matchType.toLowerCase() === "set",
+        (m) => m.teams.matchType.toLowerCase() === "set",
       ),
     },
   ];
 
-  const renderMatchCard = (match: any, idx: number) => (
-    <SessionCard
-      key={match.sessionId || idx}
-      match={match}
-      sessionData={match.sessionData}
-    />
+  const renderMatchCard = (match: Match, idx: number) => (
+    <SessionMatchCard key={idx} match={match} sessionData={match.sessionData} />
   );
 
   const renderTabContent = () => {
@@ -355,7 +331,7 @@ export default function Schedule({
                       ? `/${tabId}`
                       : "/screens/newsession") as any,
                     params: {
-                      locationId: formattedMatches[0]?.locationId,
+                      locationId: formattedMatches[0].sessionId,
                     },
                   });
                 } else {
@@ -400,7 +376,7 @@ export default function Schedule({
               ))}
             </View>
 
-            <View className="mt-[27px] w-full">{renderTabContent()}</View>
+            <View className="mt-[27px] flex-1">{renderTabContent()}</View>
           </View>
         </View>
       </ScrollView>

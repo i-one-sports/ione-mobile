@@ -88,8 +88,8 @@ const PitchCarousel: React.FC<PitchCarouselProps> = ({ data }) => {
 
   const handlePress = (item: PitchData) => {
     Alert.alert(
-      "Start Session",
-      "Do you want to start a session at this location?",
+      "Create Session",
+      "Do you want to create a session at this location?",
       [
         { text: "Cancel", style: "cancel" },
         { text: "Yes", onPress: () => handleStartSession(item.id) },
