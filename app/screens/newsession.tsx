@@ -24,7 +24,8 @@ import SectionCard from "@/components/ui/SectionCard";
 
 export default function NewSession() {
   const params = useLocalSearchParams();
-  const sessionId = params.locationId as string;
+  const sessionId =
+    (params.sessionId as string) || (params.locationId as string);
   const dispatch = useAppDispatch();
   const colorScheme = useColorScheme();
   const theme = Colors[colorScheme ?? "light"];
@@ -68,6 +69,15 @@ export default function NewSession() {
       minsPerSet: Yup.string().required("Minutes per set is required"),
     }),
     onSubmit: async (values) => {
+      if (!sessionId) {
+        Toast.show({
+          type: "error",
+          text1: "Missing session",
+          text2: "No session was provided for this action.",
+        });
+        return;
+      }
+
       const payload = {
         sessionId,
         data: {
