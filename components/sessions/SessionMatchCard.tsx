@@ -20,6 +20,8 @@ export function SessionMatchCard({ match, sessionData }: Props) {
     }
   };
 
+  //   console.log("SessionMatchCard match:", match);
+
   return (
     <TouchableOpacity
       onPress={handlePress}

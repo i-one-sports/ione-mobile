@@ -1,5 +1,3 @@
- 
- 
 import React from "react";
 import {
   StyleProp,
@@ -100,7 +98,8 @@ export default function CustomButton({
 
 const styles = StyleSheet.create({
   button: {
-    flex: 1,
+    // flex: 1,
+    width: "100%",
     borderRadius: 6,
     paddingVertical: 14,
     paddingHorizontal: 16,

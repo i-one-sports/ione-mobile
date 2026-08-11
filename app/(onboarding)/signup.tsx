@@ -21,6 +21,7 @@ import SectionCard from "@/components/ui/SectionCard";
 import DropdownModal from "@/components/ui/DropdownModal";
 import CustomCheckbox from "@/components/CustomCheckbox";
 import TermsCheckbox from "@/components/ui/TermsCheckbox";
+import Loader from "@/components/loader";
 import { useAppDispatch } from "@/redux/store";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Toast } from "toastify-react-native";
@@ -498,6 +499,7 @@ export default function SignUp() {
           )}
         </Formik>
       </KeyboardAvoidingView>
+      <Loader visible={loading} />
     </SafeAreaScreen>
   );
 }

@@ -14,7 +14,6 @@
     "expo-env.d.ts",
     "app/(tabs)/earnings",
     "nativewind-env.d.ts",
-    "app/(onboarding)/forgottenpassword.tsx",
-    "assets/svg"
+    "app/(onboarding)/forgottenpassword.tsx"
   ]
 }

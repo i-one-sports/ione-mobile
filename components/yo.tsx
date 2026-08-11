@@ -1,22 +1,24 @@
-import { getLocation, getSessionByDate } from "@/api/ownerDashboardThunk";
-import PlusIcon from "@/assets/svg/PlusIcon";
+import { allSessions, getMyCurrentSession } from "@/api/sessions";
 import CustomDatePicker from "@/components/modals/CustomDatePicker";
-import { CalendarPolygon } from "@/components/admin/fixtures/CalendarPolygon";
-import { FixtureMatchCard } from "@/components/admin/fixtures/FixtureMatchCard";
-import { TeamScheduleGroup } from "@/components/admin/fixtures/TeamScheduleGroup";
+import PlusIcon from "@/assets/svg/PlusIcon";
+import { CalendarPolygon } from "@/components/sessions/CalendarPolygon";
+import { SessionMatchCard } from "@/components/sessions/SessionMatchCard";
+import { TeamScheduleGroup } from "@/components/sessions/TeamScheduleGroup";
 import {
   DateItem,
   ExpandedState,
-  FixtureTab,
   Match,
+  ScheduleProps,
+  SessionTab,
   TAB_ROUTE_MAP,
-} from "@/components/admin/fixtures/types";
+} from "@/components/sessions/types";
 import SafeAreaScreen from "@/components/SafeAreaScreen";
 import { ThemedText } from "@/components/ThemedText";
 import { Colors } from "@/constants/Colors";
 import { useAppDispatch, useAppSelector } from "@/redux/store";
-import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
+import Toast from "react-native-toast-message";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   ScrollView,
@@ -27,7 +29,10 @@ import {
   View,
 } from "react-native";
 
-export default function Schedule() {
+export default function Schedule({
+  initialTab = "all",
+  title = "Match schedule",
+}: ScheduleProps = {}) {
   const [expandedAll, setExpandedAll] = useState<ExpandedState>({
     "All Teams": false,
   });
@@ -41,32 +46,26 @@ export default function Schedule() {
     "Set Games": false,
   });
   const [dates, setDates] = useState<DateItem[]>([]);
-  const [activeTab, setActiveTab] = useState<FixtureTab>("all");
+  const [activeTab, setActiveTab] = useState<SessionTab>(initialTab);
   const [date, setDate] = useState(new Date());
-  const [isPickerVisible, setPickerVisible] = useState(false);
 
   const colorScheme = useColorScheme();
   const theme = Colors[colorScheme ?? "light"];
   const scrollViewRef = useRef<ScrollView>(null);
+  const [isCalendarVisible, setCalendarVisible] = useState(false);
 
   const dispatch = useAppDispatch();
   const { user } = useAppSelector((state) => state.auth);
-  const { location, sessionByDate, loadingSessionByDate, errorSessionByDate } =
-    useAppSelector((state) => state.ownerDashboard);
-
-  const formattedDate = date.toLocaleDateString("en-CA");
-
-  useEffect(() => {
-    dispatch(getLocation());
-  }, [dispatch]);
+  const { all, loadingAll, errorAll } = useAppSelector(
+    (state) => state.sessions,
+  );
 
   useEffect(() => {
-    if (location?._id) {
-      dispatch(
-        getSessionByDate({ locationId: location._id, date: formattedDate }),
-      );
-    }
-  }, [dispatch, location?._id, formattedDate]);
+    if (!user?.location?.coordinates) return;
+    const [lat, lng] = user.location.coordinates;
+    dispatch(allSessions({ lat, lng }));
+    dispatch(getMyCurrentSession());
+  }, [dispatch, user]);
 
   useEffect(() => {
     const today = new Date();
@@ -86,8 +85,8 @@ export default function Schedule() {
   }, []);
 
   const formattedMatches = useMemo(() => {
-    if (!sessionByDate || sessionByDate.length === 0) return [];
-    return sessionByDate.map((session: any) => {
+    if (!all || all.length === 0) return [];
+    return all.map((session: any) => {
       const captainName =
         session.captain?.firstName || session.captain?.username || "Unknown";
       const locationName = session.location?.name || "Unknown Location";
@@ -136,7 +135,12 @@ export default function Schedule() {
         sessionData: session,
       };
     });
-  }, [sessionByDate, user]);
+  }, [all, user]);
+
+  const isCaptain = formattedMatches.some((m) => {
+    const captain = m.sessionData?.captain;
+    return captain?._id === user?._id || captain?.userId === user?._id;
+  });
 
   const groupedAll = [
     { teamName: "All Teams", teamInitials: "AT", matches: formattedMatches },
@@ -170,30 +174,27 @@ export default function Schedule() {
   ];
 
   const renderMatchCard = (match: Match, idx: number) => (
-    <FixtureMatchCard key={idx} match={match} sessionData={match.sessionData} />
+    <SessionMatchCard key={idx} match={match} sessionData={match.sessionData} />
   );
 
   const renderTabContent = () => {
-    const isLoading = loadingSessionByDate;
-    const error = errorSessionByDate;
-
-    if (isLoading) {
+    if (loadingAll) {
       return (
         <View className="items-center py-10">
           <Text className="text-gray-400 text-sm">Loading sessions...</Text>
         </View>
       );
     }
-    if (error) {
+    if (errorAll) {
       return (
         <View className="items-center py-10">
-          <Text className="text-red-500 text-sm">{error}</Text>
+          <Text className="text-red-500 text-sm">{errorAll}</Text>
         </View>
       );
     }
 
     const tabGroupMap: Record<
-      FixtureTab,
+      SessionTab,
       {
         group: typeof groupedAll;
         expanded: ExpandedState;
@@ -229,14 +230,6 @@ export default function Schedule() {
 
     const { group, expanded, setExpanded, emptyMsg } = tabGroupMap[activeTab];
 
-    if (activeTab === "all" && formattedMatches.length === 0) {
-      return (
-        <View className="items-center py-10">
-          <Text className="text-gray-400 text-sm">{emptyMsg}</Text>
-        </View>
-      );
-    }
-
     if (group[0].matches.length === 0) {
       return (
         <View className="items-center py-10">
@@ -265,15 +258,18 @@ export default function Schedule() {
     );
   };
 
+  //   console.log("Schedule formattedMatches:", formattedMatches);
+  console.log("Schedule all:", all);
+
   return (
     <SafeAreaScreen>
       <ScrollView
-        className="mb-[40px] h-full flex-1"
+        className="h-full flex-1"
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 40, flexGrow: 1 }}
       >
         <View className="flex-col gap-4 lg:flex-row">
-          {/* Header: title + date picker + calendar strip */}
+          {/* Header: title + calendar icon + calendar strip */}
           <View className="w-full">
             <View className="flex flex-col gap-[25px] px-[32px] py-6">
               <View className="mb-6 flex-row items-center justify-between">
@@ -282,9 +278,9 @@ export default function Schedule() {
                   darkColor={theme.text}
                   className="text-[20px] font-[600] text-black"
                 >
-                  Match schedule
+                  {title}
                 </ThemedText>
-                <TouchableOpacity onPress={() => setPickerVisible(true)}>
+                <TouchableOpacity onPress={() => setCalendarVisible(true)}>
                   <Ionicons
                     name="calendar-outline"
                     size={28}
@@ -293,8 +289,8 @@ export default function Schedule() {
                 </TouchableOpacity>
                 <CustomDatePicker
                   date={date}
-                  isVisible={isPickerVisible}
-                  onClose={() => setPickerVisible(false)}
+                  isVisible={isCalendarVisible}
+                  onClose={() => setCalendarVisible(false)}
                   onChange={(newDate) => setDate(newDate)}
                 />
               </View>
@@ -321,34 +317,66 @@ export default function Schedule() {
             <View className="w-full border-t-[1px] border-[#464242]" />
           </View>
 
+          {/* start a session button*/}
+
+          <View className="mt-[18px] px-[32px]">
+            <TouchableOpacity
+              className="flex w-full flex-row items-center justify-between rounded-[5px] border border-[#7D7D7D] px-[21px] py-[15px]"
+              onPress={() => {
+                if (isCaptain) {
+                  const tabId = TAB_ROUTE_MAP[activeTab];
+
+                  router.push({
+                    pathname: (tabId
+                      ? `/${tabId}`
+                      : "/screens/newsession") as any,
+                    params: {
+                      locationId: formattedMatches[0].sessionId,
+                    },
+                  });
+                } else {
+                  Toast.show({
+                    type: "success",
+                    props: {
+                      title: "New Game",
+                      message: "Pick a pitch to create your new game",
+                    },
+                  });
+                  router.push("/");
+                }
+              }}
+            >
+              <Text className="text-base text-[#696969]">New Game?</Text>
+              <PlusIcon />
+            </TouchableOpacity>
+          </View>
+
           {/* Tab bar + content */}
           <View className="mt-[13px] w-full px-[32px]">
-            <View className="mb-4 flex w-full flex-row justify-between gap-2">
-              {(["all", "tournaments", "friendlies", "sets"] as const).map(
-                (tab) => (
-                  <TouchableWithoutFeedback
-                    key={tab}
-                    onPress={() => setActiveTab(tab)}
+            <View className="flex w-full flex-row gap-2">
+              {(["all", "tournaments", "friendlies"] as const).map((tab) => (
+                <TouchableWithoutFeedback
+                  key={tab}
+                  onPress={() => setActiveTab(tab)}
+                >
+                  <View
+                    className={`rounded px-4 py-[9px] ${
+                      activeTab === tab ? "bg-[#00FF94]" : "bg-[#ECECEC]"
+                    }`}
                   >
-                    <View
-                      className={`rounded px-4 py-[9px] ${
-                        activeTab === tab ? "bg-[#00FF94]" : "bg-[#ECECEC]"
+                    <Text
+                      className={`text-sm font-[600] ${
+                        activeTab === tab ? "text-black" : "text-[#929292]"
                       }`}
                     >
-                      <Text
-                        className={`text-sm font-[600] ${
-                          activeTab === tab ? "text-black" : "text-[#929292]"
-                        }`}
-                      >
-                        {tab.charAt(0).toUpperCase() + tab.slice(1)}
-                      </Text>
-                    </View>
-                  </TouchableWithoutFeedback>
-                ),
-              )}
+                      {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                    </Text>
+                  </View>
+                </TouchableWithoutFeedback>
+              ))}
             </View>
 
-            <View className="mt-[33px] flex-1">{renderTabContent()}</View>
+            <View className="mt-[27px] flex-1">{renderTabContent()}</View>
           </View>
         </View>
       </ScrollView>

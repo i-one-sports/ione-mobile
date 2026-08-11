@@ -15,6 +15,7 @@ import SafeAreaScreen from "@/components/SafeAreaScreen";
 import { ThemedText } from "@/components/ThemedText";
 import CustomButton from "@/components/ui/CustomButton";
 import { Icon } from "@/components/ui/Icon";
+import Loader from "@/components/loader";
 import { useAppDispatch } from "@/redux/store";
 import { useRouter } from "expo-router";
 import { Toast } from "toastify-react-native";
@@ -209,6 +210,7 @@ export default function SignIn() {
           )}
         </Formik>
       </KeyboardAvoidingView>
+      <Loader visible={loading} />
     </SafeAreaScreen>
   );
 }
