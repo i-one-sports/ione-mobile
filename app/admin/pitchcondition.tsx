@@ -3,7 +3,6 @@ import {
   getSummary,
   updatePitchCondition,
 } from "@/api/ownerDashboardThunk";
-import AdminNotificationIcon from "@/assets/svg/AdminNotificationIcon";
 import { useColorScheme } from "nativewind";
 import { ThemedText } from "@/components/ThemedText";
 import { PitchConditionType } from "@/components/typings/apiResponse";
@@ -14,6 +13,7 @@ import React, { useEffect, useState } from "react";
 import { Text, TouchableOpacity, View } from "react-native";
 import { Toast } from "toastify-react-native";
 import { formatPitchCondition } from "@/utils/formatPitchCondition";
+import CustomButton from "@/components/ui/CustomButton";
 
 export default function AdminPitchConditionScreen() {
   const { colorScheme } = useColorScheme();
@@ -58,6 +58,8 @@ export default function AdminPitchConditionScreen() {
     (state) => state.ownerDashboard,
   );
 
+  const screenBg = isDark ? "#000" : "#FAFAFA";
+
   useEffect(() => {
     dispatch(getLocation());
     if (location?._id) {
@@ -80,7 +82,7 @@ export default function AdminPitchConditionScreen() {
         text1: "Success",
         text2: res.message,
       });
-      router.replace("/admin/(tabs)");
+      router.back();
     } catch (err: any) {
       Toast.show({
         type: "error",
@@ -91,26 +93,31 @@ export default function AdminPitchConditionScreen() {
   };
 
   return (
-    <View className="flex-1 dark:bg-black">
-      <View className="pb-6 pt-16 px-[35px] flex-1">
+    <View style={{ flex: 1, backgroundColor: screenBg }}>
+      <View className="pb-6 pt-16 px-[20px] flex-1">
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 32,
+            marginBottom: 32,
+          }}
+        >
+          <TouchableOpacity onPress={() => router.back()}>
+            <Ionicons
+              name="arrow-back"
+              size={22}
+              color={isDark ? "#fff" : "#111"}
+            />
+          </TouchableOpacity>
+          <ThemedText style={{ fontSize: 17, fontWeight: "700" }}>
+            Pitch Condition
+          </ThemedText>
+        </View>
         <View>
-          <View className="flex flex-row items-center justify-between">
-            <ThemedText
-              style={{ fontFamily: "Poppins_600SemiBold" }}
-              className="text-xl"
-              darkColor="#FFFFFF"
-              lightColor="#000000"
-            >
-              Pitch Condition
-            </ThemedText>
-            <TouchableOpacity className="bg-[#00FF943B] rounded-[10px] w-[30px] h-[32px] items-center justify-center">
-              <AdminNotificationIcon />
-            </TouchableOpacity>
-          </View>
-
           <TouchableOpacity
             onPress={() => setOpenDropdown(!openDropdown)}
-            className="mt-12 relative"
+            className="relative"
           >
             <View
               style={{ borderColor: "#B2B2B2", borderRadius: 5 }}
@@ -153,14 +160,13 @@ export default function AdminPitchConditionScreen() {
         </View>
 
         <View className="mt-auto mb-[42px]">
-          <TouchableOpacity onPress={handleUpdatePitch}>
-            <ThemedText
-              style={{ fontFamily: "Poppins_500Medium" }}
-              className="text-[#000000] text-center py-5 text-[15px] bg-[#00FF94]"
-            >
-              {loadingPitchCondition ? "Updating...." : "Update"}
-            </ThemedText>
-          </TouchableOpacity>
+          <CustomButton
+            primary
+            title={loadingPitchCondition ? "Updating...." : "Update"}
+            loading={loadingPitchCondition}
+            disabled={loadingPitchCondition}
+            onPress={handleUpdatePitch}
+          />
         </View>
       </View>
     </View>

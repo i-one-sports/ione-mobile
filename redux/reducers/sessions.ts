@@ -37,6 +37,7 @@ export interface pitchSessions {
   address: string;
   booked: boolean;
   pitchPhoto: string;
+  tournament: boolean;
 }
 
 export interface Set {

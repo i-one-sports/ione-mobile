@@ -2,6 +2,7 @@ import HomeIcon from "@/assets/svg/HomeIcon";
 import SessionsIcon from "@/assets/svg/SessionsIcon";
 import SettingsIcon from "@/assets/svg/SettingsIcon";
 import SatisticsIcon from "@/assets/svg/StatisticsIcon";
+import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { HapticTab } from "@/components/HapticTab";
 import TabBarBackground from "@/components/ui/TabBarBackground";
 import { Colors } from "@/constants/Colors";

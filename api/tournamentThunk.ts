@@ -56,7 +56,7 @@ export const createTournament = createAsyncThunk<
   AsyncThunkConfig
 >("tournaments/createTournament", async ({ locationId, payload }, thunkAPI) => {
   return apiCall(
-    axiosInstance.post(`/i-one/tournaments/create${locationId}`, payload),
+    axiosInstance.post(`/i-one/tournaments/create/${locationId}`, payload),
     thunkAPI,
   );
 });

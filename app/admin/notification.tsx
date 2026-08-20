@@ -17,6 +17,9 @@ export default function Notification() {
     (state) => state.ownerDashboard.latestNotification,
   );
 
+  const isDark = colorScheme === "dark";
+  const screenBg = isDark ? "#000" : "#FAFAFA";
+
   useEffect(() => {
     let es: EventSource;
 
@@ -59,11 +62,11 @@ export default function Notification() {
   }, []);
 
   return (
-    <View className="flex-1 bg-white dark:bg-black">
+    <View style={{ flex: 1, backgroundColor: screenBg }}>
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{
-          paddingHorizontal: 35,
+          paddingHorizontal: 20,
           paddingTop: 64,
           paddingBottom: 120,
           flexGrow: 1,
@@ -74,7 +77,7 @@ export default function Notification() {
             <TouchableOpacity onPress={() => router.back()}>
               <Ionicons
                 name="arrow-back"
-                size={28}
+                size={22}
                 color={colorScheme === "dark" ? "#fff" : "#000"}
               />
             </TouchableOpacity>

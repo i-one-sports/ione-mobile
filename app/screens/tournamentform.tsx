@@ -1,9 +1,10 @@
 import { Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { useFormik } from "formik";
 import React, { useState } from "react";
 import {
   KeyboardAvoidingView,
+  Modal,
   Platform,
   Pressable,
   ScrollView,
@@ -13,108 +14,151 @@ import {
   View,
 } from "react-native";
 import * as Yup from "yup";
-
 import InputField from "@/components/InputField";
+import Loader from "@/components/loader";
 import SafeAreaScreen from "@/components/SafeAreaScreen";
+import SectionCard from "@/components/ui/SectionCard";
 import { ThemedText } from "@/components/ThemedText";
 import { Colors } from "@/constants/Colors";
 
-type PickerField = "duration" | "players" | "rounds";
-
 type TournamentFormValues = {
-  tournamentName: string;
-  timeDuration: string;
+  name: string;
+  type: string;
+  description: string;
+  prizeMoney: string;
+  registrationFee: string;
+  minutesPerMatch: string;
   playersPerTeam: string;
-  setNumber: string;
-  startDate: string;
-  endDate: string;
+  maxTeams: string;
 };
 
+const tournamentTypes = [
+  { label: "Knockout", value: "knockout" },
+  { label: "League", value: "league" },
+];
+
+const getTypeLabel = (value: string) =>
+  tournamentTypes.find((t) => t.value === value)?.label ?? value;
+
 export default function TournamentFormScreen() {
+  const { locationId } = useLocalSearchParams<{ locationId?: string }>();
   const colorScheme = useColorScheme();
   const theme = Colors[colorScheme ?? "light"];
-  const [showPicker, setShowPicker] = useState({
-    duration: false,
-    players: false,
-    rounds: false,
-  });
-
-  const options = {
-    duration: Array.from({ length: 10 }, (_, i) => ({
-      value: (i + 1).toString(),
-    })),
-    players: Array.from({ length: 8 }, (_, i) => ({
-      value: (i + 2).toString(),
-    })),
-    rounds: Array.from({ length: 5 }, (_, i) => ({
-      value: (i + 1).toString(),
-    })),
-  };
+  const [showTypeModal, setShowTypeModal] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const formik = useFormik({
     initialValues: {
-      tournamentName: "",
-      timeDuration: "1",
-      playersPerTeam: "2",
-      setNumber: "3",
-      startDate: "",
-      endDate: "",
+      name: "",
+      type: "knockout",
+      description: "",
+      prizeMoney: "",
+      registrationFee: "",
+      minutesPerMatch: "",
+      playersPerTeam: "",
+      maxTeams: "",
     },
     validationSchema: Yup.object({
-      tournamentName: Yup.string().required("Tournament name is required"),
-      timeDuration: Yup.string().required("Total minutes is required"),
+      name: Yup.string().required("Tournament name is required"),
+      type: Yup.string()
+        .oneOf(["knockout", "league"])
+        .required("Type is required"),
+      prizeMoney: Yup.string().required("Prize money is required"),
+      registrationFee: Yup.string().required("Registration fee is required"),
+      minutesPerMatch: Yup.string().required("Minutes per match is required"),
       playersPerTeam: Yup.string().required("Players per team is required"),
-      setNumber: Yup.string().required("Number of teams is required"),
-      startDate: Yup.string().required("Start date is required"),
-      endDate: Yup.string().required("End date is required"),
+      maxTeams: Yup.string().required("Max teams is required"),
     }),
     onSubmit: (values: TournamentFormValues) => {
-      console.log("Tournament form values:", values);
-      router.push("/screens/tournamentsetup");
+      setLoading(true);
+      // Pass values (as strings) forward; numeric conversion happens at submit.
+      router.push({
+        pathname: "/screens/tournamentsetup",
+        params: {
+          locationId: locationId ?? "",
+          data: JSON.stringify(values),
+        },
+      });
+      setTimeout(() => setLoading(false), 300);
     },
   });
 
-  const handleOptionSelect = (field: PickerField, value: string) => {
-    const fieldMap = {
-      duration: "timeDuration",
-      players: "playersPerTeam",
-      rounds: "setNumber",
-    };
-
-    formik.setFieldValue(fieldMap[field], value);
-    setShowPicker((prev) => ({
-      ...prev,
-      [field]: false,
-    }));
-  };
-
-  const togglePicker = (field: PickerField) => {
-    setShowPicker((prev) => ({
-      duration: false,
-      players: false,
-      rounds: false,
-      [field]: !prev[field],
-    }));
-  };
-
-  const CustomRightIcon: React.FC<{ value: string }> = ({ value }) => (
-    <View className="absolute right-2 flex-row items-center gap-2">
-      <View className="rounded-md border border-[#00000080] px-[10px] py-[7px]">
-        <Text className="text-[11px] font-medium text-black">{value}</Text>
-      </View>
-      <Ionicons name="chevron-down" size={16} color="gray" />
-    </View>
+  const SelectModal: React.FC<{
+    visible: boolean;
+    options: { label: string; value: string }[];
+    selectedValue: string;
+    onSelect: (value: string) => void;
+    onClose: () => void;
+  }> = ({ visible, options, selectedValue, onSelect, onClose }) => (
+    <Modal
+      visible={visible}
+      transparent
+      animationType="fade"
+      onRequestClose={onClose}
+    >
+      <Pressable
+        style={{
+          flex: 1,
+          backgroundColor: "rgba(0,0,0,0.4)",
+          justifyContent: "center",
+          paddingHorizontal: 32,
+        }}
+        onPress={onClose}
+      >
+        <View
+          style={{
+            backgroundColor: colorScheme === "dark" ? "#1a1a1a" : "#fff",
+            borderRadius: 16,
+            overflow: "hidden",
+          }}
+        >
+          {options.map((opt, i) => {
+            const isSelected = opt.value === selectedValue;
+            return (
+              <TouchableOpacity
+                key={opt.value}
+                onPress={() => onSelect(opt.value)}
+                style={{
+                  paddingVertical: 15,
+                  paddingHorizontal: 20,
+                  borderBottomWidth: i < options.length - 1 ? 1 : 0,
+                  borderBottomColor:
+                    colorScheme === "dark" ? "#2a2a2a" : "#f2f2f2",
+                  flexDirection: "row",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                }}
+              >
+                <Text
+                  style={{
+                    fontSize: 14,
+                    fontWeight: isSelected ? "600" : "400",
+                    color: colorScheme === "dark" ? "#fff" : "#111",
+                    textTransform: "capitalize",
+                  }}
+                >
+                  {opt.label}
+                </Text>
+                {isSelected && (
+                  <Ionicons name="checkmark-circle" size={18} color="#00C853" />
+                )}
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+      </Pressable>
+    </Modal>
   );
 
   return (
     <SafeAreaScreen>
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
-        className="flex-1"
-        keyboardVerticalOffset={0}
+        style={{ flex: 1 }}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 20 : 0}
       >
         <ScrollView
-          className="mb-[40px]  h-full flex-1 py-6"
+          className="mb-[40px] h-full flex-1 py-6"
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
           contentContainerStyle={{
@@ -142,17 +186,19 @@ export default function TournamentFormScreen() {
               New Tournament
             </ThemedText>
 
-            <Pressable onPress={() => formik.handleSubmit()}>
-              <Text className="text-[16px] font-[500] text-[#0C4D2E]">
-                Next
+            <Pressable onPress={() => formik.handleSubmit()} disabled={loading}>
+              <Text
+                className={`text-[16px] font-[500] ${loading ? "text-gray-400" : "text-[#0C4D2E]"}`}
+              >
+                {loading ? "..." : "Next"}
               </Text>
             </Pressable>
           </View>
 
-          <View className="mt-[19px] flex w-full flex-col items-center gap-2 rounded-[4px] bg-[#03EA8926] px-[17px] py-[21px] text-center">
+          <View className="mt-[19px] mb-[32px] flex w-full flex-col items-center gap-2 rounded-[4px] bg-[#03EA8926] px-[17px] py-[21px] text-center">
             <ThemedText
               darkColor={theme.text}
-              className="text-[14px] text-[#0C4D2E]"
+              className="text-[14px] text-center text-[#0C4D2E]"
             >
               You Are Officially The Captain Of This Ball Session!
             </ThemedText>
@@ -170,214 +216,157 @@ export default function TournamentFormScreen() {
             </ThemedText>
           </View>
 
-          <View className="mt-[45px] items-center">
-            <TouchableOpacity
-              className="rounded-[5px] bg-[#67F095] px-[33px] py-[15px]"
-              onPress={() => formik.handleSubmit()}
-            >
-              <Text className="text-[14px] font-[500] text-black">Next</Text>
-            </TouchableOpacity>
-          </View>
-
-          <View className="mt-[45px]">
+          <SectionCard title="Tournament Basics">
             <InputField
               required
               label="Tournament Name"
-              autoCapitalize="none"
-              placeholder="Tournament Name"
-              value={formik.values.tournamentName}
-              onChangeText={formik.handleChange("tournamentName")}
-              onBlur={formik.handleBlur("tournamentName")}
+              placeholder="e.g. Victoria Island Cup"
+              value={formik.values.name}
+              onChangeText={formik.handleChange("name")}
+              onBlur={formik.handleBlur("name")}
               errorMessage={
-                formik.touched.tournamentName && formik.errors.tournamentName
-                  ? formik.errors.tournamentName
+                formik.touched.name && formik.errors.name
+                  ? formik.errors.name
                   : ""
               }
             />
 
-            <View className="relative">
-              <InputField
-                selectPicker
-                required
-                label="Total Minutes per Match"
-                autoCapitalize="none"
-                placeholder=" Total Minutes per Match"
-                value=""
-                pickerPressed={() => togglePicker("duration")}
-                rightIcon={
-                  <CustomRightIcon value={formik.values.timeDuration} />
-                }
-                errorMessage={
-                  formik.touched.timeDuration && formik.errors.timeDuration
-                    ? formik.errors.timeDuration
-                    : ""
-                }
-              />
+            <InputField
+              required
+              label="Tournament Type"
+              selectPicker
+              placeholder="Select tournament type"
+              value={getTypeLabel(formik.values.type)}
+              pickerPressed={() => setShowTypeModal(true)}
+              rightIcon={
+                <Ionicons name="chevron-down" size={16} color="gray" />
+              }
+              errorMessage={
+                formik.touched.type && formik.errors.type
+                  ? formik.errors.type
+                  : ""
+              }
+            />
 
-              {showPicker.duration && (
-                <View className="absolute right-[30px] top-[50%] z-10 mt-7 max-h-40 w-[40px] rounded-lg border border-gray-300 bg-white shadow-lg">
-                  <ScrollView className="max-h-40">
-                    {options.duration.map((option, index) => (
-                      <TouchableOpacity
-                        key={option.value}
-                        className={`px-2 py-2 ${
-                          index !== options.duration.length - 1
-                            ? "border-b border-gray-200"
-                            : ""
-                        } ${formik.values.timeDuration === option.value ? "bg-blue-50" : ""}`}
-                        onPress={() =>
-                          handleOptionSelect("duration", option.value)
-                        }
-                      >
-                        <Text
-                          className={`text-center ${
-                            formik.values.timeDuration === option.value
-                              ? "font-medium text-blue-600"
-                              : "text-gray-700"
-                          }`}
-                        >
-                          {option.value}
-                        </Text>
-                      </TouchableOpacity>
-                    ))}
-                  </ScrollView>
-                </View>
-              )}
-            </View>
-
-            <View className="relative">
-              <InputField
-                selectPicker
-                required
-                label="Number Of Players per Team"
-                autoCapitalize="none"
-                placeholder="Number Of Players per Team"
-                value=""
-                pickerPressed={() => togglePicker("players")}
-                rightIcon={
-                  <CustomRightIcon value={formik.values.playersPerTeam} />
-                }
-                errorMessage={
-                  formik.touched.playersPerTeam && formik.errors.playersPerTeam
-                    ? formik.errors.playersPerTeam
-                    : ""
-                }
-              />
-
-              {showPicker.players && (
-                <View className="absolute right-[30px] top-[50%] z-10 mt-7 max-h-40 w-[40px] rounded-lg border border-gray-300 bg-white shadow-lg">
-                  <ScrollView className="max-h-40">
-                    {options.players.map((option, index) => (
-                      <TouchableOpacity
-                        key={option.value}
-                        className={`px-2 py-2 ${
-                          index !== options.players.length - 1
-                            ? "border-b border-gray-200"
-                            : ""
-                        } ${formik.values.playersPerTeam === option.value ? "bg-blue-50" : ""}`}
-                        onPress={() =>
-                          handleOptionSelect("players", option.value)
-                        }
-                      >
-                        <Text
-                          className={`text-center ${
-                            formik.values.playersPerTeam === option.value
-                              ? "font-medium text-blue-600"
-                              : "text-gray-700"
-                          }`}
-                        >
-                          {option.value}
-                        </Text>
-                      </TouchableOpacity>
-                    ))}
-                  </ScrollView>
-                </View>
-              )}
-            </View>
-
-            <View className="relative">
-              <InputField
-                selectPicker
-                required
-                label="Number Of Teams"
-                autoCapitalize="none"
-                placeholder="Number Of Teams"
-                value=""
-                pickerPressed={() => togglePicker("rounds")}
-                rightIcon={<CustomRightIcon value={formik.values.setNumber} />}
-                errorMessage={
-                  formik.touched.setNumber && formik.errors.setNumber
-                    ? formik.errors.setNumber
-                    : ""
-                }
-              />
-
-              {showPicker.rounds && (
-                <View className="absolute right-[30px] top-[50%] z-10 mt-7 max-h-40 w-[40px] rounded-lg border border-gray-300 bg-white shadow-lg">
-                  <ScrollView className="max-h-40">
-                    {options.rounds.map((option, index) => (
-                      <TouchableOpacity
-                        key={option.value}
-                        className={`px-2 py-2 ${
-                          index !== options.rounds.length - 1
-                            ? "border-b border-gray-200"
-                            : ""
-                        } ${formik.values.setNumber === option.value ? "bg-blue-50" : ""}`}
-                        onPress={() =>
-                          handleOptionSelect("rounds", option.value)
-                        }
-                      >
-                        <Text
-                          className={`text-center ${
-                            formik.values.setNumber === option.value
-                              ? "font-medium text-blue-600"
-                              : "text-gray-700"
-                          }`}
-                        >
-                          {option.value}
-                        </Text>
-                      </TouchableOpacity>
-                    ))}
-                  </ScrollView>
-                </View>
-              )}
-            </View>
+            <InputField
+              label="Description"
+              placeholder="e.g. Annual VI knockout tournament"
+              multiline
+              value={formik.values.description}
+              onChangeText={formik.handleChange("description")}
+              onBlur={formik.handleBlur("description")}
+            />
 
             <View className="flex-row gap-3">
               <View className="flex-1">
                 <InputField
                   required
-                  label="Start Date"
-                  placeholder="YYYY-MM-DD"
-                  value={formik.values.startDate}
-                  onChangeText={formik.handleChange("startDate")}
-                  onBlur={formik.handleBlur("startDate")}
+                  label="Prize Money"
+                  keyboardType="numeric"
+                  placeholder="e.g. 50000000"
+                  value={formik.values.prizeMoney}
+                  onChangeText={formik.handleChange("prizeMoney")}
+                  onBlur={formik.handleBlur("prizeMoney")}
                   errorMessage={
-                    formik.touched.startDate && formik.errors.startDate
-                      ? formik.errors.startDate
+                    formik.touched.prizeMoney && formik.errors.prizeMoney
+                      ? formik.errors.prizeMoney
                       : ""
                   }
                 />
               </View>
-
               <View className="flex-1">
                 <InputField
                   required
-                  label="End Date"
-                  placeholder="YYYY-MM-DD"
-                  value={formik.values.endDate}
-                  onChangeText={formik.handleChange("endDate")}
-                  onBlur={formik.handleBlur("endDate")}
+                  label="Registration Fee"
+                  keyboardType="numeric"
+                  placeholder="e.g. 200000"
+                  value={formik.values.registrationFee}
+                  onChangeText={formik.handleChange("registrationFee")}
+                  onBlur={formik.handleBlur("registrationFee")}
                   errorMessage={
-                    formik.touched.endDate && formik.errors.endDate
-                      ? formik.errors.endDate
+                    formik.touched.registrationFee &&
+                    formik.errors.registrationFee
+                      ? formik.errors.registrationFee
                       : ""
                   }
                 />
               </View>
             </View>
+
+            <InputField
+              required
+              label="Minutes Per Match"
+              keyboardType="numeric"
+              placeholder="e.g. 10"
+              value={formik.values.minutesPerMatch}
+              onChangeText={formik.handleChange("minutesPerMatch")}
+              onBlur={formik.handleBlur("minutesPerMatch")}
+              errorMessage={
+                formik.touched.minutesPerMatch && formik.errors.minutesPerMatch
+                  ? formik.errors.minutesPerMatch
+                  : ""
+              }
+            />
+
+            <View className="flex-row gap-3">
+              <View className="flex-1">
+                <InputField
+                  required
+                  label="Players / Team"
+                  keyboardType="numeric"
+                  placeholder="e.g. 5"
+                  value={formik.values.playersPerTeam}
+                  onChangeText={formik.handleChange("playersPerTeam")}
+                  onBlur={formik.handleBlur("playersPerTeam")}
+                  errorMessage={
+                    formik.touched.playersPerTeam &&
+                    formik.errors.playersPerTeam
+                      ? formik.errors.playersPerTeam
+                      : ""
+                  }
+                />
+              </View>
+              <View className="flex-1">
+                <InputField
+                  required
+                  label="Max Teams"
+                  keyboardType="numeric"
+                  placeholder="e.g. 8"
+                  value={formik.values.maxTeams}
+                  onChangeText={formik.handleChange("maxTeams")}
+                  onBlur={formik.handleBlur("maxTeams")}
+                  errorMessage={
+                    formik.touched.maxTeams && formik.errors.maxTeams
+                      ? formik.errors.maxTeams
+                      : ""
+                  }
+                />
+              </View>
+            </View>
+          </SectionCard>
+
+          <View className="mt-[30px] items-center">
+            <TouchableOpacity
+              className="rounded-[5px] bg-[#67F095] px-[33px] py-[15px]"
+              onPress={() => formik.handleSubmit()}
+              disabled={loading}
+            >
+              <Text className="text-[14px] font-[500] text-black">Next</Text>
+            </TouchableOpacity>
           </View>
         </ScrollView>
+
+        <SelectModal
+          visible={showTypeModal}
+          options={tournamentTypes}
+          selectedValue={formik.values.type}
+          onSelect={(value) => {
+            formik.setFieldValue("type", value);
+            setShowTypeModal(false);
+          }}
+          onClose={() => setShowTypeModal(false)}
+        />
+        <Loader visible={loading} />
       </KeyboardAvoidingView>
     </SafeAreaScreen>
   );

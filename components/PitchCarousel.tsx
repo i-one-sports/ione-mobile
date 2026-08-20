@@ -6,11 +6,13 @@ import {
   ViewToken,
   ImageBackground,
   Pressable,
-  Alert,
+  Modal,
+  Text,
+  TouchableOpacity,
 } from "react-native";
 import { ThemedText } from "@/components/ThemedText";
 import { EvilIcons } from "@expo/vector-icons";
-import { useRouter } from "expo-router"; // or useNavigation if using react-navigation
+import { useRouter } from "expo-router";
 import Toast from "react-native-toast-message";
 import { useAppDispatch } from "@/redux/store";
 import { startSession } from "@/api/sessions";
@@ -33,6 +35,7 @@ interface PitchCarouselProps {
 
 const PitchCarousel: React.FC<PitchCarouselProps> = ({ data }) => {
   const [activeIndex, setActiveIndex] = useState(0);
+  const [selectedItem, setSelectedItem] = useState<PitchData | null>(null);
   const flatListRef = useRef<FlatList>(null);
   const router = useRouter();
 
@@ -49,6 +52,7 @@ const PitchCarousel: React.FC<PitchCarouselProps> = ({ data }) => {
   }).current;
   const [loadingId, setLoadingId] = useState(false);
   const dispatch = useAppDispatch();
+
   const handleStartSession = (locationId: string) => {
     setLoadingId(true);
     dispatch(startSession({ locationId }))
@@ -61,14 +65,8 @@ const PitchCarousel: React.FC<PitchCarouselProps> = ({ data }) => {
           props: {
             title: "Success",
             message: response.message || "Session started successfully",
-            //
           },
         });
-        // Toast.show({
-        //   type: "success",
-        //   text1: "You are officially the captain of this ball session!",
-        //   text2: response.message || "Session created successfully",
-        // });
         router.push(`/screens/newsession?locationId=${response._id}`);
       })
       .catch((err: any) => {
@@ -86,16 +84,17 @@ const PitchCarousel: React.FC<PitchCarouselProps> = ({ data }) => {
       });
   };
 
+  const handleCreateTournaments = (locationId: string) => {
+    router.push({
+      pathname: "/screens/tournamentform",
+      params: {
+        locationId,
+      },
+    });
+  };
+
   const handlePress = (item: PitchData) => {
-    Alert.alert(
-      "Create Session",
-      "Do you want to create a session at this location?",
-      [
-        { text: "Cancel", style: "cancel" },
-        { text: "Yes", onPress: () => handleStartSession(item.id) },
-      ],
-      { cancelable: true },
-    );
+    setSelectedItem(item);
   };
 
   const renderItem = ({ item }: { item: PitchData }) => (
@@ -178,6 +177,53 @@ const PitchCarousel: React.FC<PitchCarouselProps> = ({ data }) => {
         ))}
       </View>
       <Loader visible={loadingId} />
+      <Modal
+        visible={!!selectedItem}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setSelectedItem(null)}
+      >
+        <Pressable
+          className="flex-1 bg-black/40 justify-center px-8"
+          onPress={() => setSelectedItem(null)}
+        >
+          <Pressable
+            className="bg-white dark:bg-[#1a1a1a] rounded-2xl p-6"
+            onPress={() => {}}
+          >
+            <ThemedText className="text-lg font-bold mb-1">
+              {selectedItem?.name}
+            </ThemedText>
+            <ThemedText className="text-sm mb-5 text-gray-500 dark:text-gray-400">
+              What would you like to do?
+            </ThemedText>
+            <TouchableOpacity
+              onPress={() => {
+                const item = selectedItem;
+                setSelectedItem(null);
+                if (item) handleStartSession(item.id);
+              }}
+              className="bg-[#67F095] rounded-xl py-3.5 items-center mb-2.5"
+            >
+              <Text className="text-[#fff] text-[15px] font-semibold">
+                Create Session
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => {
+                const item = selectedItem;
+                setSelectedItem(null);
+                if (item) handleCreateTournaments(item.id);
+              }}
+              className="rounded-xl py-3.5 items-center border border-[#e5e5e5] dark:border-[#67F095]"
+            >
+              <ThemedText className="text-[15px] font-semibold">
+                Create Tournament
+              </ThemedText>
+            </TouchableOpacity>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </View>
   );
 };

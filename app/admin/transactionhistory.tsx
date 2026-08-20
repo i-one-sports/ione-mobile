@@ -3,15 +3,23 @@ import {
   getSummary,
   getTransactionHistory,
 } from "@/api/ownerDashboardThunk";
-import AdminNotificationIcon from "@/assets/svg/AdminNotificationIcon";
+import { useRouter } from "expo-router";
 import MoneyIcon from "@/assets/svg/MoneyIcon";
 import { ThemedText } from "@/components/ThemedText";
 import { useAppDispatch, useAppSelector } from "@/redux/store";
 import dayjs from "dayjs";
 import React, { useEffect } from "react";
 import { ScrollView, TouchableOpacity, View } from "react-native";
+import { useColorScheme } from "nativewind";
+import { Ionicons } from "@expo/vector-icons";
 
 export default function AdminTransactionHistoryScreen() {
+  const { colorScheme } = useColorScheme();
+  const isDark = colorScheme === "dark";
+  const router = useRouter();
+
+  const screenBg = isDark ? "#000" : "#FAFAFA";
+
   const recentActivity = [
     {
       id: 1,
@@ -114,32 +122,45 @@ export default function AdminTransactionHistoryScreen() {
   }, [dispatch, location?._id]);
 
   return (
-    <View className="flex-1 dark:bg-black">
-      <View className="pb-6 pt-16 px-[35px] flex-1">
-        <View>
-          <View className="flex flex-row items-center justify-between">
-            <ThemedText
-              darkColor="#FFFFFF"
-              lightColor="#000000"
-              style={{ fontFamily: "Poppins_600SemiBold" }}
-              className="text-xl"
-            >
-              Transaction History
-            </ThemedText>
-            <TouchableOpacity className="bg-[#00FF943B] rounded-[10px] w-[30px] h-[32px] items-center justify-center">
-              <AdminNotificationIcon />
-            </TouchableOpacity>
-          </View>
-
+    <View style={{ flex: 1, backgroundColor: screenBg }}>
+      <View className="pb-6 pt-16 px-[20px] flex-1">
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 32,
+            marginBottom: 20,
+          }}
+        >
+          <TouchableOpacity
+            onPress={() => router.back()}
+            style={{ padding: 4 }}
+          >
+            <Ionicons
+              name="arrow-back"
+              size={22}
+              color={isDark ? "#fff" : "#111"}
+            />
+          </TouchableOpacity>
           <ThemedText
             darkColor="#FFFFFF"
             lightColor="#000000"
-            style={{ fontFamily: "Poppins_500Medium" }}
-            className="mt-5 text-lg"
+            style={{ fontFamily: "Poppins_600SemiBold" }}
+            className="text-xl"
           >
-            Recent Activity
+            Transaction History
           </ThemedText>
         </View>
+
+        <ThemedText
+          darkColor="#FFFFFF"
+          lightColor="#000000"
+          style={{ fontFamily: "Poppins_500Medium" }}
+          className="mt-5 text-lg"
+        >
+          Recent Activity
+        </ThemedText>
+
         {/* <ScrollView showsVerticalScrollIndicator={false}>
           {Object.entries(grouped).map(([date, group]) => (
             <View className="mt-3" key={date}>

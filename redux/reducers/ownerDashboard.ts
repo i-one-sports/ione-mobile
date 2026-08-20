@@ -13,6 +13,7 @@ import {
   updatePricingOptions,
   getSessionByDate,
   getSessionById,
+  updateOpenHours,
 } from "@/api/ownerDashboardThunk";
 import {
   ChangePasswordResponse,
@@ -29,6 +30,7 @@ import {
   VisitorResponse,
   SessionByDateResponse,
   SessionByIdResponse,
+  UpdateOpenHoursResponse,
 } from "@/components/typings/apiResponse";
 import { createSlice } from "@reduxjs/toolkit";
 
@@ -48,6 +50,7 @@ interface State {
   pricingOptionData: UpdatePricingOptionsResponse | null;
   sessionByDate: SessionByDateResponse[];
   sessionById: SessionByIdResponse | null;
+  openingHours: UpdateOpenHoursResponse | null;
 
   loadingLocationDashboard: boolean;
   loadingLocation: boolean;
@@ -63,6 +66,7 @@ interface State {
   loadingPricingOptionData: boolean;
   loadingSessionByDate: boolean;
   loadingSessionById: boolean;
+  loadingOpenHours: boolean;
 
   errorLocationDashboard: string | null;
   errorLocation: string | null;
@@ -78,6 +82,7 @@ interface State {
   errorPricingOptionData: string | null;
   errorSessionByDate: string | null;
   errorSessionById: string | null;
+  errorOpeningHours: string | null;
 }
 
 const initialState: State = {
@@ -96,6 +101,7 @@ const initialState: State = {
   pricingOptionData: null,
   sessionByDate: [],
   sessionById: null,
+  openingHours: null,
 
   loadingLocationDashboard: false,
   loadingLocation: false,
@@ -111,6 +117,7 @@ const initialState: State = {
   loadingPricingOptionData: false,
   loadingSessionByDate: false,
   loadingSessionById: false,
+  loadingOpenHours: false,
 
   errorLocationDashboard: null,
   errorLocation: null,
@@ -126,6 +133,7 @@ const initialState: State = {
   errorPricingOptionData: null,
   errorSessionByDate: null,
   errorSessionById: null,
+  errorOpeningHours: null,
 };
 
 export const ownerDashboardSlice = createSlice({
@@ -270,6 +278,21 @@ export const ownerDashboardSlice = createSlice({
       state.loadingPitchCondition = false;
       state.errorPitchCondition =
         action.error.message || "Failed to update pitch condition";
+    });
+
+    // update opening hours
+    builder.addCase(updateOpenHours.pending, (state) => {
+      state.loadingOpenHours = true;
+      state.errorOpeningHours = null;
+    });
+    builder.addCase(updateOpenHours.fulfilled, (state, { payload }) => {
+      state.openingHours = payload;
+      state.loadingOpenHours = false;
+    });
+    builder.addCase(updateOpenHours.rejected, (state, action) => {
+      state.loadingOpenHours = false;
+      state.errorOpeningHours =
+        action.error.message || "Failed to update Opening Hours";
     });
 
     // update owner password

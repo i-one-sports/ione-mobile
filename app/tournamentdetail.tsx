@@ -1,3 +1,4 @@
+import { getTournamentsDetails } from "@/api/tournamentThunk";
 import BackIcon from "@/assets/svg/BackIcon";
 import BookMarkIcon from "@/assets/svg/BookMarkIcon";
 import ChevronRight from "@/assets/svg/ChevronRight";
@@ -7,7 +8,7 @@ import { ThemedText } from "@/components/ThemedText";
 import { Colors } from "@/constants/Colors";
 import { router, useLocalSearchParams } from "expo-router";
 import BracketDiagram from "@/components/BracketDiagram";
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import {
   ScrollView,
   Text,
@@ -16,6 +17,7 @@ import {
   View,
 } from "react-native";
 import { TournamentSession } from "@/components/typings";
+import { useAppDispatch, useAppSelector } from "@/redux/store";
 
 const fallbackSession: TournamentSession = {
   tournamentName: "Island Champions Cup",
@@ -48,9 +50,26 @@ export default function TournamentDetailScreen() {
   const detailTextColor = colorScheme === "dark" ? "#FFFFFF" : "#000000";
   const mutedDetailTextColor = colorScheme === "dark" ? "#CFCFCF" : "#7D7D7D";
   const fixtureTimeColor = colorScheme === "dark" ? "#CFCFCF" : "#3D3D3D";
+
+  const dispatch = useAppDispatch();
+  const {
+    tournamentsDetails,
+    loadingTournamentsDetails,
+    errorTournamentsDetails,
+  } = useAppSelector((state) => state.tournament);
+
   const params = useLocalSearchParams();
+  const { tournamentId } = useLocalSearchParams<{ tournamentId?: string }>();
   const [activeTab, setActiveTab] =
     useState<(typeof rewardTabs)[number]>("teams");
+
+  useEffect(() => {
+    if (!tournamentId) return;
+
+    dispatch(getTournamentsDetails(tournamentId));
+  }, [dispatch, tournamentId]);
+
+  console.log("tournamentDetails", tournamentsDetails);
 
   const session = useMemo<TournamentSession>(() => {
     if (!params.session) return fallbackSession;
@@ -62,8 +81,11 @@ export default function TournamentDetailScreen() {
     }
   }, [params.session]);
 
-  const startTime = session.startTime
-    ? new Date(session.startTime).toLocaleTimeString("en-US", {
+  const startDate = tournamentsDetails?.startDate
+    ? new Date(tournamentsDetails.startDate).toLocaleString("en-US", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
         hour: "2-digit",
         minute: "2-digit",
         hour12: false,
@@ -75,7 +97,7 @@ export default function TournamentDetailScreen() {
       id: "fixture-1",
       title: "Semi Final 1",
       teams: `${bracketTeams[0]} vs ${bracketTeams[1]}`,
-      time: startTime,
+      time: startDate,
     },
     {
       id: "fixture-2",
@@ -186,7 +208,7 @@ export default function TournamentDetailScreen() {
               darkColor={theme.text}
               className="text-center text-[24px] font-[700]"
             >
-              Victoria Island Cup
+              {tournamentsDetails?.name}
             </ThemedText>
             <ThemedText
               lightColor="#3D3D3D"
@@ -200,7 +222,7 @@ export default function TournamentDetailScreen() {
               darkColor="#9BA1A6"
               className="mt-1 text-center text-sm"
             >
-              Tue, Mar 19
+              {startDate}
             </ThemedText>
           </View>
 
@@ -311,6 +333,31 @@ export default function TournamentDetailScreen() {
           ) : (
             <RewardsContent />
           )}
+        </View>
+        <View className="px-[32px] pt-5">
+          <TouchableOpacity
+            onPress={() =>
+              router.push({
+                pathname: "/screens/create-new-team",
+                params: { tournamentId },
+              })
+            }
+            style={{
+              alignSelf: "center",
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 6,
+              backgroundColor: "#00FF94",
+              borderRadius: 5,
+              paddingHorizontal: 10,
+              paddingVertical: 10,
+            }}
+          >
+            <Text style={{ fontSize: 13, fontWeight: "700", color: "#fff" }}>
+              Create New Team
+            </Text>
+          </TouchableOpacity>
         </View>
       </ScrollView>
     </SafeAreaScreen>

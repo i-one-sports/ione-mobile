@@ -16,6 +16,7 @@ import {
   UsersChart,
   VisitorResponse,
   SessionByIdResponse,
+  UpdateOpenHoursResponse,
 } from "@/components/typings/apiResponse";
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import apiCall from "./apiCall";
@@ -180,6 +181,17 @@ export const updatePricingOptions = createAsyncThunk<
       `/i-one/location/${locationId}/pricing-options`,
       payload,
     ),
+    thunkAPI,
+  );
+});
+
+export const updateOpenHours = createAsyncThunk<
+  UpdateOpenHoursResponse,
+  { locationId: string; openingHour: string; closingHour: string },
+  AsyncThunkConfig
+>("/location/opening-hours", async ({ locationId, ...payload }, thunkAPI) => {
+  return apiCall(
+    axiosInstance.patch(`/i-one/location/${locationId}/opening-hours`, payload),
     thunkAPI,
   );
 });

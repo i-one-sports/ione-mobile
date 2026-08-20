@@ -182,21 +182,12 @@ export interface AllSessionsResponse {
   };
   sessions: MatchSession[];
 }
-
-export interface Wallet {
+export interface WalletResponse {
   _id: string;
-  userId: string;
   balance: number;
   ledgerBalance: number;
   status: "ACTIVE" | "SUSPENDED" | "CLOSED";
-  currency: string; // 'NGN'
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface WalletResponse {
-  wallet: Wallet;
-  //   dva: Dva;
+  currency: string;
 }
 
 export interface DashboardSummary {
@@ -551,10 +542,53 @@ export interface TournamentDetailsResponse {
   bracket: TournamentMatch[];
   registeredTeams: RegisteredTeam[];
   organizer: Organizer;
+  startDate: string;
   winner: string | null;
 }
 
 export interface StartTournamentResponse {
   message: string;
   bracket: TournamentMatch[];
+}
+
+export interface UpdateOpenHoursResponse {
+  message: string;
+  location: {
+    _id: string;
+    name: string;
+    openingHour: string;
+    closingHour: string;
+  };
+}
+
+export type TransactionType = "DEBIT" | "CREDIT" | "REFUNDED";
+
+export type TransactionReason = "SESSION_PAYMENT";
+
+export interface TransactionLedger {
+  _id: string;
+  walletId: string;
+  transactionId: string;
+  type: TransactionType;
+  amount: number;
+  balanceAfter: number;
+  reason: TransactionReason;
+  createdAt: string;
+}
+
+export interface TransactionLedgerPagination {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+}
+
+export interface TransactionLedgerResponse {
+  entries: TransactionLedger[];
+  pagination: TransactionLedgerPagination;
+}
+
+export interface TransactionListResponse {
+  transactions: TransactionLedger[];
+  pagination: TransactionLedgerPagination;
 }

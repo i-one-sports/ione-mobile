@@ -54,7 +54,9 @@ function PitchConditionIcon({
   size: number;
   color: string;
 }) {
-  const config = CONDITION_ICON[condition ?? ""];
+  const normalizedCondition = condition?.trim().toLowerCase();
+  const config = CONDITION_ICON[normalizedCondition ?? ""];
+
   if (!config)
     return <Ionicons name="help-circle-outline" size={size} color={color} />;
   if (config.library === "MaterialIcons")
@@ -125,36 +127,6 @@ export default function AdminHomeScreen() {
     return () => sub.remove();
   }, [dispatch]);
 
-  //   useEffect(() => {
-  //     if (location?.status !== "pending_verification") return;
-
-  //     const interval = setInterval(() => {
-  //       dispatch(getLocation());
-  //     }, 10000);
-
-  //     return () => clearInterval(interval);
-  //   }, [dispatch, location?.status]);
-
-  //   useEffect(() => {
-  //     const sub = AppState.addEventListener("change", (state) => {
-  //       if (state === "active") {
-  //         dispatch(getLocation());
-  //       }
-  //     });
-
-  //     return () => sub.remove();
-  //   }, [dispatch]);
-
-  //   useEffect(() => {
-  //     if (user?.ownerOnboardingStatus !== "PENDING_VERIFICATION") return;
-
-  //     const interval = setInterval(() => {
-  //       dispatch(getUser());
-  //     }, 10000);
-
-  //     return () => clearInterval(interval);
-  //   }, [dispatch, user?.ownerOnboardingStatus]);
-
   const accent = isDark ? "#00FF94" : "#00cc77";
   const showOnboardingBanner =
     user?.ownerOnboardingStatus === "PENDING_VERIFICATION";
@@ -167,6 +139,7 @@ export default function AdminHomeScreen() {
   //   console.log("dashboardSummary", dashboardSummary);
   //   console.log("location", location);
   //   console.log("locationDashboard", locationDashboard);
+
   return (
     <View style={{ flex: 1, backgroundColor: isDark ? "#000" : "#fff" }}>
       {/* Hero image background */}
@@ -223,7 +196,10 @@ export default function AdminHomeScreen() {
                   style={{
                     backgroundColor: "rgba(255,255,255,0.2)",
                     borderRadius: 10,
-                    padding: 9,
+                    width: 38,
+                    height: 38,
+                    alignItems: "center",
+                    justifyContent: "center",
                   }}
                 >
                   <AdminNotificationIcon />

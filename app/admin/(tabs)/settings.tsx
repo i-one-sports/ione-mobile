@@ -144,15 +144,16 @@ export default function AdminSettingsScreen() {
             icon="schedule"
             iconColor="#00FF94"
             label="Open Hours"
-            rightElement={
-              <ThemedText
-                style={{ fontFamily: "Poppins_400Regular", fontSize: 13 }}
-                lightColor="#999"
-                darkColor="#666"
-              >
-                {openHours}
-              </ThemedText>
-            }
+            // rightElement={
+            //   <ThemedText
+            //     style={{ fontFamily: "Poppins_400Regular", fontSize: 13 }}
+            //     lightColor="#999"
+            //     darkColor="#666"
+            //   >
+            //     {openHours}
+            //   </ThemedText>
+            // }
+            onPress={() => router.push("/admin/open-hours")}
           />
           <SettingsRow
             icon="grass"
@@ -171,12 +172,6 @@ export default function AdminSettingsScreen() {
         {/* Account */}
         <SettingsSection title="Account">
           <SettingsRow
-            icon="lock-outline"
-            iconColor="#2196F3"
-            label="Change Password"
-            onPress={() => router.push("/admin/changepassword")}
-          />
-          <SettingsRow
             icon="receipt-long"
             iconColor="#9C27B0"
             label="Transaction History"
@@ -187,6 +182,18 @@ export default function AdminSettingsScreen() {
             iconColor="#FF5722"
             label="Notifications"
             onPress={() => router.navigate("/admin/notification")}
+          />
+          <SettingsRow
+            icon="wallet"
+            iconColor="#00C853"
+            label="Wallets"
+            onPress={() => router.navigate("/admin/wallets")}
+          />
+          <SettingsRow
+            icon="lock-outline"
+            iconColor="#2196F3"
+            label="Change Password"
+            onPress={() => router.push("/admin/changepassword")}
           />
         </SettingsSection>
 

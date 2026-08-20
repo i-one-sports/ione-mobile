@@ -121,7 +121,7 @@ export default function WalletFundScreen() {
           alignItems: "center",
           paddingHorizontal: 20,
           paddingVertical: 14,
-          gap: 12,
+          gap: 32,
           borderBottomWidth: 1,
           borderBottomColor: cardBorder,
         }}
