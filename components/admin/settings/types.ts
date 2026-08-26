@@ -6,6 +6,9 @@ export interface SettingsHeaderProps {
   lastName: string;
   email: string;
   nickname?: string;
+  avatar?: string;
+  onAvatarPress?: () => void;
+  uploadingAvatar?: boolean;
 }
 
 export interface SettingsRowProps {

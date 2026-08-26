@@ -3,7 +3,6 @@ import type { ReactNode } from "react";
 
 export interface WalletsHeaderProps {
   availableBalance: number;
-  ledgerBalance: number;
   currency: string;
   status: string;
 }

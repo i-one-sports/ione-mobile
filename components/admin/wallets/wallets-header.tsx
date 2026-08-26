@@ -4,12 +4,7 @@ import { View } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { WalletsHeaderProps as Props } from "./types";
 
-export function WalletsHeader({
-  availableBalance,
-  ledgerBalance,
-  currency,
-  status,
-}: Props) {
+export function WalletsHeader({ availableBalance, currency, status }: Props) {
   return (
     <LinearGradient
       colors={["#00492A", "#61C89D"]}
@@ -59,29 +54,8 @@ export function WalletsHeader({
           marginBottom: 12,
         }}
       >
-        ₦{availableBalance.toLocaleString()}
+        ₦{(availableBalance / 100).toLocaleString()}
       </ThemedText>
-
-      <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-        <ThemedText
-          style={{
-            color: "rgba(255,255,255,0.6)",
-            fontSize: 12,
-            fontWeight: "400",
-          }}
-        >
-          Ledger balance
-        </ThemedText>
-        <ThemedText
-          style={{
-            color: "rgba(255,255,255,0.9)",
-            fontSize: 13,
-            fontWeight: "600",
-          }}
-        >
-          ₦{ledgerBalance.toLocaleString()} {currency}
-        </ThemedText>
-      </View>
     </LinearGradient>
   );
 }

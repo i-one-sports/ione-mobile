@@ -1,7 +1,8 @@
 import { allSessions, getMyCurrentSession } from "@/api/sessions";
+import { getLocation } from "@/api/ownerDashboardThunk";
 import CustomDatePicker from "@/components/modals/CustomDatePicker";
 import { DateStrip } from "@/components/sessions/DateStrip";
-import { SessionCard } from "@/components/sessions/session-card";
+import { FixtureCard } from "@/components/admin/fixtures/fixture-card";
 import { SessionSkeletonCard } from "@/components/sessions/SessionSkeletonCard";
 import { FixturesHeader } from "@/components/admin/fixtures/fixtures-header";
 import {
@@ -54,12 +55,14 @@ export default function Schedule({
   const dispatch = useAppDispatch();
   const { user } = useAppSelector((s) => s.auth);
   const { all, loadingAll, errorAll } = useAppSelector((s) => s.sessions);
+  //   const { location } = useAppSelector((s) => s.ownerDashboard);
 
   const screenBg = isDark ? "#000" : "#FAFAFA";
   const mutedText = isDark ? "#555" : "#999";
   const primaryText = isDark ? "#FFF" : "#111";
 
   useEffect(() => {
+    // dispatch(getLocation());
     if (!user?.location?.coordinates) return;
     const [lat, lng] = user.location.coordinates;
     dispatch(allSessions({ lat, lng }));
@@ -332,10 +335,11 @@ export default function Schedule({
             />
           ) : (
             filteredMatches.map((match, idx) => (
-              <SessionCard
+              <FixtureCard
                 key={match.sessionId || idx}
                 match={match}
                 sessionData={match.sessionData}
+                locationId={match.locationId}
               />
             ))
           )}

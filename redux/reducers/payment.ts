@@ -229,7 +229,7 @@ const paymentSlice = createSlice({
       })
       .addCase(getWalletTransactions.fulfilled, (state, { payload }) => {
         state.loadingWalletTransaction = false;
-        state.walletTransactions = payload.data ?? [];
+        state.walletTransactions = payload.transactions ?? [];
         state.walletTransactionsPagination = payload.pagination ?? null;
       })
       .addCase(getWalletTransactions.rejected, (state) => {

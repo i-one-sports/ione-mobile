@@ -22,7 +22,7 @@ type Player = {
   name: string;
   number: number;
   paymentStatus: string;
-  avatar: string;
+  avatar: string | null;
 };
 
 export default function JoinSession() {

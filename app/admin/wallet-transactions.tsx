@@ -30,7 +30,7 @@ const TABS: SegmentedTab<TabKey>[] = [
 ];
 
 function formatCurrency(amount: number) {
-  return `₦${amount.toLocaleString()}`;
+  return `₦${(amount / 100).toLocaleString()}`;
 }
 
 function formatDescription(desc: string) {
@@ -67,10 +67,12 @@ export default function WalletTransactionsScreen() {
 
   const fetchTransactions = useCallback(
     (p: number, type?: string) => {
-      dispatch(getWalletTransactions({ page: p, limit: 50, type }));
+      dispatch(getWalletTransactions({ page: 1, limit: 50, type }));
     },
     [dispatch],
   );
+
+  console.log(walletTransactions, "page");
 
   useEffect(() => {
     setAllTransactions([]);

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -19,12 +19,17 @@ import SafeAreaScreen from "@/components/SafeAreaScreen";
 import { ThemedText } from "@/components/ThemedText";
 import CustomButton from "@/components/ui/CustomButton";
 import PaymentPollingOverlay from "@/components/payment/PaymentPollingOverlay";
+import usePaymentPolling from "@/hooks/usePaymentPolling";
+import { PaymentStatus } from "@/components/typings/payment";
+
 import { useAppDispatch, useAppSelector } from "@/redux/store";
+
 import {
   getWalletBalance,
   getWalletTransactions,
   initWalletFund,
 } from "@/api/paymentThunks";
+
 import { clearPaymentState } from "@/redux/reducers/payment";
 
 const QUICK_AMOUNTS = [1000, 2000, 5000, 10000, 20000, 50000];
@@ -33,6 +38,7 @@ export default function WalletFundScreen() {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
   const accent = isDark ? "#00FF94" : "#00cc77";
+
   const dispatch = useAppDispatch();
 
   const { walletBalance, walletTransactions, loadingInit, loadingBalance } =
@@ -40,56 +46,187 @@ export default function WalletFundScreen() {
 
   const [amount, setAmount] = useState("");
   const [awaitingConfirmation, setAwaitingConfirmation] = useState(false);
+  const [paymentReference, setPaymentReference] = useState<string | null>(null);
   const [timedOut, setTimedOut] = useState(false);
 
   useEffect(() => {
     dispatch(getWalletBalance());
     dispatch(getWalletTransactions({ page: 1, limit: 10 }));
+
     return () => {
       dispatch(clearPaymentState());
     };
   }, [dispatch]);
 
   const parsedAmount = parseInt(amount.replace(/,/g, ""), 10);
+
   const isValidAmount = !isNaN(parsedAmount) && parsedAmount >= 100;
 
+  const fetchPaymentStatus = useCallback(async (): Promise<{
+    status: PaymentStatus;
+  } | null> => {
+    if (!paymentReference) {
+      return null;
+    }
+
+    const result = await dispatch(
+      getWalletTransactions({
+        page: 1,
+        limit: 10,
+      }),
+    )
+      .unwrap()
+      .catch(() => null);
+
+    if (!result) {
+      return null;
+    }
+
+    const transaction = result.transactions.find(
+      (tx) => tx.reference === paymentReference,
+    );
+
+    if (!transaction) {
+      return { status: "PENDING" };
+    }
+
+    if (transaction.status === "SUCCESS") {
+      return { status: "PAID" };
+    }
+
+    if (transaction.status === "FAILED") {
+      return { status: "FAILED" };
+    }
+
+    return { status: "PENDING" };
+  }, [dispatch, paymentReference]);
+
+  const {
+    status: polledStatus,
+    timedOut: pollingTimedOut,
+    stopPolling,
+  } = usePaymentPolling({
+    fetchFn: fetchPaymentStatus,
+    enabled: awaitingConfirmation && !!paymentReference,
+
+    onSuccess: () => {
+      setAwaitingConfirmation(false);
+      setTimedOut(false);
+      setAmount("");
+      setPaymentReference(null);
+
+      dispatch(getWalletBalance());
+      dispatch(
+        getWalletTransactions({
+          page: 1,
+          limit: 10,
+        }),
+      );
+
+      Toast.show({
+        type: "success",
+        text1: "Wallet funded",
+        text2: "Your wallet has been funded successfully.",
+      });
+    },
+
+    onFailure: () => {
+      setAwaitingConfirmation(false);
+    },
+
+    onTimeout: () => {
+      setAwaitingConfirmation(false);
+      setTimedOut(true);
+
+      // Refresh whatever the backend currently has.
+      dispatch(getWalletBalance());
+      dispatch(
+        getWalletTransactions({
+          page: 1,
+          limit: 10,
+        }),
+      );
+    },
+  });
+
+  /**
+   * Start a new wallet funding payment.
+   */
   const handleFund = async () => {
     if (!isValidAmount) {
-      Toast.show({ type: "error", text1: "Enter a valid amount (min ₦100)" });
+      Toast.show({
+        type: "error",
+        text1: "Invalid amount",
+        text2: "Enter a valid amount (minimum ₦100).",
+      });
+
       return;
     }
+
     try {
-      const result = await dispatch(initWalletFund(parsedAmount)).unwrap();
-      await WebBrowser.openBrowserAsync(result.authorizationUrl);
       setTimedOut(false);
+
+      const amountInKobo = parsedAmount * 100;
+
+      const result = await dispatch(initWalletFund(amountInKobo)).unwrap();
+
+      console.log("[wallet-fund] initWalletFund result:", result);
+
+      setPaymentReference(result.reference);
+
+      await WebBrowser.openBrowserAsync(result.authorizationUrl);
+
       setAwaitingConfirmation(true);
-      setTimeout(() => {
-        setAwaitingConfirmation(false);
-        setTimedOut(true);
-        dispatch(getWalletBalance());
-        dispatch(getWalletTransactions({ page: 1, limit: 10 }));
-      }, 120000);
     } catch (err: any) {
-      Toast.show({ type: "error", text1: "Funding error", text2: err?.msg });
+      console.log(
+        "[wallet-fund] initWalletFund error:",
+        JSON.stringify(err, null, 2),
+      );
+
+      Toast.show({
+        type: "error",
+        text1: "Funding error",
+        text2:
+          err?.msg || err?.message || "Unable to initialize wallet funding.",
+      });
     }
   };
 
+  /**
+   * Retry confirmation for the SAME payment reference.
+   */
   const handleCheckAgain = () => {
+    if (!paymentReference) {
+      return;
+    }
+
     setTimedOut(false);
-    setAwaitingConfirmation(false);
-    dispatch(getWalletBalance());
-    dispatch(getWalletTransactions({ page: 1, limit: 10 }));
+    setAwaitingConfirmation(true);
   };
 
+  /**
+   * Dismiss the confirmation overlay.
+   */
   const handleDismiss = () => {
+    stopPolling();
+
     setAwaitingConfirmation(false);
     setTimedOut(false);
+    setPaymentReference(null);
+
     dispatch(getWalletBalance());
-    dispatch(getWalletTransactions({ page: 1, limit: 10 }));
+
+    dispatch(
+      getWalletTransactions({
+        page: 1,
+        limit: 10,
+      }),
+    );
   };
 
   const handleAmountInput = (text: string) => {
     const numeric = text.replace(/[^0-9]/g, "");
+
     setAmount(numeric ? parseInt(numeric, 10).toLocaleString() : "");
   };
 
@@ -99,20 +236,34 @@ export default function WalletFundScreen() {
   const inputBg = isDark ? "#181818" : "#F5F5F5";
   const inputColor = isDark ? "#fff" : "#111";
 
-  const showOverlay = awaitingConfirmation || timedOut;
+  const showOverlay = awaitingConfirmation || timedOut || pollingTimedOut;
 
+  /**
+   * Your API returns uppercase transaction types:
+   *
+   * CREDIT
+   * DEBIT
+   */
   const txTypeIcon = (type: string) => {
-    if (type === "credit" || type === "fund") return "arrow-downward";
-    if (type === "debit" || type === "payment") return "arrow-upward";
+    if (type === "CREDIT") {
+      return "arrow-downward";
+    }
+
+    if (type === "DEBIT") {
+      return "arrow-upward";
+    }
+
     return "swap-horiz";
   };
 
-  const txColor = (type: string) =>
-    type === "credit" || type === "fund" ? accent : "#FF4444";
+  const txColor = (type: string) => (type === "CREDIT" ? accent : "#FF4444");
 
   return (
     <SafeAreaScreen
-      style={{ flex: 1, backgroundColor: isDark ? "#000" : "#fff" }}
+      style={{
+        flex: 1,
+        backgroundColor: isDark ? "#000" : "#fff",
+      }}
     >
       {/* Header */}
       <View
@@ -133,18 +284,27 @@ export default function WalletFundScreen() {
             color={isDark ? "#fff" : "#111"}
           />
         </TouchableOpacity>
-        <ThemedText style={{ fontSize: 17, fontWeight: "700" }}>
+
+        <ThemedText
+          style={{
+            fontSize: 17,
+            fontWeight: "700",
+          }}
+        >
           Fund Wallet
         </ThemedText>
       </View>
 
       <KeyboardAvoidingView
         style={{ flex: 1 }}
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
       >
         <ScrollView
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ padding: 20, paddingBottom: 40 }}
+          contentContainerStyle={{
+            padding: 20,
+            paddingBottom: 40,
+          }}
           keyboardShouldPersistTaps="handled"
         >
           {/* Balance card */}
@@ -159,9 +319,16 @@ export default function WalletFundScreen() {
               alignItems: "center",
             }}
           >
-            <Text style={{ color: mutedColor, fontSize: 12, marginBottom: 6 }}>
+            <Text
+              style={{
+                color: mutedColor,
+                fontSize: 12,
+                marginBottom: 6,
+              }}
+            >
               Current Balance
             </Text>
+
             {loadingBalance && !walletBalance ? (
               <ActivityIndicator color={accent} size="small" />
             ) : (
@@ -172,11 +339,18 @@ export default function WalletFundScreen() {
                   fontWeight: "800",
                 }}
               >
-                ₦{(walletBalance?.balance ?? 0).toLocaleString()}
+                ₦{((walletBalance?.balance ?? 0) / 100).toLocaleString()}
               </Text>
             )}
+
             {walletBalance?.ledgerBalance !== undefined && (
-              <Text style={{ color: mutedColor, fontSize: 12, marginTop: 4 }}>
+              <Text
+                style={{
+                  color: mutedColor,
+                  fontSize: 12,
+                  marginTop: 4,
+                }}
+              >
                 Ledger: ₦{walletBalance.ledgerBalance.toLocaleString()}
               </Text>
             )}
@@ -184,10 +358,15 @@ export default function WalletFundScreen() {
 
           {/* Amount input */}
           <ThemedText
-            style={{ fontSize: 13, fontWeight: "600", marginBottom: 8 }}
+            style={{
+              fontSize: 13,
+              fontWeight: "600",
+              marginBottom: 8,
+            }}
           >
             Amount to Add
           </ThemedText>
+
           <View
             style={{
               flexDirection: "row",
@@ -200,9 +379,16 @@ export default function WalletFundScreen() {
               marginBottom: 16,
             }}
           >
-            <Text style={{ color: mutedColor, fontSize: 18, marginRight: 6 }}>
+            <Text
+              style={{
+                color: mutedColor,
+                fontSize: 18,
+                marginRight: 6,
+              }}
+            >
               ₦
             </Text>
+
             <TextInput
               value={amount}
               onChangeText={handleAmountInput}
@@ -230,6 +416,7 @@ export default function WalletFundScreen() {
           >
             {QUICK_AMOUNTS.map((q) => {
               const isSelected = parsedAmount === q;
+
               return (
                 <TouchableOpacity
                   key={q}
@@ -257,6 +444,7 @@ export default function WalletFundScreen() {
             })}
           </View>
 
+          {/* Info */}
           <Text
             style={{
               fontSize: 12,
@@ -267,10 +455,11 @@ export default function WalletFundScreen() {
             }}
           >
             {
-              "You'll be taken to Paystack to complete the payment. Funds will appear in your wallet within seconds after confirmation."
+              "You'll be taken to Paystack to complete the payment. Funds will appear in your wallet once the payment is confirmed."
             }
           </Text>
 
+          {/* Fund button */}
           <CustomButton
             primary
             title={
@@ -287,10 +476,15 @@ export default function WalletFundScreen() {
           {walletTransactions && walletTransactions.length > 0 && (
             <View style={{ marginTop: 32 }}>
               <ThemedText
-                style={{ fontSize: 14, fontWeight: "700", marginBottom: 12 }}
+                style={{
+                  fontSize: 14,
+                  fontWeight: "700",
+                  marginBottom: 12,
+                }}
               >
                 Recent Transactions
               </ThemedText>
+
               <View
                 style={{
                   backgroundColor: cardBg,
@@ -301,7 +495,8 @@ export default function WalletFundScreen() {
                 }}
               >
                 {walletTransactions.map((tx, i) => {
-                  const isCredit = tx.type === "credit" || tx.type === "fund";
+                  const isCredit = tx.type === "CREDIT";
+
                   return (
                     <View
                       key={tx._id}
@@ -335,6 +530,7 @@ export default function WalletFundScreen() {
                           color={txColor(tx.type)}
                         />
                       </View>
+
                       <View style={{ flex: 1 }}>
                         <Text
                           style={{
@@ -346,6 +542,7 @@ export default function WalletFundScreen() {
                         >
                           {tx.description || tx.type}
                         </Text>
+
                         <Text
                           style={{
                             fontSize: 11,
@@ -362,6 +559,7 @@ export default function WalletFundScreen() {
                           })}
                         </Text>
                       </View>
+
                       <Text
                         style={{
                           fontSize: 14,
@@ -369,7 +567,8 @@ export default function WalletFundScreen() {
                           color: txColor(tx.type),
                         }}
                       >
-                        {isCredit ? "+" : "-"}₦{tx.amount.toLocaleString()}
+                        {isCredit ? "+" : "-"}₦
+                        {(tx.amount / 100).toLocaleString()}
                       </Text>
                     </View>
                   );
@@ -380,11 +579,18 @@ export default function WalletFundScreen() {
         </ScrollView>
       </KeyboardAvoidingView>
 
+      {/* Payment confirmation overlay */}
       {showOverlay && (
         <PaymentPollingOverlay
-          status={null}
-          timedOut={timedOut}
-          polling={awaitingConfirmation && !timedOut}
+          status={polledStatus}
+          timedOut={timedOut || pollingTimedOut}
+          polling={
+            awaitingConfirmation &&
+            !timedOut &&
+            !pollingTimedOut &&
+            polledStatus !== "PAID" &&
+            polledStatus !== "FAILED"
+          }
           isDark={isDark}
           accent={accent}
           onRetry={handleCheckAgain}

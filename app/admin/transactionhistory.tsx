@@ -1,135 +1,333 @@
+import React, { useCallback, useEffect, useState } from "react";
 import {
-  getLocation,
-  getSummary,
-  getTransactionHistory,
-} from "@/api/ownerDashboardThunk";
+  ActivityIndicator,
+  FlatList,
+  Platform,
+  RefreshControl,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { useRouter } from "expo-router";
+import { useColorScheme } from "nativewind";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { Ionicons } from "@expo/vector-icons";
+import dayjs from "dayjs";
 import MoneyIcon from "@/assets/svg/MoneyIcon";
 import { ThemedText } from "@/components/ThemedText";
 import { useAppDispatch, useAppSelector } from "@/redux/store";
-import dayjs from "dayjs";
-import React, { useEffect } from "react";
-import { ScrollView, TouchableOpacity, View } from "react-native";
-import { useColorScheme } from "nativewind";
-import { Ionicons } from "@expo/vector-icons";
+import {
+  getLocation,
+  getLocationTransactions,
+} from "@/api/ownerDashboardThunk";
+import {
+  BillingPagination,
+  PaymentDateGroup,
+  PaymentEntry,
+  PaymentStatus,
+} from "@/components/typings/apiResponse";
+
+const PAGE_SIZE = 20;
+
+const STATUS_CONFIG: Record<PaymentStatus, { label: string; color: string }> = {
+  COMPLETE: { label: "Complete", color: "#00C853" },
+  PARTIAL: { label: "Partial", color: "#FFB800" },
+  UNPAID: { label: "Unpaid", color: "#FF4444" },
+};
+
+function formatDate(date: string) {
+  if (dayjs(date).isSame(dayjs(), "day")) return "Today";
+  if (dayjs(date).isSame(dayjs().subtract(1, "day"), "day")) return "Yesterday";
+  return dayjs(date).format("ddd D MMM");
+}
+
+function formatPricing(pricingOption: string) {
+  return pricingOption.charAt(0).toUpperCase() + pricingOption.slice(1);
+}
+
+function StatusBadge({ status }: { status: PaymentStatus }) {
+  const config = STATUS_CONFIG[status] ?? STATUS_CONFIG.UNPAID;
+  return (
+    <View
+      style={{
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 4,
+        backgroundColor: `${config.color}1A`,
+        borderRadius: 20,
+        paddingHorizontal: 8,
+        paddingVertical: 3,
+        alignSelf: "flex-start",
+      }}
+    >
+      <View
+        style={{
+          width: 6,
+          height: 6,
+          borderRadius: 3,
+          backgroundColor: config.color,
+        }}
+      />
+      <ThemedText
+        lightColor={config.color}
+        darkColor={config.color}
+        style={{ fontFamily: "Poppins_500Medium", fontSize: 10 }}
+      >
+        {config.label}
+      </ThemedText>
+    </View>
+  );
+}
+
+function TransactionRow({
+  entry,
+  isDark,
+}: {
+  entry: PaymentEntry;
+  isDark: boolean;
+}) {
+  const shortfall = Math.max(entry.expectedTotal - entry.totalPaid, 0);
+
+  return (
+    <View
+      style={{
+        backgroundColor: isDark ? "#141414" : "#fff",
+        borderWidth: 1,
+        borderColor: isDark ? "#242424" : "#F1F1F1",
+        borderRadius: 14,
+        padding: 14,
+        marginTop: 8,
+      }}
+    >
+      <View style={{ flexDirection: "row", alignItems: "center" }}>
+        <View className="h-10 w-10 items-center justify-center rounded-full bg-[#00FF9433]">
+          <MoneyIcon />
+        </View>
+
+        <View style={{ flex: 1, marginLeft: 12 }}>
+          <ThemedText
+            lightColor="#111"
+            darkColor="#fff"
+            numberOfLines={1}
+            style={{ fontFamily: "Poppins_500Medium", fontSize: 15 }}
+          >
+            {entry.teamName}
+          </ThemedText>
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 6,
+              marginTop: 2,
+            }}
+          >
+            <ThemedText
+              lightColor="#7D7D7D"
+              darkColor="#7D7D7D"
+              style={{ fontFamily: "Poppins_300Light", fontSize: 12 }}
+            >
+              {dayjs(entry.sessionStartTime).format("h:mm A")}
+            </ThemedText>
+            <View
+              style={{
+                width: 3,
+                height: 3,
+                borderRadius: 2,
+                backgroundColor: isDark ? "#FFFFFF66" : "#00000066",
+              }}
+            />
+            <ThemedText
+              lightColor="#7D7D7D"
+              darkColor="#7D7D7D"
+              style={{ fontFamily: "Poppins_300Light", fontSize: 12 }}
+            >
+              {formatPricing(entry.pricingOption)}
+            </ThemedText>
+          </View>
+        </View>
+
+        <View style={{ alignItems: "flex-end", marginLeft: 8 }}>
+          <ThemedText
+            lightColor="#111"
+            darkColor="#fff"
+            style={{ fontFamily: "Poppins_600SemiBold", fontSize: 14 }}
+          >
+            ₦{entry.totalPaid.toLocaleString()}
+          </ThemedText>
+          <View style={{ marginTop: 4 }}>
+            <StatusBadge status={entry.paymentStatus} />
+          </View>
+        </View>
+      </View>
+
+      <View
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "space-between",
+          marginTop: 10,
+          paddingTop: 10,
+          borderTopWidth: 1,
+          borderTopColor: isDark ? "#242424" : "#F1F1F1",
+        }}
+      >
+        <ThemedText
+          lightColor="#7D7D7D"
+          darkColor="#7D7D7D"
+          style={{ fontFamily: "Poppins_400Regular", fontSize: 12 }}
+        >
+          {entry.membersPaid}/{entry.teamSize} players paid · ₦
+          {entry.paymentAmount.toLocaleString()} per player
+        </ThemedText>
+        {shortfall > 0 ? (
+          <ThemedText
+            lightColor="#FFB800"
+            darkColor="#FFB800"
+            style={{ fontFamily: "Poppins_500Medium", fontSize: 12 }}
+          >
+            ₦{shortfall.toLocaleString()} outstanding
+          </ThemedText>
+        ) : (
+          <ThemedText
+            lightColor="#00C853"
+            darkColor="#00FF94"
+            style={{ fontFamily: "Poppins_500Medium", fontSize: 12 }}
+          >
+            ₦{entry.expectedTotal.toLocaleString()} collected
+          </ThemedText>
+        )}
+      </View>
+    </View>
+  );
+}
 
 export default function AdminTransactionHistoryScreen() {
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === "dark";
   const router = useRouter();
+  const insets = useSafeAreaInsets();
+  const dispatch = useAppDispatch();
+
+  const {
+    location,
+    locationTransactions,
+    billingPagination,
+    loadingLocationTransactions: loading,
+    errorLocationTransactions: error,
+  } = useAppSelector((state) => state.ownerDashboard);
+
+  const [page, setPage] = useState(1);
+  const [refreshing, setRefreshing] = useState(false);
+  const [groups, setGroups] = useState<PaymentDateGroup[]>([]);
 
   const screenBg = isDark ? "#000" : "#FAFAFA";
-
-  const recentActivity = [
-    {
-      id: 1,
-      teamName: "Eagle FC.",
-      time: "5:00PM",
-      booking: "Hourly Booking",
-      date: "2026-03-19T17:00:00Z",
-      price: "#5,000",
-    },
-    {
-      id: 2,
-      teamName: "Falcons FC.",
-      time: "7:00PM",
-      booking: "Weekly Booking",
-      date: "2026-03-19T17:00:00Z",
-      price: "#25,000",
-    },
-    {
-      id: 3,
-      teamName: "Captains FC.",
-      time: "10:50PM",
-      booking: "Hourly Booking",
-      date: "2026-03-19T17:00:00Z",
-      price: "#5,000",
-    },
-    {
-      id: 4,
-      teamName: "Eagle FC.",
-      time: "10:50PM",
-      booking: "Hourly Booking",
-      date: "2026-03-16T17:00:00Z",
-      price: "#5,000",
-    },
-    {
-      id: 5,
-      teamName: "Falcons FC.",
-      time: "10:50PM",
-      booking: "Hourly Booking",
-      date: "2026-03-16T17:00:00Z",
-      price: "#25,000",
-    },
-    {
-      id: 6,
-      teamName: "Captains FC.",
-      time: "10:50PM",
-      booking: "Hourly Booking",
-      date: "2026-03-16T17:00:00Z",
-      price: "#5,000",
-    },
-    {
-      id: 7,
-      teamName: "Captains FC.",
-      time: "10:50PM",
-      booking: "Hourly Booking",
-      date: "2026-03-16T17:00:00Z",
-      price: "#5,000",
-    },
-    {
-      id: 8,
-      teamName: "Captains FC.",
-      time: "10:50PM",
-      booking: "Hourly Booking",
-      date: "2026-03-16T17:00:00Z",
-      price: "#5,000",
-    },
-    {
-      id: 9,
-      teamName: "Captains FC.",
-      time: "10:50PM",
-      booking: "Hourly Booking",
-      date: "2026-03-16T17:00:00Z",
-      price: "#5,000",
-    },
-    {
-      id: 10,
-      teamName: "Captains FC.",
-      time: "10:50PM",
-      booking: "Hourly Booking",
-      date: "2026-03-16T17:00:00Z",
-      price: "#5,000",
-    },
-  ];
-  const formatDate = (date: string) => {
-    if (dayjs(date).isSame(dayjs(), "day")) return "Today";
-    if (dayjs(date).isSame(dayjs().subtract(1, "day"), "day"))
-      return "Yesterday";
-    return dayjs(date).format("ddd D MMM");
-  };
-  const dispatch = useAppDispatch();
-  const { location, transactionHistory } = useAppSelector(
-    (state) => state.ownerDashboard,
-  );
+  const paddingTop = Platform.OS === "ios" ? insets.top + 12 : 52;
 
   useEffect(() => {
     dispatch(getLocation());
-    if (location?._id) {
-      dispatch(getSummary(location._id));
-      dispatch(getTransactionHistory(location._id));
-    }
+  }, [dispatch]);
+
+  useEffect(() => {
+    if (!location?._id) return;
+    setPage(1);
+    setGroups([]);
+    dispatch(
+      getLocationTransactions({
+        locationId: location._id,
+        page: 1,
+        limit: PAGE_SIZE,
+      }),
+    );
   }, [dispatch, location?._id]);
+
+  // Reducer replaces state per request, so accumulate pages locally.
+  // Merge by date in case a day spans a page boundary.
+  useEffect(() => {
+    if (locationTransactions.length === 0) return;
+    setGroups((prev) => {
+      if (page === 1 || prev.length === 0) return locationTransactions;
+      const byDate = new Map(prev.map((g) => [g.date, g]));
+      for (const group of locationTransactions) {
+        const existing = byDate.get(group.date);
+        if (!existing) {
+          byDate.set(group.date, group);
+          continue;
+        }
+        const seenIds = new Set(existing.entries.map((e) => e.setId));
+        byDate.set(group.date, {
+          date: existing.date,
+          entries: [
+            ...existing.entries,
+            ...group.entries.filter((e) => !seenIds.has(e.setId)),
+          ],
+        });
+      }
+      return Array.from(byDate.values());
+    });
+  }, [locationTransactions, page]);
+
+  const refetch = useCallback(
+    async (nextPage: number) => {
+      if (!location?._id) return;
+      await dispatch(
+        getLocationTransactions({
+          locationId: location._id,
+          page: nextPage,
+          limit: PAGE_SIZE,
+        }),
+      );
+    },
+    [dispatch, location?._id],
+  );
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    setPage(1);
+    await refetch(1);
+    setRefreshing(false);
+  }, [refetch]);
+
+  const loadMore = useCallback(() => {
+    if (loading || refreshing || !billingPagination) return;
+    const pagination: BillingPagination = billingPagination;
+    if (page >= pagination.totalPages) return;
+    const nextPage = page + 1;
+    setPage(nextPage);
+    refetch(nextPage);
+  }, [loading, refreshing, billingPagination, page, refetch]);
+
+  const renderGroup = useCallback(
+    ({ item }: { item: PaymentDateGroup }) => (
+      <View style={{ marginTop: 8 }}>
+        <ThemedText
+          lightColor="#7D7D7D"
+          darkColor="#7D7D7D"
+          style={{ fontFamily: "Poppins_500Medium", fontSize: 13 }}
+        >
+          {formatDate(item.date)}
+        </ThemedText>
+        {item.entries.map((entry) => (
+          <TransactionRow key={entry.setId} entry={entry} isDark={isDark} />
+        ))}
+      </View>
+    ),
+    [isDark],
+  );
 
   return (
     <View style={{ flex: 1, backgroundColor: screenBg }}>
-      <View className="pb-6 pt-16 px-[20px] flex-1">
+      <View
+        style={{
+          paddingTop,
+          paddingBottom: 12,
+          paddingHorizontal: 20,
+        }}
+      >
         <View
           style={{
             flexDirection: "row",
             alignItems: "center",
             gap: 32,
-            marginBottom: 20,
+            marginBottom: 4,
           }}
         >
           <TouchableOpacity
@@ -143,144 +341,114 @@ export default function AdminTransactionHistoryScreen() {
             />
           </TouchableOpacity>
           <ThemedText
-            darkColor="#FFFFFF"
-            lightColor="#000000"
-            style={{ fontFamily: "Poppins_600SemiBold" }}
-            className="text-xl"
+            lightColor="#000"
+            darkColor="#fff"
+            style={{ fontFamily: "Poppins_600SemiBold", fontSize: 17 }}
           >
             Transaction History
           </ThemedText>
         </View>
 
-        <ThemedText
-          darkColor="#FFFFFF"
-          lightColor="#000000"
-          style={{ fontFamily: "Poppins_500Medium" }}
-          className="mt-5 text-lg"
-        >
-          Recent Activity
-        </ThemedText>
-
-        {/* <ScrollView showsVerticalScrollIndicator={false}>
-          {Object.entries(grouped).map(([date, group]) => (
-            <View className="mt-3" key={date}>
-              <Text className="text-[#7D7D7D]">{group.label}</Text>
-
-              {group.activities.map((item) => (
-                <View className="mt-2 flex-row items-center justify-between py-3 px-[10px]">
-                  <View className="flex-row items-center gap-4">
-                    <View className="bg-[#00FF9433] h-10 w-10 flex-row items-center justify-center rounded-full">
-                      <MoneyIcon />
-                    </View>
-                    <View>
-                      <Text
-                        style={{ fontFamily: "Poppins_500Medium" }}
-                        className="text-black text-lg"
-                        key={item.id}
-                      >
-                        {item.teamName}
-                      </Text>
-                      <View className="mt-1 flex-row items-center gap-5">
-                        <Text
-                          style={{ fontFamily: "Poppins_300Light" }}
-                          className="text-[#7D7D7D] text-sm"
-                        >
-                          {item.time}
-                        </Text>
-                        <View className="h-1 w-1 bg-[#000000BF] rounded-full" />
-                        <Text
-                          style={{ fontFamily: "Poppins_300Light" }}
-                          className="text-[#7D7D7D] text-sm"
-                        >
-                          {item.booking}
-                        </Text>
-                      </View>
-                    </View>
-                  </View>
-                  <Text
-                    style={{ fontFamily: "Poppins_500Medium" }}
-                    className="text-black"
-                  >
-                    {item.price}
-                  </Text>
-                </View>
-              ))}
-            </View>
-          ))}
-        </ScrollView> */}
-        <ScrollView showsVerticalScrollIndicator={false}>
-          {transactionHistory.length === 0 && (
-            <ThemedText
-              darkColor="#FFFFFF"
-              lightColor="#000000"
-              className="text-center mt-10"
-            >
-              No transactions yet
-            </ThemedText>
-          )}
-          {transactionHistory.map((group) => (
-            <View className="mt-3" key={group.date}>
-              <ThemedText darkColor="#FFFFFF" lightColor="#7D7D7D">
-                {formatDate(group.date)}
-              </ThemedText>
-
-              {group.entries.map((item) => (
-                <View
-                  key={item.setId}
-                  className="mt-2 flex-row items-center justify-between py-3 px-[10px]"
-                >
-                  <View className="flex-row items-center gap-4">
-                    <View className="bg-[#00FF9433] h-10 w-10 items-center justify-center rounded-full">
-                      <MoneyIcon />
-                    </View>
-
-                    <View>
-                      <ThemedText
-                        darkColor="#FFFFFF"
-                        lightColor="#000000"
-                        style={{ fontFamily: "Poppins_500Medium" }}
-                        className="text-lg"
-                      >
-                        {item.teamName}
-                      </ThemedText>
-
-                      <View className="mt-1 flex-row items-center gap-5">
-                        <ThemedText
-                          darkColor="#FFFFFF"
-                          lightColor="#7D7D7D"
-                          style={{ fontFamily: "Poppins_300Light" }}
-                          className="text-sm"
-                        >
-                          {dayjs(item.sessionStartTime).format("h:mm A")}
-                        </ThemedText>
-
-                        <View className="h-1 w-1 bg-[#000000BF] rounded-full" />
-
-                        <ThemedText
-                          darkColor="#FFFFFF"
-                          lightColor="#7D7D7D"
-                          style={{ fontFamily: "Poppins_300Light" }}
-                          className="text-sm"
-                        >
-                          {item.pricingOption}
-                        </ThemedText>
-                      </View>
-                    </View>
-                  </View>
-
-                  <ThemedText
-                    darkColor="#FFFFFF"
-                    lightColor="#000000"
-                    style={{ fontFamily: "Poppins_500Medium" }}
-                  >
-                    ₦{item.totalPaid.toLocaleString()}
-                  </ThemedText>
-                </View>
-              ))}
-            </View>
-          ))}
-        </ScrollView>
+        {billingPagination && (
+          <ThemedText
+            lightColor="#7D7D7D"
+            darkColor="#7D7D7D"
+            style={{
+              fontFamily: "Poppins_400Regular",
+              fontSize: 13,
+              marginLeft: 62,
+            }}
+          >
+            {billingPagination.total} transaction
+            {billingPagination.total === 1 ? "" : "s"}
+          </ThemedText>
+        )}
       </View>
+
+      <FlatList
+        data={groups}
+        keyExtractor={(item) => item.date}
+        renderItem={renderGroup}
+        contentContainerStyle={{
+          paddingHorizontal: 20,
+          paddingTop: 4,
+          paddingBottom: insets.bottom + 40,
+        }}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor="#00FF94"
+            colors={["#00FF94"]}
+          />
+        }
+        onEndReached={loadMore}
+        onEndReachedThreshold={0.3}
+        ListEmptyComponent={
+          loading ? (
+            <ActivityIndicator
+              size="large"
+              color="#00FF94"
+              style={{ marginTop: 80 }}
+            />
+          ) : (
+            <View
+              style={{
+                alignItems: "center",
+                justifyContent: "center",
+                paddingTop: 80,
+                paddingHorizontal: 32,
+              }}
+            >
+              <Ionicons
+                name="receipt-outline"
+                size={48}
+                color={isDark ? "#333" : "#ccc"}
+              />
+              <ThemedText
+                lightColor="#999"
+                darkColor="#555"
+                style={{
+                  fontFamily: "Poppins_500Medium",
+                  fontSize: 15,
+                  marginTop: 12,
+                  textAlign: "center",
+                }}
+              >
+                {error ?? "No transactions yet"}
+              </ThemedText>
+              {error && location?._id && (
+                <TouchableOpacity
+                  onPress={() => refetch(1)}
+                  style={{
+                    marginTop: 16,
+                    backgroundColor: "#00FF9433",
+                    borderRadius: 20,
+                    paddingHorizontal: 20,
+                    paddingVertical: 8,
+                  }}
+                >
+                  <ThemedText
+                    lightColor="#00A85A"
+                    darkColor="#00FF94"
+                    style={{ fontFamily: "Poppins_500Medium", fontSize: 13 }}
+                  >
+                    Try Again
+                  </ThemedText>
+                </TouchableOpacity>
+              )}
+            </View>
+          )
+        }
+        ListFooterComponent={
+          loading && groups.length > 0 ? (
+            <View style={{ paddingVertical: 20, alignItems: "center" }}>
+              <ActivityIndicator size="small" color="#00FF94" />
+            </View>
+          ) : null
+        }
+      />
     </View>
   );
 }

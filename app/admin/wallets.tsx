@@ -33,6 +33,8 @@ export default function AdminWalletScreen() {
     dispatch(getMyWalletBalance());
   }, [dispatch]);
 
+  console.log(myWalletBalance, "wallet balance");
+
   return (
     <View style={{ flex: 1, backgroundColor: screenBg }}>
       <ScrollView
@@ -80,7 +82,6 @@ export default function AdminWalletScreen() {
         ) : (
           <WalletsHeader
             availableBalance={myWalletBalance?.balance ?? 0}
-            ledgerBalance={myWalletBalance?.ledgerBalance ?? 0}
             currency={myWalletBalance?.currency ?? ""}
             status={myWalletBalance?.status ?? ""}
           />
@@ -112,7 +113,7 @@ export default function AdminWalletScreen() {
           <SettingsRow
             icon="receipt-long"
             iconColor="#7C4DFF"
-            label="Ledger"
+            label="Transaction history"
             onPress={() => router.push("/admin/ledger")}
           />
 

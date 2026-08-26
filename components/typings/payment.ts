@@ -43,6 +43,8 @@ export interface WalletTransaction {
   _id: string;
   type: string;
   amount: number;
+  status: "SUCCESS" | "FAILED" | "PENDING";
+  reference: string;
   description: string;
   createdAt: string;
 }

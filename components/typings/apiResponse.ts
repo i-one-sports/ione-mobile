@@ -198,6 +198,8 @@ export interface DashboardSummary {
   closingHour: string;
 }
 
+export type PricingOption = "hourly" | "monthly";
+
 export interface LocationResponse {
   _id: string;
   name: string;
@@ -209,7 +211,7 @@ export interface LocationResponse {
   status: string;
   owner?: string;
   tier: "free" | "paid";
-  pricingOption: "hourly" | "monthly";
+  pricingOption: PricingOption;
   paymentPerPersonHourly?: number;
   paymentPerPersonMonthly?: number;
   openingHour?: string;
@@ -360,7 +362,7 @@ export interface TransactionEntry {
   sessionId: string;
   setId: string;
   sessionStartTime: string;
-  pricingOption: "hourly" | "monthly";
+  pricingOption: PricingOption;
   paymentAmount: number;
   teamSize: number;
   membersPaid: number;
@@ -591,4 +593,74 @@ export interface TransactionLedgerResponse {
 export interface TransactionListResponse {
   transactions: TransactionLedger[];
   pagination: TransactionLedgerPagination;
+}
+
+export type PaymentStatus = "COMPLETE" | "PARTIAL" | "UNPAID";
+
+export interface PaymentEntry {
+  teamName: string;
+  sessionId: string;
+  setId: string;
+  sessionStartTime: string;
+  pricingOption: PricingOption;
+  paymentAmount: number;
+  teamSize: number;
+  membersPaid: number;
+  totalPaid: number;
+  expectedTotal: number;
+  paymentStatus: PaymentStatus;
+  paidAt: string;
+}
+
+export interface PaymentDateGroup {
+  date: string;
+  entries: PaymentEntry[];
+}
+
+export interface BillingPagination {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+}
+
+export interface PaymentHistoryResponse {
+  data: PaymentDateGroup[];
+  pagination: BillingPagination;
+}
+
+export type PlayerPaymentStatus = "PAID" | "PENDING" | "NOT_PAID";
+
+export interface PlayerPaymentDetail {
+  userId: string;
+  status: PlayerPaymentStatus;
+  amountPaid: number;
+  paidAt: string | null;
+}
+
+export interface TeamPayment {
+  setId: string;
+  teamName: string;
+  totalPlayers: number;
+  playersPaid: number;
+  playersUnpaid: number;
+  expectedTotal: number;
+  totalPaid: number;
+  shortfall: number;
+  status: PaymentStatus;
+  playerDetails: PlayerPaymentDetail[];
+}
+
+export interface SessionPaymentDetailsResponse {
+  sessionId: string;
+  sessionStartTime: string;
+  sessionStopTime: string;
+  paymentAmount: number;
+  pricingOption: string;
+  sessionPaymentStatus: PaymentStatus;
+  grandExpected: number;
+  grandPaid: number;
+  shortfall: number;
+  allTeamsPaid: boolean;
+  teams: TeamPayment[];
 }

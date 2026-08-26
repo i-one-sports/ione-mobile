@@ -1,6 +1,7 @@
 import { ThemedText } from "@/components/ThemedText";
+import { Image } from "expo-image";
 import React from "react";
-import { Text, View } from "react-native";
+import { Text, TouchableOpacity, View } from "react-native";
 import { SettingsHeaderProps as Props } from "./types";
 
 export function SettingsHeader({
@@ -8,34 +9,57 @@ export function SettingsHeader({
   lastName,
   email,
   nickname,
+  avatar,
+  onAvatarPress,
+  uploadingAvatar,
 }: Props) {
   const initials =
     `${firstName?.[0] ?? ""}${lastName?.[0] ?? ""}`.toUpperCase();
+  const hasAvatar = !!avatar;
 
   return (
     <View style={{ alignItems: "center", paddingVertical: 28 }}>
-      <View
-        style={{
-          width: 76,
-          height: 76,
-          borderRadius: 38,
-          backgroundColor: "#00FF94",
-          alignItems: "center",
-          justifyContent: "center",
-          marginBottom: 14,
-          shadowColor: "#00FF94",
-          shadowOffset: { width: 0, height: 4 },
-          shadowOpacity: 0.3,
-          shadowRadius: 8,
-          elevation: 6,
-        }}
+      <TouchableOpacity
+        onPress={onAvatarPress}
+        disabled={!onAvatarPress || uploadingAvatar}
+        activeOpacity={0.8}
       >
-        <Text
-          style={{ fontSize: 28, fontFamily: "Poppins_700Bold", color: "#000" }}
+        <View
+          style={{
+            width: 76,
+            height: 76,
+            borderRadius: 38,
+            backgroundColor: "#00FF94",
+            alignItems: "center",
+            justifyContent: "center",
+            marginBottom: 14,
+            shadowColor: "#00FF94",
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.3,
+            shadowRadius: 8,
+            elevation: 6,
+            overflow: hasAvatar ? "hidden" : "visible",
+          }}
         >
-          {initials}
-        </Text>
-      </View>
+          {hasAvatar ? (
+            <Image
+              source={avatar}
+              style={{ width: 76, height: 76, borderRadius: 38 }}
+              contentFit="cover"
+            />
+          ) : (
+            <Text
+              style={{
+                fontSize: 28,
+                fontFamily: "Poppins_700Bold",
+                color: "#000",
+              }}
+            >
+              {initials}
+            </Text>
+          )}
+        </View>
+      </TouchableOpacity>
 
       <ThemedText
         style={{ fontFamily: "Poppins_600SemiBold", fontSize: 18 }}

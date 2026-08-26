@@ -162,12 +162,12 @@ export const getMyWalletBalance = createAsyncThunk<
 });
 
 export const getWalletTransactions = createAsyncThunk<
-  { data: WalletTransaction[]; pagination: LedgerPagination },
+  { transactions: WalletTransaction[]; pagination: LedgerPagination },
   { page?: number; limit?: number; type?: string },
   AsyncThunkConfig
 >(
   "payment/walletTransactions",
-  async ({ page = 1, limit = 50, type }, thunkAPI) => {
+  async ({ page = 1, limit = 10, type }, thunkAPI) => {
     const params = `page=${page}&limit=${limit}${type ? `&type=${type}` : ""}`;
     const endpoint = `/i-one/wallet/transactions?${params}`;
     logRequest("getWalletTransactions", `GET ${endpoint}`, {

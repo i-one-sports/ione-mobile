@@ -306,6 +306,8 @@ export default function JoinSession() {
     );
   }
 
+  console.log(session);
+
   return (
     <SafeAreaScreen>
       <ScrollView
@@ -439,6 +441,28 @@ export default function JoinSession() {
                         Assign Sets
                       </Text>
                     </TouchableOpacity>
+
+                    {/* Reschedule — only the session captain, before match starts/ends */}
+                    {session?.captain?._id === user?.id &&
+                      !session?.inProgress &&
+                      !session?.finished && (
+                        <TouchableOpacity
+                          className="flex w-[120px] items-center justify-center rounded-[5px] bg-black p-[10px]"
+                          onPress={() =>
+                            router.push({
+                              pathname: "/reschedule-session",
+                              params: {
+                                sessionId,
+                                session: JSON.stringify(session),
+                              },
+                            })
+                          }
+                        >
+                          <Text className="text-[10px] font-[400] text-primary">
+                            Reschedule
+                          </Text>
+                        </TouchableOpacity>
+                      )}
 
                     {/* Pay Fee — only shown when server says payment is required and unpaid */}
                     {showPayButton && (

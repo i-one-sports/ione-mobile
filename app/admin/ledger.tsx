@@ -30,7 +30,7 @@ const TABS: SegmentedTab<TabKey>[] = [
 ];
 
 function formatCurrency(amount: number) {
-  return `₦${amount.toLocaleString()}`;
+  return `₦${(amount / 100).toLocaleString()}`;
 }
 
 function formatReason(reason: string) {
@@ -55,6 +55,8 @@ export default function LedgerScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [allEntries, setAllEntries] = useState<LedgerEntry[]>([]);
 
+  console.log(activeTab, "tabs");
+
   const screenBg = isDark ? "#000" : "#FAFAFA";
   const cardBg = isDark ? "#141414" : "#fff";
   const cardBorder = isDark ? "#242424" : "#F1F1F1";
@@ -68,18 +70,20 @@ export default function LedgerScreen() {
   );
 
   useEffect(() => {
-    setAllEntries([]);
     setPage(1);
+    setAllEntries([]);
+
     const type = activeTab === "ALL" ? undefined : activeTab;
+
     fetchLedger(1, type);
   }, [activeTab, fetchLedger]);
 
   useEffect(() => {
-    if (walletLedger.length > 0) {
-      setAllEntries((prev) =>
-        page === 1 ? walletLedger : [...prev, ...walletLedger],
-      );
-    }
+    if (walletLedger.length === 0) return;
+
+    setAllEntries((prev) =>
+      page === 1 ? walletLedger : [...prev, ...walletLedger],
+    );
   }, [walletLedger, page]);
 
   const onRefresh = useCallback(async () => {
@@ -230,7 +234,7 @@ export default function LedgerScreen() {
             lightColor="#000"
             darkColor="#fff"
           >
-            Ledger
+            Transaction History
           </ThemedText>
         </View>
 

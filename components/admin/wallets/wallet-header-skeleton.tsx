@@ -79,34 +79,6 @@ export function WalletHeaderSkeleton() {
           marginBottom: 12,
         }}
       />
-
-      {/* Ledger Balance */}
-      <View
-        style={{
-          flexDirection: "row",
-          alignItems: "center",
-          gap: 6,
-        }}
-      >
-        <View
-          style={{
-            width: 85,
-            height: 13,
-            borderRadius: 5,
-            backgroundColor: "rgba(255,255,255,0.2)",
-          }}
-        />
-
-        <Animated.View
-          style={{
-            opacity,
-            width: 90,
-            height: 16,
-            borderRadius: 5,
-            backgroundColor: "rgba(255,255,255,0.25)",
-          }}
-        />
-      </View>
     </LinearGradient>
   );
 }

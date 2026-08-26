@@ -74,9 +74,10 @@ export default function WithdrawFundScreen() {
 
   const handleWithdraw = async (values: { amount: string; reason: string }) => {
     const num = parsedAmount(values.amount);
+    const amountInKobo = num * 100;
     try {
       const result = await dispatch(
-        withdrawFunds({ amount: num, reason: values.reason }),
+        withdrawFunds({ amount: amountInKobo, reason: values.reason }),
       ).unwrap();
       if (result.authorizationUrl) {
         await WebBrowser.openBrowserAsync(result.authorizationUrl);
@@ -189,12 +190,7 @@ export default function WithdrawFundScreen() {
                   fontWeight: "800",
                 }}
               >
-                ₦{(walletBalance?.balance ?? 0).toLocaleString()}
-              </Text>
-            )}
-            {walletBalance?.ledgerBalance !== undefined && (
-              <Text style={{ color: mutedColor, fontSize: 12, marginTop: 4 }}>
-                Ledger: ₦{walletBalance.ledgerBalance.toLocaleString()}
+                ₦{((walletBalance?.balance ?? 0) / 100).toLocaleString()}
               </Text>
             )}
           </View>
