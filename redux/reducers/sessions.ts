@@ -14,12 +14,14 @@ import {
   nearBy,
   nearByLocation,
   rescheduleSession,
+  searchRegisteredLocation,
 } from "@/api/sessions";
 import {
   SessionByIdResponse,
   SessionSet,
+  RegisteredLocationResponse,
 } from "@/components/typings/apiResponse";
-import { Team } from "@/components/typings";
+// import { Team } from "@/components/typings";
 
 // export interface MatchSession {
 //   _id: string;
@@ -140,6 +142,10 @@ interface State {
   errorAll: string | null;
   errorJoin: string | null;
   errorLeave: string | null;
+
+  registeredLocations: RegisteredLocationResponse;
+  loadingRegisteredLocations: boolean;
+  errorRegisteredLocations: string | null;
 }
 
 const initialState: State = {
@@ -177,6 +183,14 @@ const initialState: State = {
   errorAll: null,
   errorJoin: null,
   errorLeave: null,
+
+  registeredLocations: {
+    exact: false,
+    cached: false,
+    results: [],
+  },
+  loadingRegisteredLocations: false,
+  errorRegisteredLocations: null,
 };
 
 export const sessionSlice = createSlice({
@@ -207,6 +221,22 @@ export const sessionSlice = createSlice({
         state.loadingSessions = false;
         state.errorSessions =
           action.error.message ?? "Failed to fetch sessions";
+      });
+
+    // search registered locations
+    builder
+      .addCase(searchRegisteredLocation.pending, (state) => {
+        state.loadingRegisteredLocations = true;
+        state.errorRegisteredLocations = null;
+      })
+      .addCase(searchRegisteredLocation.fulfilled, (state, { payload }) => {
+        state.registeredLocations = payload;
+        state.loadingRegisteredLocations = false;
+      })
+      .addCase(searchRegisteredLocation.rejected, (state, action) => {
+        state.loadingRegisteredLocations = false;
+        state.errorRegisteredLocations =
+          action.error.message ?? "Failed to fetch registered locations";
       });
 
     // Nearby pitches
