@@ -156,13 +156,15 @@ export default function HomeScreen() {
             <ThemedText style={{ fontSize: 17, fontWeight: "700" }}>
               Nearby Pitches
             </ThemedText>
-            <TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => router.push("/screens/newsession")}
+            >
               <ThemedText
                 lightColor={accent}
                 darkColor={accent}
                 style={{ fontSize: 12, fontWeight: "600" }}
               >
-                See all
+                Create session
               </ThemedText>
             </TouchableOpacity>
           </View>
