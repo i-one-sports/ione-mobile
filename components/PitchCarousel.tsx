@@ -13,10 +13,6 @@ import {
 import { ThemedText } from "@/components/ThemedText";
 import { EvilIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import Toast from "react-native-toast-message";
-import { useAppDispatch } from "@/redux/store";
-import { startSession } from "@/api/sessions";
-import Loader from "./loader";
 
 const { width, height } = Dimensions.get("window");
 const CARD_WIDTH = width - 48; // accounting for padding
@@ -50,38 +46,15 @@ const PitchCarousel: React.FC<PitchCarouselProps> = ({ data }) => {
   const viewabilityConfig = useRef({
     itemVisiblePercentThreshold: 50,
   }).current;
-  const [loadingId, setLoadingId] = useState(false);
-  const dispatch = useAppDispatch();
-
-  const handleStartSession = (locationId: string) => {
-    setLoadingId(true);
-    dispatch(startSession({ locationId }))
-      .unwrap()
-      .then((response: any) => {
-        setLoadingId(false);
-        console.log("Session started:", response);
-        Toast.show({
-          type: "success",
-          props: {
-            title: "Success",
-            message: response.message || "Session started successfully",
-          },
-        });
-        router.push(`/screens/newsession?locationId=${response._id}`);
-      })
-      .catch((err: any) => {
-        setLoadingId(false);
-        console.log("Error starting session:", err);
-        const message =
-          err?.msg?.message || err?.msg || "Failed to start session";
-        Toast.show({
-          type: "error",
-          props: {
-            title: "Error",
-            message,
-          },
-        });
-      });
+  const handleStartSession = (pitch: PitchData) => {
+    router.push({
+      pathname: "/screens/newsession",
+      params: {
+        pitchId: pitch.id,
+        pitchName: pitch.name,
+        pitchAddress: pitch.location,
+      },
+    });
   };
 
   const handleCreateTournaments = (locationId: string) => {
@@ -176,7 +149,6 @@ const PitchCarousel: React.FC<PitchCarouselProps> = ({ data }) => {
           />
         ))}
       </View>
-      <Loader visible={loadingId} />
       <Modal
         visible={!!selectedItem}
         transparent
@@ -201,7 +173,7 @@ const PitchCarousel: React.FC<PitchCarouselProps> = ({ data }) => {
               onPress={() => {
                 const item = selectedItem;
                 setSelectedItem(null);
-                if (item) handleStartSession(item.id);
+                if (item) handleStartSession(item);
               }}
               className="bg-[#67F095] rounded-xl py-3.5 items-center mb-2.5"
             >
