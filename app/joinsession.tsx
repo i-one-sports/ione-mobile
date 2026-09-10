@@ -1,10 +1,10 @@
 import {
   allSessions,
+  endSession,
   getSession,
   joinSession,
   leaveSession,
 } from "@/api/sessions";
-import BackIcon from "@/assets/svg/BackIcon";
 import OpenIcon from "@/assets/svg/OpenIcon";
 import PitchIcon from "@/assets/svg/PitchSvg";
 import pitch from "@/assets/images/greenpitch.png";
@@ -27,8 +27,11 @@ import {
   useColorScheme,
   View,
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { Toast } from "toastify-react-native";
 import PlayerInfoCard from "./playerinfocard";
+import { formatTime } from "@/utils/formatTime";
+import CustomButton from "@/components/ui/CustomButton";
 
 function buildFormationPositions(
   count: number,
@@ -122,6 +125,7 @@ function buildFormationPositions(
 
 export default function JoinSession() {
   const colorScheme = useColorScheme();
+  const isDark = colorScheme === "dark";
   const theme = Colors[colorScheme ?? "light"];
   const [showDetails, setShowDetails] = useState(false);
   const [activeView, setActiveView] = useState<"squad" | "lineups">("squad");
@@ -138,8 +142,13 @@ export default function JoinSession() {
   const sessionId: string = params.sessionId ?? staticSession?._id ?? "";
 
   const { user } = useAppSelector((state) => state.auth);
-  const { activeSession, loadingActiveSession, loadingJoin, loadingLeave } =
-    useAppSelector((state) => state.sessions);
+  const {
+    activeSession,
+    loadingActiveSession,
+    loadingJoin,
+    loadingLeave,
+    loadingAction,
+  } = useAppSelector((state) => state.sessions);
 
   // Fetch fresh session data from server on mount
   useEffect(() => {
@@ -224,6 +233,27 @@ export default function JoinSession() {
       });
   };
 
+  const handleEndSession = () => {
+    if (!sessionId) return;
+    dispatch(endSession(sessionId))
+      .unwrap()
+      .then((response) => {
+        Toast.show({
+          type: "success",
+          text1: "Session ended",
+          text2: response.message,
+        });
+        dispatch(getSession(sessionId));
+        if (user?.location?.coordinates) {
+          const [lat, lng] = user.location.coordinates;
+          dispatch(allSessions({ lat, lng }));
+        }
+      })
+      .catch((err) => {
+        Toast.show({ type: "error", text1: "Error", text2: err?.msg });
+      });
+  };
+
   // Helper formatters
   const formatDate = (dateString?: string) => {
     if (!dateString) return "Date TBD";
@@ -231,15 +261,6 @@ export default function JoinSession() {
       weekday: "short",
       month: "short",
       day: "numeric",
-    });
-  };
-
-  const formatTime = (dateString?: string) => {
-    if (!dateString) return "Time TBD";
-    return new Date(dateString).toLocaleTimeString("en-US", {
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: true,
     });
   };
 
@@ -306,8 +327,6 @@ export default function JoinSession() {
     );
   }
 
-  console.log(session);
-
   return (
     <SafeAreaScreen>
       <ScrollView
@@ -316,7 +335,7 @@ export default function JoinSession() {
         contentContainerStyle={{ paddingBottom: 40, flexGrow: 1 }}
       >
         <View className="flex flex-col gap-[31px]">
-          <View className="mx-[32px] flex flex-col gap-[31px]">
+          <View className="mx-[24px] flex flex-col gap-[31px]">
             {/* Session status bar + live indicator */}
             <View className="w-full rounded-[10px] border-[1px] border-[#43B75D] bg-[#ECF8EF] p-[16px]">
               <View className="flex flex-col gap-[4px]">
@@ -361,7 +380,11 @@ export default function JoinSession() {
             <View>
               <View className="flex flex-row items-center justify-between">
                 <TouchableOpacity onPress={() => router.back()}>
-                  <BackIcon />
+                  <Ionicons
+                    name="arrow-back"
+                    size={22}
+                    color={isDark ? "#fff" : "#111"}
+                  />
                 </TouchableOpacity>
 
                 <ThemedText
@@ -437,17 +460,17 @@ export default function JoinSession() {
                         })
                       }
                     >
-                      <Text className="text-[10px] font-[400] text-black">
-                        Assign Sets
+                      <Text className="text-[10px] font-[400] text-white">
+                        View Sets
                       </Text>
                     </TouchableOpacity>
 
                     {/* Reschedule — only the session captain, before match starts/ends */}
-                    {session?.captain?._id === user?.id &&
+                    {session?.captain === user?._id &&
                       !session?.inProgress &&
                       !session?.finished && (
                         <TouchableOpacity
-                          className="flex w-[120px] items-center justify-center rounded-[5px] bg-black p-[10px]"
+                          className="flex w-[120px] items-center justify-center rounded-[5px] bg-primary p-[10px]"
                           onPress={() =>
                             router.push({
                               pathname: "/reschedule-session",
@@ -458,9 +481,28 @@ export default function JoinSession() {
                             })
                           }
                         >
-                          <Text className="text-[10px] font-[400] text-primary">
+                          <Text className="text-[10px] font-[400] text-white">
                             Reschedule
                           </Text>
+                        </TouchableOpacity>
+                      )}
+
+                    {/* End match — only the session captain, while match is live */}
+                    {session?.captain === user?._id &&
+                      session?.inProgress &&
+                      !session?.finished && (
+                        <TouchableOpacity
+                          className="flex w-[120px] items-center justify-center rounded-[5px] bg-red-500 p-[10px]"
+                          onPress={handleEndSession}
+                          disabled={loadingAction}
+                        >
+                          {loadingAction ? (
+                            <ActivityIndicator size="small" color="#fff" />
+                          ) : (
+                            <Text className="text-[10px] font-[400] text-white">
+                              End Session
+                            </Text>
+                          )}
                         </TouchableOpacity>
                       )}
 
@@ -574,6 +616,7 @@ export default function JoinSession() {
                   <TouchableOpacity
                     key={view}
                     onPress={() => setActiveView(view)}
+                    className="relative"
                   >
                     <ThemedText
                       lightColor={isActive ? "#00CC77" : theme.text}
@@ -581,13 +624,13 @@ export default function JoinSession() {
                       style={{
                         fontSize: 15,
                         fontWeight: isActive ? "700" : "500",
-                        borderBottomWidth: isActive ? 2 : 0,
-                        borderBottomColor: "#00FF94",
-                        paddingBottom: 2,
                       }}
                     >
                       {label}
                     </ThemedText>
+                    {isActive && (
+                      <View className="absolute bottom-[-25px] h-[2px] w-full bg-[#00FF94]" />
+                    )}
                   </TouchableOpacity>
                 );
               })}

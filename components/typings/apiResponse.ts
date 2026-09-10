@@ -664,3 +664,39 @@ export interface SessionPaymentDetailsResponse {
   allTeamsPaid: boolean;
   teams: TeamPayment[];
 }
+
+export interface SetPlayer {
+  _id: string;
+  email: string;
+  address: string;
+  createdAt: string;
+  currentSession: string;
+  emailVerified: boolean;
+  firstName: string;
+  isOwner: boolean;
+  lastName: string;
+  newsletterOptIn: boolean;
+  nickname: string;
+  otp: string | null;
+  otpExpiration: string | null;
+  otpVerified: string | null;
+  password: string;
+  phoneNumber: string;
+  position: string;
+  role: string;
+  updatedAt: string;
+  __v: number;
+  location: {
+    type: "Point";
+    coordinates: [number, number];
+  };
+}
+
+export interface SessionSet {
+  _id: string;
+  session: string;
+  name: string;
+  players: SetPlayer[];
+  createdAt: string;
+  updatedAt: string;
+}

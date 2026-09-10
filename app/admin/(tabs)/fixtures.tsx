@@ -1,5 +1,4 @@
-import { allSessions, getMyCurrentSession } from "@/api/sessions";
-import { getLocation } from "@/api/ownerDashboardThunk";
+import { getLocation, getSessionByDate } from "@/api/ownerDashboardThunk";
 import CustomDatePicker from "@/components/modals/CustomDatePicker";
 import { DateStrip } from "@/components/sessions/DateStrip";
 import { FixtureCard } from "@/components/admin/fixtures/fixture-card";
@@ -10,7 +9,6 @@ import {
   Match,
   ScheduleProps,
   SessionTab,
-  TAB_ROUTE_MAP,
 } from "@/components/sessions/types";
 import SafeAreaScreen from "@/components/SafeAreaScreen";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -19,7 +17,6 @@ import {
   SegmentedTab,
 } from "@/components/ui/SegmentedControl";
 import { useAppDispatch, useAppSelector } from "@/redux/store";
-import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
@@ -38,6 +35,13 @@ const TABS: SegmentedTab<SessionTab>[] = [
   { key: "sets", label: "Sets" },
 ];
 
+function formatDate(date: Date): string {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
 export default function Schedule({
   initialTab = "all",
   title = "Match Schedule",
@@ -54,20 +58,27 @@ export default function Schedule({
 
   const dispatch = useAppDispatch();
   const { user } = useAppSelector((s) => s.auth);
-  const { all, loadingAll, errorAll } = useAppSelector((s) => s.sessions);
-  //   const { location } = useAppSelector((s) => s.ownerDashboard);
+  const { location, sessionByDate, loadingSessionByDate, errorSessionByDate } =
+    useAppSelector((s) => s.ownerDashboard);
 
   const screenBg = isDark ? "#000" : "#FAFAFA";
   const mutedText = isDark ? "#555" : "#999";
   const primaryText = isDark ? "#FFF" : "#111";
 
   useEffect(() => {
-    // dispatch(getLocation());
-    if (!user?.location?.coordinates) return;
-    const [lat, lng] = user.location.coordinates;
-    dispatch(allSessions({ lat, lng }));
-    dispatch(getMyCurrentSession());
-  }, [dispatch, user]);
+    dispatch(getLocation());
+  }, [dispatch]);
+
+  useEffect(() => {
+    if (!location?._id) return;
+    const date = selectedDate ?? new Date();
+    dispatch(
+      getSessionByDate({
+        locationId: location._id,
+        date: formatDate(date),
+      }),
+    );
+  }, [dispatch, location?._id, selectedDate]);
 
   useEffect(() => {
     const today = new Date();
@@ -87,8 +98,8 @@ export default function Schedule({
   }, []);
 
   const formattedMatches: Match[] = useMemo(() => {
-    if (!all || all.length === 0) return [];
-    return all.map((session: any) => {
+    if (!sessionByDate || sessionByDate.length === 0) return [];
+    return sessionByDate.map((session: any) => {
       const captainName =
         session.captain?.nickname ||
         session.captain?.firstName ||
@@ -130,7 +141,7 @@ export default function Schedule({
         sessionData: session,
       };
     });
-  }, [all, user]);
+  }, [sessionByDate, user]);
 
   const filteredMatches = useMemo(() => {
     let list = formattedMatches;
@@ -181,29 +192,19 @@ export default function Schedule({
   };
 
   const handleRefresh = useCallback(async () => {
-    if (!user?.location?.coordinates) return;
+    if (!location?._id) return;
     setRefreshing(true);
-    const [lat, lng] = user.location.coordinates;
-    await Promise.all([
-      dispatch(allSessions({ lat, lng })),
-      dispatch(getMyCurrentSession()),
-    ]);
-    setRefreshing(false);
-  }, [dispatch, user]);
-
-  const handleNewGame = () => {
-    const route = TAB_ROUTE_MAP[activeTab];
-    router.push(
-      route
-        ? {
-            pathname: `/${route}` as any,
-            params: { locationId: formattedMatches[0]?.locationId },
-          }
-        : "/",
+    const date = selectedDate ?? new Date();
+    await dispatch(
+      getSessionByDate({
+        locationId: location._id,
+        date: formatDate(date),
+      }),
     );
-  };
+    setRefreshing(false);
+  }, [dispatch, location?._id, selectedDate]);
 
-  const showSkeletons = loadingAll || refreshing;
+  const showSkeletons = loadingSessionByDate || refreshing;
 
   return (
     <SafeAreaScreen style={{ backgroundColor: screenBg }}>
@@ -288,7 +289,7 @@ export default function Schedule({
             [1, 2, 3].map((n) => (
               <SessionSkeletonCard key={n} isDark={isDark} />
             ))
-          ) : errorAll ? (
+          ) : errorSessionByDate ? (
             <View style={{ alignItems: "center", paddingVertical: 60 }}>
               <Ionicons name="wifi-outline" size={40} color={mutedText} />
               <Text
@@ -299,13 +300,18 @@ export default function Schedule({
                   textAlign: "center",
                 }}
               >
-                {errorAll}
+                {errorSessionByDate}
               </Text>
               <TouchableOpacity
                 onPress={() => {
-                  if (user?.location?.coordinates) {
-                    const [lat, lng] = user.location.coordinates;
-                    dispatch(allSessions({ lat, lng }));
+                  if (location?._id) {
+                    const date = selectedDate ?? new Date();
+                    dispatch(
+                      getSessionByDate({
+                        locationId: location._id,
+                        date: formatDate(date),
+                      }),
+                    );
                   }
                 }}
                 style={{
@@ -322,15 +328,12 @@ export default function Schedule({
           ) : filteredMatches.length === 0 ? (
             <EmptyState
               icon="football-outline"
-              title="No sessions found"
+              title="No fixtures found"
               message={
                 selectedDate
-                  ? "No sessions on this date. Try another day or clear the filter."
-                  : "No sessions nearby yet. Start one!"
+                  ? "No fixtures on this date. Try another day or clear the filter."
+                  : ""
               }
-              ctaLabel="Start a Game"
-              ctaIcon="add"
-              onCta={handleNewGame}
               isDark={isDark}
             />
           ) : (

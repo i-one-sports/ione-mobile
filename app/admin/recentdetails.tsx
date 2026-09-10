@@ -9,6 +9,8 @@ import { useAppDispatch, useAppSelector } from "@/redux/store";
 import { router, useLocalSearchParams } from "expo-router";
 import React, { useEffect, useMemo, useState } from "react";
 import { ScrollView, TouchableOpacity, View } from "react-native";
+import { useColorScheme } from "nativewind";
+import { Ionicons } from "@expo/vector-icons";
 
 export default function RecentDetails() {
   const dispatch = useAppDispatch();
@@ -21,6 +23,9 @@ export default function RecentDetails() {
   );
   const [activeTeam, setActiveTeam] = useState<"T1" | "T2">("T1");
   const { matchDetails } = useAppSelector((state) => state.matchDetails);
+
+  const { colorScheme } = useColorScheme();
+  const isDark = colorScheme === "dark";
 
   const match = matchDetails[matchId];
 
@@ -91,16 +96,20 @@ export default function RecentDetails() {
 
   return (
     <View className="flex-1 pt-16 dark:bg-black">
-      <View className="flex-row px-[35px] mb-[27px]">
-        <TouchableOpacity onPress={() => router.back()} className="mr-4">
-          <ThemedText className="text-2xl">←</ThemedText>
+      <View className="flex-row px-[20px] mb-[27px]">
+        <TouchableOpacity onPress={() => router.back()}>
+          <Ionicons
+            name="arrow-back"
+            size={22}
+            color={isDark ? "#fff" : "#111"}
+          />
         </TouchableOpacity>
-        <View className="flex-1 items-center mr-8">
+        <View className="flex-1 items-center">
           <ThemedText className="text-xl font-bold">Recent Match</ThemedText>
-          <ThemedText className="text-xs text-gray-600 dark:text-gray-400">
+          {/* <ThemedText className="text-xs text-gray-600 dark:text-gray-400">
             Tiger Sports Sangotedo, Lagos
-          </ThemedText>
-          <ThemedText className="text-xs text-gray-600 dark:text-gray-400">
+          </ThemedText> */}
+          <ThemedText className="text-xs font-semibold text-gray-600 dark:text-gray-400">
             {formateDate(date)}
           </ThemedText>
         </View>
@@ -158,7 +167,7 @@ export default function RecentDetails() {
         </View>
       </View>
 
-      <View className="gap-[17px] dark:border-gray-700 px-[35px] border-[#EDEDED] border-t border-b py-5 flex flex-row  items-center mt-[25px] mb-5">
+      <View className="gap-[17px] dark:border-gray-700 px-[20px] border-[#EDEDED] border-t border-b py-5 flex flex-row  items-center mt-[25px] mb-5">
         <TouchableOpacity
           onPress={() => setActiveTab("lineups")}
           className="relative pb-3 items-center"

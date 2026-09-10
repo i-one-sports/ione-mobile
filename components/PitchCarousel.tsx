@@ -19,7 +19,7 @@ import { startSession } from "@/api/sessions";
 import Loader from "./loader";
 
 const { width, height } = Dimensions.get("window");
-const CARD_WIDTH = width - 70; // accounting for padding
+const CARD_WIDTH = width - 48; // accounting for padding
 
 interface PitchData {
   id: string;

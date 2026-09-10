@@ -131,14 +131,7 @@ export default function AdminHomeScreen() {
   const showOnboardingBanner =
     user?.ownerOnboardingStatus === "PENDING_VERIFICATION";
 
-  //   console.log("user", user);
-  //   console.log("verification", verification);
-
   const showAdminEmailVerificationBanner = !user?.emailVerified;
-
-  //   console.log("dashboardSummary", dashboardSummary);
-  //   console.log("location", location);
-  //   console.log("locationDashboard", locationDashboard);
 
   return (
     <View style={{ flex: 1, backgroundColor: isDark ? "#000" : "#fff" }}>
@@ -149,7 +142,7 @@ export default function AdminHomeScreen() {
         <SafeAreaView edges={["top"]}>
           <StatusBar style="light" />
           <View
-            style={{ paddingHorizontal: 35, paddingTop: 16, paddingBottom: 24 }}
+            style={{ paddingHorizontal: 20, paddingTop: 16, paddingBottom: 24 }}
           >
             {/* Top bar: condition pill + action buttons */}
             <View
@@ -280,7 +273,7 @@ export default function AdminHomeScreen() {
       >
         <ScrollView
           contentContainerStyle={{
-            paddingHorizontal: 35,
+            paddingHorizontal: 20,
             paddingTop: 20,
             paddingBottom: 100,
           }}
@@ -296,19 +289,20 @@ export default function AdminHomeScreen() {
               onPress={() => router.push("/verify-email")}
             />
           )}
-          {/* {showOnboardingBanner && (
+
+          {verification?.status === "REJECTED" ? (
             <TouchableOpacity
               onPress={() => router.push("/admin/onboarding")}
               style={{
                 flexDirection: "row",
                 alignItems: "center",
                 gap: 12,
-                backgroundColor: isDark ? "#0D2B1F" : "#EDFFF8",
+                backgroundColor: isDark ? "#2B1212" : "#FDECEC",
                 borderRadius: 12,
                 padding: 16,
                 marginBottom: 20,
                 borderWidth: 1,
-                borderColor: isDark ? "#1a3d2b" : "#c8f5e2",
+                borderColor: isDark ? "#4A1A1A" : "#F5C6C6",
               }}
             >
               <View
@@ -316,36 +310,57 @@ export default function AdminHomeScreen() {
                   width: 38,
                   height: 38,
                   borderRadius: 19,
-                  backgroundColor: `${accent}22`,
+                  backgroundColor: "#EF444422",
                   alignItems: "center",
                   justifyContent: "center",
                 }}
               >
                 <Ionicons
-                  name="shield-checkmark-outline"
+                  name="close-circle-outline"
                   size={20}
-                  color={accent}
+                  color="#EF4444"
                 />
               </View>
+
               <View style={{ flex: 1 }}>
                 <ThemedText
                   style={{ fontSize: 13, fontWeight: "600", marginBottom: 2 }}
                 >
-                  Complete Your Onboarding
+                  Verification Rejected
                 </ThemedText>
-                <ThemedText
-                  lightColor="#666"
-                  darkColor="#aaa"
-                  style={{ fontSize: 11 }}
-                >
-                  Verify your identity to start accepting bookings
-                </ThemedText>
-              </View>
-              <Ionicons name="chevron-forward" size={18} color={accent} />
-            </TouchableOpacity>
-          )} */}
 
-          {verification?.status === "PENDING" ? (
+                <ThemedText
+                  lightColor="#777"
+                  darkColor="#aaa"
+                  style={{ fontSize: 11, marginBottom: 8 }}
+                >
+                  {verification.rejectionReason ||
+                    "Your documents were rejected. Please resubmit a new verification."}
+                </ThemedText>
+
+                <View
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    gap: 4,
+                  }}
+                >
+                  <Ionicons name="refresh" size={13} color="#EF4444" />
+                  <ThemedText
+                    style={{
+                      fontSize: 12,
+                      fontWeight: "700",
+                      color: "#EF4444",
+                    }}
+                  >
+                    Resubmit Verification
+                  </ThemedText>
+                </View>
+              </View>
+
+              <Ionicons name="chevron-forward" size={18} color="#EF4444" />
+            </TouchableOpacity>
+          ) : verification?.status === "PENDING" ? (
             <TouchableOpacity
               style={{
                 flexDirection: "row",

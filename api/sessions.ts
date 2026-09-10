@@ -9,6 +9,7 @@ import {
   AllSessionsResponse,
   SessionByDateResponse,
   SessionByIdResponse,
+  SessionSet,
 } from "@/components/typings/apiResponse";
 import axiosInstance from "./axios";
 
@@ -178,7 +179,7 @@ export const createSets = createAsyncThunk<
 );
 
 export const getSessionSets = createAsyncThunk<
-  any[],
+  SessionSet[],
   { sessionId: string },
   AsyncThunkConfig
 >("/getSessionSets", async ({ sessionId }, thunkAPI) =>

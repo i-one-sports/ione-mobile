@@ -198,14 +198,15 @@ export const updateOpenHours = createAsyncThunk<
   );
 });
 
-// billing location
-
 export const getLocationTeamStatus = createAsyncThunk<
   SessionPaymentDetailsResponse,
   { locationId: string; sessionId: string },
   AsyncThunkConfig
->("billing/LocationTeamStatus", async ({ locationId, sessionId }, thunkAPI) => {
-  const endpoint = `/i-one/billing/location/${locationId}/sessions/${sessionId}/team-status`;
-  const result = await apiCall(axiosInstance.get(endpoint), thunkAPI);
-  return result;
-});
+>(
+  "/billing/LocationTeamStatus",
+  async ({ locationId, sessionId }, thunkAPI) => {
+    const endpoint = `/i-one/billing/location/${locationId}/sessions/${sessionId}/team-status`;
+    const result = await apiCall(axiosInstance.get(endpoint), thunkAPI);
+    return result;
+  },
+);

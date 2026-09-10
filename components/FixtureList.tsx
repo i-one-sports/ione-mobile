@@ -14,6 +14,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Polygon from "./Polygon";
 import { ThemedText } from "./ThemedText";
 import { Fixture } from "./typings";
+import { formatTime } from "@/utils/formatTime";
 
 interface Props {
   limit?: number;
@@ -30,15 +31,21 @@ const FixtureList: React.FC<Props> = ({ limit }) => {
 
   const allFixtures: Fixture[] = sessions.map((s) => ({
     id: s._id,
-    time: "14:00",
+
+    time: formatTime(s.session?.startTime),
+
     teamA: s.teamOne?.name?.slice(0, 2).toUpperCase() || "NA",
     teamAName: s.teamOne?.name || "Unknown",
+
     teamB: s.teamTwo?.name?.slice(0, 2).toUpperCase() || "NA",
     teamBName: s.teamTwo?.name || "Unknown",
+
     type: s.matchType || "Match",
   }));
 
   const fixtures = limit ? allFixtures.slice(0, limit) : allFixtures;
+
+  //   console.log(sessions[0], "sessions");
 
   const handleFixturePress = (fixture: Fixture) => {
     router.push({ pathname: "/fixtureDetails", params: fixture });

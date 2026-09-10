@@ -1,4 +1,4 @@
-import { createSets, getSession, getSessionSets } from "@/api/sessions";
+import { getSession, getSessionSets } from "@/api/sessions";
 import pitch from "@/assets/images/greenpitch.png";
 import OpenIcon from "@/assets/svg/OpenIcon";
 import SafeAreaScreen from "@/components/SafeAreaScreen";
@@ -20,9 +20,8 @@ import {
   useColorScheme,
   View,
 } from "react-native";
-import { Toast } from "toastify-react-native";
-import PlayerInfoCard from "./playerinfocard";
-import TeamBoxes from "./teamboxes";
+import PlayerInfoCard from "@/app/playerinfocard";
+import TeamBoxes from "@/app/teamboxes";
 
 // ─── Pitch formation helpers ────────────────────────────────────────────────
 
@@ -152,7 +151,7 @@ interface SetDoc {
 
 // ─── Component ──────────────────────────────────────────────────────────────
 
-export default function Assigned() {
+export default function ViewAssignedSetScreen() {
   const params = useLocalSearchParams<{
     session?: string;
     sessionId?: string;
@@ -168,24 +167,15 @@ export default function Assigned() {
   const [activeTab, setActiveTab] = useState<"squad" | "lineups">("squad");
   const [selectedSet, setSelectedSet] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
-  const [finalizeStatus, setFinalizeStatus] = useState<
-    "idle" | "finalizing" | "takingLong"
-  >("idle");
 
-  const { sets, loadingSets, creatingSet, activeSession } = useAppSelector(
+  const { sets, loadingSets, activeSession } = useAppSelector(
     (s) => s.sessions,
   );
-  const { user } = useAppSelector((s) => s.auth);
 
   // Prefer live activeSession members (with paymentStatus), fall back to params
   const sessionData = activeSession ?? staticData;
   const members: Member[] = sessionData?.members ?? [];
   const paymentRequired = sessionData?.paymentRequired ?? false;
-
-  // Paid sessions: all members have paid but teams are still being allocated
-  const allPaid =
-    Boolean(sessionData?.allPaymentsCompleted) ||
-    sessionData?.paymentStatus === "COMPLETED";
 
   const pitchName = sessionData?.location?.name ?? "Unknown Pitch";
   const pitchAddress = sessionData?.location?.address ?? "";
@@ -209,61 +199,6 @@ export default function Assigned() {
 
   // ── Filtering ──────────────────────────────────────────────────────────────
   const safeSets: SetDoc[] = Array.isArray(sets) ? sets : [];
-
-  // ── Auto-poll for team allocation (paid sessions) ──────────────────────────
-  // Once every member has paid, the server auto-allocates teams (fire & forget).
-  // Poll GET /sets/:sessionId until teams appear; after ~10 attempts (5s) surface
-  // a manual retry that calls POST /sets/create/:sessionId (safe, no duplicates).
-  useEffect(() => {
-    if (!sessionId || !paymentRequired || !allPaid) {
-      setFinalizeStatus("idle");
-      return;
-    }
-    if (safeSets.length > 0) {
-      setFinalizeStatus("idle");
-      return;
-    }
-
-    let attempts = 0;
-    const maxAttempts = 10;
-    setFinalizeStatus("finalizing");
-
-    const interval = setInterval(async () => {
-      attempts += 1;
-      try {
-        const sets = await dispatch(getSessionSets({ sessionId })).unwrap();
-        if (Array.isArray(sets) && sets.length > 0) {
-          clearInterval(interval);
-          setFinalizeStatus("idle");
-          return;
-        }
-      } catch {
-        // ignore & keep polling
-      }
-      if (attempts >= maxAttempts) {
-        clearInterval(interval);
-        setFinalizeStatus("takingLong");
-      }
-    }, 500);
-
-    return () => clearInterval(interval);
-  }, [sessionId, paymentRequired, allPaid, safeSets.length, dispatch]);
-
-  // ── Create sets ────────────────────────────────────────────────────────────
-  const handleCreateSets = () => {
-    if (!sessionId) return;
-    dispatch(createSets({ sessionId }))
-      .unwrap()
-      .then(() => {
-        Toast.show({ type: "success", text1: "Sets created!" });
-        setFinalizeStatus("idle");
-        dispatch(getSessionSets({ sessionId }));
-      })
-      .catch((err: any) => {
-        setFinalizeStatus("takingLong");
-        Toast.show({ type: "error", text1: "Error", text2: err?.msg });
-      });
-  };
 
   const currentSet: SetDoc | null = selectedSet
     ? (safeSets.find((s) => s._id === selectedSet) ?? null)
@@ -291,10 +226,6 @@ export default function Assigned() {
   })();
 
   const pitchPositions = buildFormationPositions(pitchPlayers.length);
-
-  const isCaptain =
-    sessionData?.captain?._id === user?._id ||
-    sessionData?.captain === user?._id;
 
   return (
     <SafeAreaScreen>
@@ -349,71 +280,22 @@ export default function Assigned() {
               </View>
             </View>
 
-            {/* Paid session — everyone has paid, teams are being allocated */}
-            {safeSets.length === 0 && paymentRequired && allPaid && (
-              <>
-                {finalizeStatus === "takingLong" ? (
-                  <View className="rounded-lg bg-[#1A1A1A]/5 py-4 px-4 items-center">
-                    <Text className="text-[13px] text-[#6D717F] text-center">
-                      Teams are taking longer than expected to be allocated.
-                    </Text>
-                    <TouchableOpacity
-                      onPress={handleCreateSets}
-                      disabled={creatingSet}
-                      className="mt-3 bg-[#00FF94] rounded-lg py-3 px-6 items-center"
-                      activeOpacity={0.7}
-                    >
-                      {creatingSet ? (
-                        <ActivityIndicator color="#000" />
-                      ) : (
-                        <Text className="text-black font-[600] text-[15px]">
-                          Finalize Teams
-                        </Text>
-                      )}
-                    </TouchableOpacity>
-                  </View>
-                ) : (
-                  <View className="items-center py-2">
-                    <ActivityIndicator color="#00FF94" />
-                    <Text className="text-[12px] text-[#6D717F] mt-1">
-                      Finalizing teams…
-                    </Text>
-                  </View>
-                )}
-              </>
+            {/* No teams allocated yet — admin can only view */}
+            {safeSets.length === 0 && !loadingSets && (
+              <View className="items-center py-2">
+                <Text className="text-[12px] text-[#6D717F] text-center">
+                  No teams have been allocated yet.
+                </Text>
+              </View>
             )}
-
-            {/* Manual create — only when no sets exist yet (non-auto cases) */}
-            {safeSets.length === 0 &&
-              !loadingSets &&
-              (!paymentRequired || !allPaid) && (
-                <TouchableOpacity
-                  onPress={handleCreateSets}
-                  disabled={creatingSet}
-                  className="bg-[#00FF94] rounded-lg py-3 px-4 items-center"
-                  activeOpacity={0.7}
-                >
-                  {creatingSet ? (
-                    <ActivityIndicator color="#000" />
-                  ) : (
-                    <Text className="text-black font-[600] text-[16px]">
-                      Create Sets
-                    </Text>
-                  )}
-                </TouchableOpacity>
-              )}
-
-            {/* Loading sets */}
-            {(loadingSets || creatingSet) &&
-              safeSets.length === 0 &&
-              !(paymentRequired && allPaid) && (
-                <View className="items-center py-2">
-                  <ActivityIndicator color="#00FF94" />
-                  <Text className="text-[12px] text-[#6D717F] mt-1">
-                    {creatingSet ? "Creating sets…" : "Loading sets…"}
-                  </Text>
-                </View>
-              )}
+            {loadingSets && safeSets.length === 0 && (
+              <View className="items-center py-2">
+                <ActivityIndicator color="#00FF94" />
+                <Text className="text-[12px] text-[#6D717F] mt-1">
+                  Loading sets…
+                </Text>
+              </View>
+            )}
           </View>
 
           {/* ── Team selector (shown when sets exist) ──────────────────────── */}
@@ -527,9 +409,7 @@ export default function Assigned() {
               {safeSets.length === 0 ? (
                 <View className="items-center py-8">
                   <Text className="text-[14px] text-[#6D717F] text-center">
-                    {isCaptain
-                      ? "Create sets first to see team lineups on the pitch."
-                      : "Sets have not been created yet."}
+                    No lineups to display yet.
                   </Text>
                 </View>
               ) : (

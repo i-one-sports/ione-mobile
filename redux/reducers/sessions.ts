@@ -15,20 +15,75 @@ import {
   nearByLocation,
   rescheduleSession,
 } from "@/api/sessions";
-import { SessionByIdResponse } from "@/components/typings/apiResponse";
+import {
+  SessionByIdResponse,
+  SessionSet,
+} from "@/components/typings/apiResponse";
 import { Team } from "@/components/typings";
 
-export interface MatchSession {
-  _id: string;
-  session: string;
-  teamOne?: Team;
-  teamTwo?: Team;
-  teamOneScore: number;
-  teamTwoScore: number;
-  initials?: string;
-  matchType: string;
-  isStarted: boolean;
+// export interface MatchSession {
+//   _id: string;
+//   session: string;
+//   teamOne?: Team;
+//   teamTwo?: Team;
+//   teamOneScore: number;
+//   teamTwoScore: number;
+//   initials?: string;
+//   matchType: string;
+//   isStarted: boolean;
+//   __v: number;
+// }
+
+export interface SessionLocation {
   __v: number;
+  _id: string;
+  address: string;
+  booked: boolean;
+  location: unknown;
+  name: string;
+  pitchPhoto: string;
+  updatedAt: string;
+}
+
+export interface FixtureSession {
+  __v: number;
+  _id: string;
+  captain: string;
+  finished: boolean;
+  inProgress: boolean;
+  isFull: boolean;
+  location: SessionLocation;
+  matchType: string;
+  maxNumber: number;
+  members: string[];
+  minsPerSet: number;
+  playersPerTeam: number;
+  setNumber: number;
+  startTime: string;
+  stopTime: string;
+  timeDuration: number;
+  winningDecider: string;
+}
+
+export interface FixtureTeam {
+  __v: number;
+  _id: string;
+  name: string;
+  players: string[];
+  session: string;
+}
+
+export interface MatchSession {
+  __v: number;
+  _id: string;
+  isStarted: boolean;
+  matchType: string;
+  session: FixtureSession;
+  teamOne: FixtureTeam;
+  teamOneScore: number;
+  teamTwo: FixtureTeam;
+  teamTwoScore: number;
+  updatedAt: string;
 }
 
 export interface pitchSessions {
@@ -38,16 +93,6 @@ export interface pitchSessions {
   booked: boolean;
   pitchPhoto: string;
   tournament: boolean;
-}
-
-export interface Set {
-  _id: string;
-  session: string;
-  name: string;
-  players: string[];
-  status: string;
-  createdAt: string;
-  updatedAt: string;
 }
 
 interface State {
@@ -75,7 +120,7 @@ interface State {
   loadingLocationSessions: boolean;
 
   // Sets state
-  sets: Set[];
+  sets: SessionSet[];
   loadingSets: boolean;
   errorSets: string | null;
   creatingSet: boolean;
@@ -332,14 +377,13 @@ export const sessionSlice = createSlice({
         state.errorCreatingSets = null;
       })
       .addCase(createSets.fulfilled, (state, { payload }) => {
-        // API returns { message, sets: [...] } — extract the array
-        state.sets = Array.isArray(payload) ? payload : (payload?.sets ?? []);
         state.creatingSet = false;
+        state.sets = payload;
       })
       .addCase(createSets.rejected, (state, action) => {
         state.creatingSet = false;
         state.errorCreatingSets =
-          action.error.message ?? "Failed to create sets";
+          (action.payload as any)?.msg ?? "Failed to create sets";
       });
 
     // Get Session Sets
@@ -349,7 +393,7 @@ export const sessionSlice = createSlice({
         state.errorSets = null;
       })
       .addCase(getSessionSets.fulfilled, (state, { payload }) => {
-        state.sets = Array.isArray(payload) ? payload : (payload?.sets ?? []);
+        state.sets = payload;
         state.loadingSets = false;
       })
       .addCase(getSessionSets.rejected, (state, action) => {

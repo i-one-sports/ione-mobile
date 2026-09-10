@@ -5,12 +5,19 @@ import Polygon from "@/components/Polygon";
 import SafeAreaScreen from "@/components/SafeAreaScreen";
 import { ThemedText } from "@/components/ThemedText";
 import { LineupData, Player } from "@/components/typings";
+import { getSessionSets } from "@/api/sessions";
+import { useAppDispatch, useAppSelector } from "@/redux/store";
 import { router, useLocalSearchParams } from "expo-router";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+import { Ionicons } from "@expo/vector-icons";
+import { useColorScheme } from "nativewind";
 import { ScrollView, TouchableOpacity, View } from "react-native";
 
 export default function FixtureDetailsScreen() {
+  const { colorScheme } = useColorScheme();
+  const isDark = colorScheme === "dark";
   const params = useLocalSearchParams();
+  const dispatch = useAppDispatch();
   const [activeTab, setActiveTab] = useState<"lineups" | "substitutes">(
     "lineups",
   );
@@ -22,6 +29,20 @@ export default function FixtureDetailsScreen() {
   const teamAName = params.teamAName as string;
   const teamB = params.teamB as string;
   const teamBName = params.teamBName as string;
+  const sessionId = (params.sessionId ?? params.id) as string | undefined;
+
+  const { sets, loadingSets } = useAppSelector((state) => state.sessions);
+
+  useEffect(() => {
+    if (sessionId) {
+      dispatch(getSessionSets({ sessionId }));
+    }
+  }, [sessionId, dispatch]);
+
+  console.log(params, "fixtures params");
+  console.log(sets, "fixture details");
+
+  const screenBg = isDark ? "#000" : "#FAFAFA";
 
   // Sample lineup data
   const lineups: LineupData = {
@@ -64,17 +85,21 @@ export default function FixtureDetailsScreen() {
   );
 
   return (
-    <SafeAreaScreen className="flex-1">
-      <View className="flex-row px-[35px] mb-[27px]">
-        <TouchableOpacity onPress={() => router.back()} className="mr-4">
-          <ThemedText className="text-2xl">←</ThemedText>
+    <SafeAreaScreen style={{ flex: 1, backgroundColor: screenBg }}>
+      <View className="flex-row pt-5 px-[20px] mb-[27px]">
+        <TouchableOpacity onPress={() => router.back()}>
+          <Ionicons
+            name="arrow-back"
+            size={22}
+            color={isDark ? "#fff" : "#111"}
+          />
         </TouchableOpacity>
-        <View className="flex-1 items-center mr-8">
+        <View className="flex-1 items-center">
           <ThemedText className="text-xl font-bold">Upcoming Match</ThemedText>
           <ThemedText className="text-xs text-gray-600 dark:text-gray-400">
             Tiger Sports Sangotedo, Lagos
           </ThemedText>
-          <ThemedText className="text-xs text-gray-600 dark:text-gray-400">
+          <ThemedText className="text-xs font-semibold text-gray-600 dark:text-gray-400">
             Tue, Mar 19
           </ThemedText>
         </View>
@@ -101,22 +126,23 @@ export default function FixtureDetailsScreen() {
         </View>
       </View>
 
-      <View className="flex-row border-b gap-[17px] border-t py-[21px] border-gray-300 dark:border-gray-700 mb-4 px-[35px]">
+      <View className="gap-[17px] dark:border-gray-700 px-[20px] border-[#EDEDED] border-t border-b py-5 flex flex-row  items-center mt-[25px] mb-5">
         <TouchableOpacity
           onPress={() => setActiveTab("lineups")}
           className="relative pb-3 items-center"
         >
           <ThemedText
-            className={`text-center font-semibold text-base ${activeTab === "lineups" ? "text-primary" : "text-gray-500"}`}
-            style={{
-              color: activeTab === "lineups" ? "#000000" : "#B9B9B9",
-            }}
+            className={`text-center font-semibold text-base ${
+              activeTab === "lineups"
+                ? "text-black dark:text-white"
+                : "text-gray-400"
+            }`}
           >
             Lineups
           </ThemedText>
 
           {activeTab === "lineups" && (
-            <View className="absolute bottom-0 w-8 h-[2px] bg-[#46BB1C] rounded-full" />
+            <View className="absolute bottom-[-19px] h-[2px] w-full bg-[#00FF94]" />
           )}
         </TouchableOpacity>
 
@@ -125,16 +151,16 @@ export default function FixtureDetailsScreen() {
           className="relative pb-3 items-center"
         >
           <ThemedText
-            className={`text-center font-semibold text-base`}
-            style={{
-              color: activeTab === "substitutes" ? "#000000" : "#B9B9B9",
-            }}
+            className={`text-center font-semibold text-base ${
+              activeTab === "substitutes"
+                ? "text-black dark:text-white"
+                : "text-gray-400"
+            }`}
           >
             Substitutes
           </ThemedText>
-
           {activeTab === "substitutes" && (
-            <View className="absolute bottom-0 w-8 h-[2px] bg-[#46BB1C] rounded-full" />
+            <View className="absolute bottom-[-19px] h-[2px] w-full bg-[#00FF94]" />
           )}
         </TouchableOpacity>
       </View>

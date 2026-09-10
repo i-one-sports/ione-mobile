@@ -1,24 +1,18 @@
 import React from "react";
 import { Pressable, Text, View } from "react-native";
-
-interface Set {
-  _id: string;
-  name: string;
-  players: string[];
-  status: string;
-  session: string;
-  createdAt: string;
-  updatedAt: string;
-}
+import { SessionSet } from "@/components/typings/apiResponse";
 
 interface TeamBoxesProps {
-  sets: Set[];
+  sets: SessionSet[];
   selectedSet: string | null;
   onSelectSet: (setId: string | null) => void;
 }
 
-export default function TeamBoxes({ sets, selectedSet, onSelectSet }: TeamBoxesProps) {
-
+export default function TeamBoxes({
+  sets,
+  selectedSet,
+  onSelectSet,
+}: TeamBoxesProps) {
   return (
     <View className="flex flex-row items-start px-8 gap-5">
       {sets.map((set) => {
@@ -28,8 +22,9 @@ export default function TeamBoxes({ sets, selectedSet, onSelectSet }: TeamBoxesP
           <Pressable
             key={set._id}
             onPress={() => onSelectSet(isActive ? null : set._id)}
-            className={`w-full flex-1 p-3 rounded-md items-center justify-center ${isActive ? "bg-[#00FF94]" : "bg-[#E4E4E4]"
-              }`}
+            className={`w-full flex-1 p-3 rounded-md items-center justify-center ${
+              isActive ? "bg-[#00FF94]" : "bg-[#E4E4E4]"
+            }`}
           >
             <Text className="text-[12px] font-[600]">{set.name}</Text>
           </Pressable>
