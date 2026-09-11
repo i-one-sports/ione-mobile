@@ -12,11 +12,94 @@ interface ErrorPayload {
     };
     status: number;
   };
+  config?: {
+    baseURL?: string;
+    data?: unknown;
+    headers?: unknown;
+    method?: string;
+    params?: unknown;
+    url?: string;
+  };
 }
 
 type RejectedWithValue = {
   rejectWithValue(rejectValue: RejectValue): { payload: RejectValue };
 };
+
+const SENSITIVE_FIELD =
+  /authorization|cookie|token|password|otp|secret|api[-_]?key|cvv/i;
+
+function redactSensitiveValues(value: unknown): unknown {
+  if (Array.isArray(value)) {
+    return value.map(redactSensitiveValues);
+  }
+
+  if (value && typeof value === "object") {
+    return Object.fromEntries(
+      Object.entries(value as Record<string, unknown>).map(([key, nested]) => [
+        key,
+        SENSITIVE_FIELD.test(key)
+          ? "[REDACTED]"
+          : redactSensitiveValues(nested),
+      ]),
+    );
+  }
+
+  return value;
+}
+
+function requestUrl(config?: ErrorPayload["config"]): string | null {
+  const baseURL = config?.baseURL;
+  const url = config?.url;
+
+  if (!url) return baseURL ?? null;
+  if (/^https?:\/\//i.test(url) || !baseURL) return url;
+
+  return `${baseURL.replace(/\/+$/, "")}/${url.replace(/^\/+/, "")}`;
+}
+
+function requestBody(data: unknown): unknown {
+  if (data === undefined || data === null || data === "") return null;
+  if (typeof data !== "string") return redactSensitiveValues(data);
+
+  try {
+    return redactSensitiveValues(JSON.parse(data));
+  } catch {
+    return "[non-JSON request body omitted]";
+  }
+}
+
+function requestHeaders(headers: unknown): unknown {
+  const serializableHeaders =
+    headers &&
+    typeof headers === "object" &&
+    "toJSON" in headers &&
+    typeof (headers as { toJSON?: unknown }).toJSON === "function"
+      ? (headers as { toJSON: () => unknown }).toJSON()
+      : headers;
+
+  return redactSensitiveValues(serializableHeaders);
+}
+
+function logFailedRequest(error: ErrorPayload) {
+  const config = error.config;
+  if (!config) return;
+
+  console.log(
+    "📤 [apiCall] request that failed:",
+    JSON.stringify(
+      {
+        method: config?.method?.toUpperCase() ?? null,
+        url: requestUrl(config),
+        params: redactSensitiveValues(config?.params) ?? null,
+        body: requestBody(config?.data),
+        headers: requestHeaders(config?.headers) ?? null,
+      },
+      null,
+      2,
+    ),
+  );
+}
 
 async function apiCall(
   asyncFn: Promise<AxiosResponse>,
@@ -52,6 +135,8 @@ async function apiCall(
     return data;
   } catch (err) {
     const error = err as ErrorPayload;
+    logFailedRequest(error);
+
     if (!error?.response) {
       console.log("data", error);
       return thunkAPI.rejectWithValue({ msg: "Network Error", status: 500 });

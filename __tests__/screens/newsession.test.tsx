@@ -1,5 +1,6 @@
 import React from "react";
-import { act, render } from "@testing-library/react-native";
+import { act, fireEvent, render, within } from "@testing-library/react-native";
+import { Keyboard, Modal } from "react-native";
 import { useFormik } from "formik";
 import { router, useLocalSearchParams } from "expo-router";
 import { createSession, startSession } from "@/api/sessions";
@@ -26,7 +27,6 @@ jest.mock(
   "@/components/ui/SectionCard",
   () => jest.requireActual("react-native").View,
 );
-jest.mock("@/components/InputField", () => () => null);
 jest.mock("@/components/TimePickerField", () => () => null);
 jest.mock("@/components/SessionPitchPicker", () => () => null);
 jest.mock("@/components/loader", () => () => null);
@@ -130,4 +130,51 @@ it("supports older links that already carry a session ID", async () => {
   });
   expect(startMock).not.toHaveBeenCalled();
   expect(createMock.mock.calls[0][0].sessionId).toBe("existing-session");
+});
+
+it("keeps the decider modal mounted through input blur and validation, then selects and reopens", async () => {
+  jest
+    .mocked(useFormik)
+    .mockImplementation(jest.requireActual("formik").useFormik);
+  const dismissKeyboard = jest
+    .spyOn(Keyboard, "dismiss")
+    .mockImplementation(() => {});
+  const screen = render(<NewSession />);
+
+  try {
+    fireEvent.press(screen.getByText("Select decider"));
+    expect(dismissKeyboard).toHaveBeenCalledTimes(1);
+    const modalInstance = screen.UNSAFE_getByType(Modal).instance;
+    expect(screen.getByText("Penalty Shootout")).toBeTruthy();
+
+    // iOS blurs the input as the modal opens; Formik also validates asynchronously.
+    await act(async () => {
+      fireEvent(screen.getByLabelText("Minutes Per Set"), "blur", {
+        nativeEvent: {},
+        target: {},
+      });
+    });
+    expect(screen.getByText("Minutes per set is required")).toBeTruthy();
+    expect(screen.UNSAFE_getByType(Modal).instance).toBe(modalInstance);
+    expect(screen.UNSAFE_getByType(Modal).props.visible).toBe(true);
+
+    await act(async () => {
+      fireEvent.press(screen.getByText("Golden Goal"));
+    });
+    expect(screen.UNSAFE_getByType(Modal).props.visible).toBe(false);
+    expect(screen.getByText("Golden Goal")).toBeTruthy();
+
+    fireEvent.press(screen.getByText("Golden Goal"));
+    expect(
+      within(screen.UNSAFE_getByType(Modal)).getByText("Golden Goal"),
+    ).toHaveStyle({ fontWeight: "600" });
+    expect(screen.UNSAFE_getByType(Modal).props.visible).toBe(true);
+    expect(screen.UNSAFE_getByType(Modal).instance).toBe(modalInstance);
+
+    fireEvent(screen.UNSAFE_getByType(Modal), "requestClose");
+    expect(screen.UNSAFE_getByType(Modal).props.visible).toBe(false);
+    expect(screen.getByText("Golden Goal")).toBeTruthy();
+  } finally {
+    dismissKeyboard.mockRestore();
+  }
 });

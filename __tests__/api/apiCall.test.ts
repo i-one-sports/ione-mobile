@@ -6,14 +6,19 @@ const thunkAPI = { rejectWithValue: mockRejectWithValue };
 
 const makeResponse = (data: object) => Promise.resolve({ data }) as any;
 
-const makeError = (status: number, data: object) => {
+const makeError = (status: number, data: object, config?: object) => {
   const err: any = new Error("Request failed");
   err.response = { status, data };
+  err.config = config;
   return Promise.reject(err);
 };
 
 beforeEach(() => {
   jest.clearAllMocks();
+});
+
+afterEach(() => {
+  jest.restoreAllMocks();
 });
 
 describe("apiCall", () => {
@@ -57,9 +62,42 @@ describe("apiCall", () => {
   it("rejects with server error message on 500", async () => {
     await apiCall(makeError(500, { error: "Internal Server Error" }), thunkAPI);
     expect(mockRejectWithValue).toHaveBeenCalledWith({
-      msg: "Server Error",
+      msg: "Internal Server Error",
       status: 500,
     });
+  });
+
+  it("logs the failed request URL and body without exposing auth data", async () => {
+    const logSpy = jest.spyOn(console, "log").mockImplementation();
+
+    await apiCall(
+      makeError(
+        500,
+        { message: "Cannot read properties of undefined (reading '_id')" },
+        {
+          baseURL: "https://i-one-server-v1.onrender.com",
+          url: "/i-one/sets/create/6a7b7e448f81fb6ffc4bf32f",
+          method: "post",
+          headers: {
+            Authorization: "Bearer private-token",
+            Cookie: "jwt=private-cookie",
+            "Content-Type": "application/json",
+          },
+        },
+      ),
+      thunkAPI,
+    );
+
+    const requestLog = logSpy.mock.calls.find(
+      ([label]) => label === "📤 [apiCall] request that failed:",
+    );
+
+    expect(requestLog?.[1]).toContain(
+      '"url": "https://i-one-server-v1.onrender.com/i-one/sets/create/6a7b7e448f81fb6ffc4bf32f"',
+    );
+    expect(requestLog?.[1]).toContain('"body": null');
+    expect(requestLog?.[1]).toContain('"Authorization": "[REDACTED]"');
+    expect(requestLog?.[1]).toContain('"Cookie": "[REDACTED]"');
   });
 
   it("rejects with API error message on 4xx", async () => {

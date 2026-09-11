@@ -7,6 +7,7 @@ import {
   Pressable,
   Platform,
   KeyboardAvoidingView,
+  Keyboard,
   Modal,
   TouchableOpacity,
 } from "react-native";
@@ -27,6 +28,77 @@ import TimePickerField from "@/components/TimePickerField";
 
 import SessionPitchPicker from "@/components/SessionPitchPicker";
 import type { SessionPitch } from "@/api/pitchSearch";
+
+// Keep this component stable while Formik blur and validation updates rerender the screen.
+const SelectModal: React.FC<{
+  visible: boolean;
+  options: { label: string; value: string }[];
+  selectedValue?: string;
+  onSelect: (value: string) => void;
+  onClose: () => void;
+}> = ({ visible, options, selectedValue, onSelect, onClose }) => {
+  const colorScheme = useColorScheme();
+
+  return (
+    <Modal
+      visible={visible}
+      transparent
+      animationType="fade"
+      onRequestClose={onClose}
+    >
+      <Pressable
+        style={{
+          flex: 1,
+          backgroundColor: "rgba(0,0,0,0.4)",
+          justifyContent: "center",
+          paddingHorizontal: 32,
+        }}
+        onPress={onClose}
+      >
+        <View
+          style={{
+            backgroundColor: colorScheme === "dark" ? "#1a1a1a" : "#fff",
+            borderRadius: 16,
+            overflow: "hidden",
+          }}
+        >
+          {options.map((opt, i) => {
+            const isSelected = opt.value === selectedValue;
+            return (
+              <TouchableOpacity
+                key={opt.value}
+                onPress={() => onSelect(opt.value)}
+                style={{
+                  paddingVertical: 15,
+                  paddingHorizontal: 20,
+                  borderBottomWidth: i < options.length - 1 ? 1 : 0,
+                  borderBottomColor:
+                    colorScheme === "dark" ? "#2a2a2a" : "#f2f2f2",
+                  flexDirection: "row",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                }}
+              >
+                <Text
+                  style={{
+                    fontSize: 14,
+                    fontWeight: isSelected ? "600" : "400",
+                    color: colorScheme === "dark" ? "#fff" : "#111",
+                  }}
+                >
+                  {opt.label}
+                </Text>
+                {isSelected && (
+                  <Ionicons name="checkmark-circle" size={18} color="#00C853" />
+                )}
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+      </Pressable>
+    </Modal>
+  );
+};
 
 export default function NewSession() {
   const params = useLocalSearchParams();
@@ -162,72 +234,6 @@ export default function NewSession() {
     },
   });
 
-  const SelectModal: React.FC<{
-    visible: boolean;
-    options: { label: string; value: string }[];
-    selectedValue?: string;
-    onSelect: (value: string) => void;
-    onClose: () => void;
-  }> = ({ visible, options, selectedValue, onSelect, onClose }) => (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="fade"
-      onRequestClose={onClose}
-    >
-      <Pressable
-        style={{
-          flex: 1,
-          backgroundColor: "rgba(0,0,0,0.4)",
-          justifyContent: "center",
-          paddingHorizontal: 32,
-        }}
-        onPress={onClose}
-      >
-        <View
-          style={{
-            backgroundColor: colorScheme === "dark" ? "#1a1a1a" : "#fff",
-            borderRadius: 16,
-            overflow: "hidden",
-          }}
-        >
-          {options.map((opt, i) => {
-            const isSelected = opt.value === selectedValue;
-            return (
-              <TouchableOpacity
-                key={opt.value}
-                onPress={() => onSelect(opt.value)}
-                style={{
-                  paddingVertical: 15,
-                  paddingHorizontal: 20,
-                  borderBottomWidth: i < options.length - 1 ? 1 : 0,
-                  borderBottomColor:
-                    colorScheme === "dark" ? "#2a2a2a" : "#f2f2f2",
-                  flexDirection: "row",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                }}
-              >
-                <Text
-                  style={{
-                    fontSize: 14,
-                    fontWeight: isSelected ? "600" : "400",
-                    color: colorScheme === "dark" ? "#fff" : "#111",
-                  }}
-                >
-                  {opt.label}
-                </Text>
-                {isSelected && (
-                  <Ionicons name="checkmark-circle" size={18} color="#00C853" />
-                )}
-              </TouchableOpacity>
-            );
-          })}
-        </View>
-      </Pressable>
-    </Modal>
-  );
-
   return (
     <SafeAreaScreen>
       <KeyboardAvoidingView
@@ -238,6 +244,7 @@ export default function NewSession() {
         <ScrollView
           className="mb-[40px] h-full flex-1 py-6"
           showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
           contentContainerStyle={{
             paddingBottom: 40,
             paddingHorizontal: 32,
@@ -424,7 +431,10 @@ export default function NewSession() {
                     ? getWinningDeciderLabel(formik.values.winningDecider)
                     : ""
                 }
-                pickerPressed={() => setShowDeciderModal(true)}
+                pickerPressed={() => {
+                  Keyboard.dismiss();
+                  setShowDeciderModal(true);
+                }}
                 rightIcon={
                   <Ionicons name="chevron-down" size={16} color="gray" />
                 }
