@@ -54,12 +54,10 @@ export default function HomeScreen() {
       .unwrap()
       .then((response: any) => {
         setLoadingId(false);
-        console.log("Session started:", response);
         router.push(`/screens/newsession?locationId=${response._id}`);
       })
       .catch((err: any) => {
         setLoadingId(false);
-        console.log("Error starting session:", err);
         const message =
           err?.msg?.message || err?.msg || "Failed to start session";
         Toast.show({
@@ -176,7 +174,7 @@ export default function HomeScreen() {
               justifyContent: "center",
             }}
           >
-            <NotificationIcon />
+            <NotificationIcon color={isDark ? "#FFFFFF" : "#2D264B"} />
           </TouchableOpacity>
         </View>
 
@@ -316,13 +314,15 @@ export default function HomeScreen() {
             <ThemedText style={{ fontSize: 17, fontWeight: "700" }}>
               Nearby Pitches
             </ThemedText>
-            <TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => router.push("/screens/newsession")}
+            >
               <ThemedText
                 lightColor={accent}
                 darkColor={accent}
                 style={{ fontSize: 12, fontWeight: "600" }}
               >
-                See all
+                Create session
               </ThemedText>
             </TouchableOpacity>
           </View>

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import {
   View,
   Text,
@@ -19,15 +19,37 @@ import InputField from "@/components/InputField";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
 import { useAppDispatch } from "@/redux/store";
-import { createSession } from "@/api/sessions";
+import { createSession, startSession } from "@/api/sessions";
 import Toast from "react-native-toast-message";
 import Loader from "@/components/loader";
 import SectionCard from "@/components/ui/SectionCard";
 import TimePickerField from "@/components/TimePickerField";
 
+import SessionPitchPicker from "@/components/SessionPitchPicker";
+import type { SessionPitch } from "@/api/pitchSearch";
+
 export default function NewSession() {
   const params = useLocalSearchParams();
-  const sessionId = params.locationId as string;
+  // Older links used locationId to carry an already-started session ID.
+  const legacySessionId =
+    (params.sessionId as string) || (params.locationId as string);
+  const [selectedPitch, setSelectedPitch] = useState<SessionPitch | null>(
+    typeof params.pitchId === "string"
+      ? {
+          id: params.pitchId,
+          name:
+            typeof params.pitchName === "string"
+              ? params.pitchName
+              : "Selected pitch",
+          address:
+            typeof params.pitchAddress === "string" ? params.pitchAddress : "",
+        }
+      : null,
+  );
+  const startedSession = useRef<string | null>(legacySessionId || null);
+  const submitting = useRef(false);
+  const [pitchError, setPitchError] = useState("");
+  const [pitchLocked, setPitchLocked] = useState(!!legacySessionId);
   const dispatch = useAppDispatch();
   const colorScheme = useColorScheme();
   const theme = Colors[colorScheme ?? "light"];
@@ -79,51 +101,64 @@ export default function NewSession() {
       minsPerSet: Yup.string().required("Minutes per set is required"),
     }),
     onSubmit: async (values) => {
-      const payload = {
-        sessionId,
-        data: {
-          setNumber: Number(values.setNumber),
-          playersPerTeam: Number(values.playersPerTeam),
-          timeDuration: Number(values.timeDuration),
-          minsPerSet: Number(values.minsPerSet),
-          startTime: values.startTime,
-          winningDecider: values.winningDecider,
-        },
-      };
-      console.log("testing timeout", payload);
+      if (submitting.current) return;
+      if (!startedSession.current && !selectedPitch) {
+        setPitchError("Choose a pitch before creating your session.");
+        return;
+      }
+      submitting.current = true;
       setLoading(true);
-      dispatch(createSession(payload))
-        .unwrap()
-        .then((response) => {
-          setLoading(false);
-          console.log("responseee", response);
-          Toast.show({
-            type: "success",
-            props: {
-              title: "Success",
-              message: response.message || "Session created successfully",
+      try {
+        if (!startedSession.current && selectedPitch) {
+          const started = await dispatch(
+            startSession({ locationId: selectedPitch.id }),
+          ).unwrap();
+          if (!started?._id)
+            throw new Error("The server did not return a session ID.");
+          // Reuse this ID if completing the session fails and the user retries.
+          startedSession.current = started._id;
+          setPitchLocked(true);
+        }
+        const response = await dispatch(
+          createSession({
+            sessionId: startedSession.current!,
+            data: {
+              setNumber: Number(values.setNumber),
+              playersPerTeam: Number(values.playersPerTeam),
+              timeDuration: Number(values.timeDuration),
+              minsPerSet: Number(values.minsPerSet),
+              startTime: values.startTime,
+              winningDecider: values.winningDecider,
             },
-          });
-
-          router.replace({
-            pathname: "/joinsession",
-            params: {
-              sessionId: response._id,
-            },
-          });
-        })
-        .catch((err) => {
-          setLoading(false);
-          const message =
-            err?.msg?.message || err?.msg || "Failed to create session";
-          Toast.show({
-            type: "error",
-            props: {
-              title: "Error",
-              message,
-            },
-          });
+          }),
+        ).unwrap();
+        Toast.show({
+          type: "success",
+          props: {
+            title: "Success",
+            message: response.message || "Session created successfully",
+          },
         });
+        router.replace({
+          pathname: "/joinsession",
+          params: { sessionId: response._id || startedSession.current! },
+        });
+      } catch (err: any) {
+        Toast.show({
+          type: "error",
+          props: {
+            title: "Error",
+            message:
+              err?.msg?.message ||
+              err?.msg ||
+              err?.message ||
+              "Failed to create session",
+          },
+        });
+      } finally {
+        submitting.current = false;
+        setLoading(false);
+      }
     },
   });
 
@@ -252,6 +287,34 @@ export default function NewSession() {
               Team Names Will Be Assigned Randomly
             </ThemedText>
           </View>
+
+          <SectionCard title="Session Pitch">
+            {pitchLocked ? (
+              <View>
+                <ThemedText>
+                  {selectedPitch?.name || "Pitch linked to this session"}
+                </ThemedText>
+                {!!selectedPitch?.address && (
+                  <ThemedText className="mt-1 text-xs">
+                    {selectedPitch.address}
+                  </ThemedText>
+                )}
+              </View>
+            ) : (
+              <SessionPitchPicker
+                value={selectedPitch}
+                onChange={(pitch) => {
+                  setSelectedPitch(pitch);
+                  setPitchError("");
+                }}
+              />
+            )}
+            {!!pitchError && (
+              <Text accessibilityRole="alert" className="text-xs text-red-600">
+                {pitchError}
+              </Text>
+            )}
+          </SectionCard>
 
           <SectionCard title="Session Details">
             <View>
