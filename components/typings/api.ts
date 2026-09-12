@@ -149,3 +149,7 @@ export interface CreateTournamentTeamPayload {
   captainId: string;
   playerIds: string[];
 }
+
+export interface SearchRegisteredLocationParams {
+  name: string;
+}

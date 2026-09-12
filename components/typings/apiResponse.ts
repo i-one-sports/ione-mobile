@@ -700,3 +700,15 @@ export interface SessionSet {
   createdAt: string;
   updatedAt: string;
 }
+
+export interface RegisteredLocation {
+  _id: string;
+  name: string;
+  // ...
+}
+
+export interface RegisteredLocationResponse {
+  exact: boolean;
+  cached: boolean;
+  results: RegisteredLocation[];
+}

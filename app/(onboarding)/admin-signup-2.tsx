@@ -166,12 +166,7 @@ export default function AdminSignup2() {
             };
             dispatch(registerOwner(payload))
               .unwrap()
-              .then((res) => {
-                Toast.show({
-                  type: "success",
-                  text1: "Account created!",
-                  text2: res.message,
-                });
+              .then(() => {
                 router.replace("/(onboarding)/verify-email");
               })
               .catch((err) => {

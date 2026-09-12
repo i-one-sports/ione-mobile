@@ -47,14 +47,6 @@ export default function SignIn() {
     setLoading(true);
     dispatch(login(values))
       .unwrap()
-      .then((response) => {
-        Toast.show({
-          type: "success",
-          text1: response.message || "Login successful",
-        });
-        // Keep loading=true — AppNavigator reads role from getUser() and routes to the
-        // correct dashboard. This component unmounts on navigation; no need to reset.
-      })
       .catch((err) => {
         setLoading(false);
         const message = err?.msg?.message || err?.msg || "Login failed";

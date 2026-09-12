@@ -103,12 +103,6 @@ export default function VerifyEmail() {
       ).unwrap();
 
       startCountdown();
-
-      Toast.show({
-        type: "success",
-        text1: "Verification code sent",
-        text2: "Please check your email for the verification code",
-      });
     } catch (err: any) {
       Toast.show({
         type: "error",

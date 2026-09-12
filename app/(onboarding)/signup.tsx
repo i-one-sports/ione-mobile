@@ -156,12 +156,7 @@ export default function SignUp() {
       } as any),
     )
       .unwrap()
-      .then((response) => {
-        Toast.show({
-          type: "success",
-          text1: "Success",
-          text2: response.message || "Account created successfully",
-        });
+      .then(() => {
         router.push("/(onboarding)/verify-email");
       })
       .catch((err) => {

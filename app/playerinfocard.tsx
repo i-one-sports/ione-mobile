@@ -49,9 +49,7 @@ export default function PlayerInfoCard({ name, paymentStatus, index }: Props) {
             </Text>
           </View>
         </View>
-        <ThemedText className="text-[15px] font-[500] text-black">
-          {name}
-        </ThemedText>
+        <Text className="text-[15px] font-[500]">{name}</Text>
       </View>
 
       {paymentStatus && paymentStatus !== "NOT_REQUIRED" && (

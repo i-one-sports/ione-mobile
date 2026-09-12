@@ -219,11 +219,6 @@ export default function ProfileScreen() {
               SecureStore.deleteItemAsync("i-one").catch(() => {});
               SecureStore.deleteItemAsync("user-data").catch(() => {});
               persistor.purge().catch(() => {});
-              Toast.show({
-                type: "success",
-                text1: "Logged out",
-                text2: "See you soon!",
-              });
             } catch {
               setIsLoggingOut(false);
               Toast.show({

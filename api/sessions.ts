@@ -2,6 +2,7 @@ import { createAsyncThunk } from "@reduxjs/toolkit";
 import apiCall from "./apiCall";
 import {
   AsyncThunkConfig,
+  SearchRegisteredLocationParams,
   sessionPayload,
   StartSessionRequest,
 } from "@/components/typings/api";
@@ -10,6 +11,7 @@ import {
   SessionByDateResponse,
   SessionByIdResponse,
   SessionSet,
+  RegisteredLocationResponse,
 } from "@/components/typings/apiResponse";
 import axiosInstance from "./axios";
 
@@ -20,6 +22,17 @@ export const nearBy = createAsyncThunk<any[], sessionPayload, AsyncThunkConfig>(
       axiosInstance.get("/i-one/sessions/nearby-sessions", { params: payload }),
       thunkAPI,
     ),
+);
+
+export const searchRegisteredLocation = createAsyncThunk<
+  RegisteredLocationResponse,
+  SearchRegisteredLocationParams,
+  AsyncThunkConfig
+>("/searchRegisteredLocation", async ({ name }, thunkAPI) =>
+  apiCall(
+    axiosInstance.get("/i-one/location/search", { params: { name } }),
+    thunkAPI,
+  ),
 );
 
 export const nearByLocation = createAsyncThunk<

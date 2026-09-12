@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from "react";
-import AdminNotificationIcon from "@/assets/svg/AdminNotificationIcon";
 import { ThemedText } from "@/components/ThemedText";
 import { SettingsHeader } from "@/components/admin/settings/SettingsHeader";
 import { SettingsRow } from "@/components/admin/settings/SettingsRow";
@@ -26,6 +25,7 @@ import InputField from "@/components/InputField";
 import { getUser, updateProfile, uploadAvatar } from "@/api/authThunks";
 import { buildProfileUpdatePayload } from "@/utils/profileUpdate";
 import CustomButton from "@/components/ui/CustomButton";
+import NotificationIcon from "@/assets/svg/NotificationIcon";
 
 export default function AdminSettingsScreen() {
   const { colorScheme } = useColorScheme();
@@ -34,7 +34,6 @@ export default function AdminSettingsScreen() {
   const dispatch = useAppDispatch();
   const insets = useSafeAreaInsets();
 
-  const { location } = useAppSelector((state) => state.ownerDashboard);
   const { user } = useAppSelector((state) => state.auth);
 
   const [isEditing, setIsEditing] = useState(false);
@@ -166,11 +165,6 @@ export default function AdminSettingsScreen() {
     }
   };
 
-  //   const openHours =
-  //     location?.openingHour && location?.closingHour
-  //       ? `${location.openingHour} – ${location.closingHour}`
-  //       : "8am – 10pm";
-
   const handleLogout = () => {
     Alert.alert(
       "Logout",
@@ -187,11 +181,6 @@ export default function AdminSettingsScreen() {
               SecureStore.deleteItemAsync("i-one").catch(() => {});
               SecureStore.deleteItemAsync("user-data").catch(() => {});
               persistor.purge().catch(() => {});
-              Toast.show({
-                type: "success",
-                text1: "Logged out",
-                text2: "See you soon!",
-              });
             } catch {
               Toast.show({
                 type: "error",
@@ -278,10 +267,7 @@ export default function AdminSettingsScreen() {
                 justifyContent: "center",
               }}
             >
-              <AdminNotificationIcon
-                color={isDark ? "#FFFFFF" : "#2D264B"}
-                dotColor="#03EA89"
-              />
+              <NotificationIcon color={isDark ? "#FFFFFF" : "#2D264B"} />
             </TouchableOpacity>
           </View>
         </View>
@@ -339,15 +325,6 @@ export default function AdminSettingsScreen() {
             icon="schedule"
             iconColor="#00FF94"
             label="Open Hours"
-            // rightElement={
-            //   <ThemedText
-            //     style={{ fontFamily: "Poppins_400Regular", fontSize: 13 }}
-            //     lightColor="#999"
-            //     darkColor="#666"
-            //   >
-            //     {openHours}
-            //   </ThemedText>
-            // }
             onPress={() => router.push("/admin/open-hours")}
           />
           <SettingsRow

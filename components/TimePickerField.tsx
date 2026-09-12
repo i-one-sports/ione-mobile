@@ -5,6 +5,7 @@ import InputField from "@/components/InputField";
 import DropdownModal from "@/components/ui/DropdownModal";
 import { ThemedText } from "./ThemedText";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useColorScheme } from "nativewind";
 
 const HOURS = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, "0"));
 
@@ -28,6 +29,8 @@ export default function TimePickerField({
   onChange,
 }: TimePickerFieldProps) {
   const insets = useSafeAreaInsets();
+  const { colorScheme } = useColorScheme();
+  const isDark = colorScheme === "dark";
   const [visible, setVisible] = useState(false);
   const [hourModalVisible, setHourModalVisible] = useState(false);
   const [minuteModalVisible, setMinuteModalVisible] = useState(false);
@@ -76,7 +79,7 @@ export default function TimePickerField({
         >
           <View
             style={{
-              backgroundColor: "#fff",
+              backgroundColor: isDark ? "#111" : "#fff",
               padding: 20,
               borderTopLeftRadius: 20,
               borderTopRightRadius: 20,
@@ -102,7 +105,11 @@ export default function TimePickerField({
                       style={{
                         padding: 12,
                         backgroundColor:
-                          selectedHour === h ? "#eee" : "transparent",
+                          selectedHour === h
+                            ? isDark
+                              ? "#1a1a1a"
+                              : "#eee"
+                            : "transparent",
                         borderRadius: 8,
                       }}
                     >
@@ -132,7 +139,11 @@ export default function TimePickerField({
                       style={{
                         padding: 12,
                         backgroundColor:
-                          selectedMinute === m ? "#eee" : "transparent",
+                          selectedMinute === m
+                            ? isDark
+                              ? "#1a1a1a"
+                              : "#eee"
+                            : "transparent",
                         borderRadius: 8,
                       }}
                     >

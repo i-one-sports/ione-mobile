@@ -11,8 +11,10 @@ import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import { useColorScheme } from "nativewind";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
+  Dimensions,
+  Modal,
   Pressable,
   ScrollView,
   Text,
@@ -54,6 +56,11 @@ export default function AdminStatisticsScreen() {
   const [openUserDropdown, setOpenUserDropdown] = useState(false);
   const [hideRevenue, setHideRevenue] = useState(true);
   const [selectedMonth, setSelectedMonth] = useState<number | null>(null);
+  const [monthBtnY, setMonthBtnY] = useState(0);
+  const [monthBtnX, setMonthBtnX] = useState(0);
+  const [monthBtnWidth, setMonthBtnWidth] = useState(0);
+  const monthBtnRef = useRef<View>(null);
+  const screenWidth = Dimensions.get("window").width;
 
   const dispatch = useAppDispatch();
   const { location, usersChart, revenueStats, loadingUsersChart } =
@@ -117,7 +124,7 @@ export default function AdminStatisticsScreen() {
               {/* Period selector */}
               <View style={{ position: "relative" }}>
                 <TouchableOpacity
-                  onPress={() => setOpenDropdown(!openDropdown)}
+                  onPress={() => setOpenDropdown(true)}
                   style={{
                     flexDirection: "row",
                     alignItems: "center",
@@ -138,72 +145,80 @@ export default function AdminStatisticsScreen() {
                     {PERIOD_LABELS[period]}
                   </Text>
                   <Ionicons
-                    name={
-                      openDropdown
-                        ? "chevron-up-outline"
-                        : "chevron-down-outline"
-                    }
+                    name={"chevron-down-outline"}
                     size={13}
                     color="#fff"
                   />
                 </TouchableOpacity>
 
-                {openDropdown && (
-                  <View
+                <Modal
+                  visible={openDropdown}
+                  transparent
+                  animationType="fade"
+                  onRequestClose={() => setOpenDropdown(false)}
+                >
+                  <Pressable
                     style={{
-                      position: "absolute",
-                      top: 44,
-                      left: 0,
-                      zIndex: 20,
-                      backgroundColor: dropdownBg,
-                      borderRadius: 12,
-                      borderWidth: 1,
-                      borderColor: dropdownBorder,
-                      minWidth: 140,
-                      shadowColor: "#000",
-                      shadowOffset: { width: 0, height: 4 },
-                      shadowOpacity: 0.15,
-                      shadowRadius: 8,
-                      elevation: 8,
-                      //   overflow: "hidden",
+                      flex: 1,
+                      backgroundColor: "rgba(0,0,0,0.4)",
+                      justifyContent: "flex-start",
+                      paddingTop: 130,
                     }}
+                    onPress={() => setOpenDropdown(false)}
                   >
-                    {Object.entries(PERIOD_LABELS).map(
-                      ([key, label], index, arr) => (
-                        <TouchableOpacity
-                          key={key}
-                          onPress={() => {
-                            setPeriod(key as typeof period);
-                            setOpenDropdown(false);
-                          }}
-                          style={{
-                            paddingHorizontal: 16,
-                            paddingVertical: 12,
-                            borderBottomWidth: index < arr.length - 1 ? 1 : 0,
-                            borderBottomColor: dropdownBorder,
-                            backgroundColor:
-                              period === key
-                                ? isDark
-                                  ? "#0D2B1F"
-                                  : "#EDFFF8"
-                                : "transparent",
-                          }}
-                        >
-                          <ThemedText
-                            style={{
-                              fontSize: 13,
-                              fontWeight: period === key ? "600" : "400",
+                    <Pressable
+                      style={{
+                        backgroundColor: dropdownBg,
+                        borderRadius: 12,
+                        borderWidth: 1,
+                        borderColor: dropdownBorder,
+                        width: 180,
+                        marginLeft: 24,
+                        overflow: "hidden",
+                        shadowColor: "#000",
+                        shadowOffset: { width: 0, height: 4 },
+                        shadowOpacity: 0.15,
+                        shadowRadius: 8,
+                        elevation: 8,
+                      }}
+                    >
+                      {Object.entries(PERIOD_LABELS).map(
+                        ([key, label], index, arr) => (
+                          <TouchableOpacity
+                            key={key}
+                            onPress={() => {
+                              setPeriod(key as typeof period);
+                              setOpenDropdown(false);
                             }}
-                            lightColor={period === key ? accent : "#333"}
-                            darkColor={period === key ? accent : "#ccc"}
+                            style={{
+                              paddingHorizontal: 16,
+                              paddingVertical: 12,
+                              borderBottomWidth: index < arr.length - 1 ? 1 : 0,
+                              borderBottomColor: dropdownBorder,
+                              backgroundColor:
+                                period === key
+                                  ? isDark
+                                    ? "#0D2B1F"
+                                    : "#EDFFF8"
+                                  : "transparent",
+                            }}
                           >
-                            {label}
-                          </ThemedText>
-                        </TouchableOpacity>
-                      ),
-                    )}
-                  </View>
-                )}
+                            <ThemedText
+                              style={{
+                                fontSize: 13,
+                                fontWeight: period === key ? "600" : "400",
+                              }}
+                              lightColor={period === key ? accent : "#333"}
+                              darkColor={period === key ? accent : "#ccc"}
+                            >
+                              {label}
+                            </ThemedText>
+                          </TouchableOpacity>
+                        ),
+                      )}
+                    </Pressable>
+                  </Pressable>
+                </Modal>
               </View>
 
               {/* Settings shortcut */}
@@ -240,7 +255,6 @@ export default function AdminStatisticsScreen() {
               >
                 <Text
                   style={{
-                    fontFamily: "PlayfairDisplay_700Bold",
                     color: "#fff",
                     fontSize: 38,
                     letterSpacing: -1,
@@ -364,7 +378,15 @@ export default function AdminStatisticsScreen() {
             {/* Month selector */}
             <View style={{ position: "relative" }}>
               <TouchableOpacity
-                onPress={() => setOpenUserDropdown(!openUserDropdown)}
+                ref={monthBtnRef}
+                onPress={() => {
+                  monthBtnRef.current?.measureInWindow((x, y, width) => {
+                    setMonthBtnX(x);
+                    setMonthBtnY(y);
+                    setMonthBtnWidth(width);
+                  });
+                  setOpenUserDropdown(true);
+                }}
                 style={{
                   flexDirection: "row",
                   alignItems: "center",
@@ -379,51 +401,52 @@ export default function AdminStatisticsScreen() {
                   {selectedMonth ? MONTHS[selectedMonth - 1] : "All"}
                 </ThemedText>
                 <Ionicons
-                  name={
-                    openUserDropdown
-                      ? "chevron-up-outline"
-                      : "chevron-down-outline"
-                  }
+                  name={"chevron-down-outline"}
                   size={12}
                   color={isDark ? "#aaa" : "#555"}
                 />
               </TouchableOpacity>
 
-              {openUserDropdown && usersChart?.data && (
-                <View
-                  style={{
-                    position: "absolute",
-                    top: 38,
-                    right: 0,
-                    zIndex: 20,
-                    backgroundColor: dropdownBg,
-                    borderRadius: 12,
-                    borderWidth: 1,
-                    borderColor: dropdownBorder,
-                    minWidth: 110,
-                    shadowColor: "#000",
-                    shadowOffset: { width: 0, height: 4 },
-                    shadowOpacity: 0.12,
-                    shadowRadius: 8,
-                    elevation: 8,
-                    overflow: "hidden",
-                  }}
+              <Modal
+                visible={openUserDropdown}
+                transparent
+                animationType="fade"
+                onRequestClose={() => setOpenUserDropdown(false)}
+              >
+                <Pressable
+                  style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.4)" }}
+                  onPress={() => setOpenUserDropdown(false)}
                 >
-                  {usersChart.data.map((item, index) => (
+                  <View
+                    style={{
+                      position: "absolute",
+                      top: monthBtnY + 60,
+                      right: screenWidth - (monthBtnX + monthBtnWidth),
+                      backgroundColor: dropdownBg,
+                      borderRadius: 12,
+                      borderWidth: 1,
+                      borderColor: dropdownBorder,
+                      width: 130,
+                      overflow: "hidden",
+                      shadowColor: "#000",
+                      shadowOffset: { width: 0, height: 4 },
+                      shadowOpacity: 0.12,
+                      shadowRadius: 8,
+                      elevation: 8,
+                    }}
+                  >
                     <TouchableOpacity
-                      key={item.month}
                       onPress={() => {
-                        setSelectedMonth(item.month);
+                        setSelectedMonth(null);
                         setOpenUserDropdown(false);
                       }}
                       style={{
                         paddingHorizontal: 16,
                         paddingVertical: 10,
-                        borderBottomWidth:
-                          index < usersChart.data.length - 1 ? 1 : 0,
+                        borderBottomWidth: 1,
                         borderBottomColor: dropdownBorder,
                         backgroundColor:
-                          selectedMonth === item.month
+                          selectedMonth === null
                             ? isDark
                               ? "#0D2B1F"
                               : "#EDFFF8"
@@ -432,19 +455,49 @@ export default function AdminStatisticsScreen() {
                     >
                       <ThemedText
                         style={{ fontSize: 13 }}
-                        lightColor={
-                          selectedMonth === item.month ? accent : "#333"
-                        }
-                        darkColor={
-                          selectedMonth === item.month ? accent : "#ccc"
-                        }
+                        lightColor={selectedMonth === null ? accent : "#333"}
+                        darkColor={selectedMonth === null ? accent : "#ccc"}
                       >
-                        {MONTHS[item.month - 1]}
+                        All
                       </ThemedText>
                     </TouchableOpacity>
-                  ))}
-                </View>
-              )}
+                    {usersChart?.data.map((item, index) => (
+                      <TouchableOpacity
+                        key={item.month}
+                        onPress={() => {
+                          setSelectedMonth(item.month);
+                          setOpenUserDropdown(false);
+                        }}
+                        style={{
+                          paddingHorizontal: 16,
+                          paddingVertical: 10,
+                          borderBottomWidth:
+                            index < usersChart.data.length - 1 ? 1 : 0,
+                          borderBottomColor: dropdownBorder,
+                          backgroundColor:
+                            selectedMonth === item.month
+                              ? isDark
+                                ? "#0D2B1F"
+                                : "#EDFFF8"
+                              : "transparent",
+                        }}
+                      >
+                        <ThemedText
+                          style={{ fontSize: 13 }}
+                          lightColor={
+                            selectedMonth === item.month ? accent : "#333"
+                          }
+                          darkColor={
+                            selectedMonth === item.month ? accent : "#ccc"
+                          }
+                        >
+                          {MONTHS[item.month - 1]}
+                        </ThemedText>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </Pressable>
+              </Modal>
             </View>
           </View>
 
