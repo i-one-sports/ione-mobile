@@ -6,18 +6,14 @@ import {
   ViewToken,
   ImageBackground,
   Pressable,
-  Modal,
-  Text,
-  TouchableOpacity,
 } from "react-native";
 import { ThemedText } from "@/components/ThemedText";
 import { EvilIcons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
 
 const { width, height } = Dimensions.get("window");
 const CARD_WIDTH = width - 48; // accounting for padding
 
-interface PitchData {
+export interface PitchData {
   id: string;
   name: string;
   location: string;
@@ -27,13 +23,12 @@ interface PitchData {
 
 interface PitchCarouselProps {
   data: PitchData[];
+  onSelect?: (item: PitchData) => void;
 }
 
-const PitchCarousel: React.FC<PitchCarouselProps> = ({ data }) => {
+const PitchCarousel: React.FC<PitchCarouselProps> = ({ data, onSelect }) => {
   const [activeIndex, setActiveIndex] = useState(0);
-  const [selectedItem, setSelectedItem] = useState<PitchData | null>(null);
   const flatListRef = useRef<FlatList>(null);
-  const router = useRouter();
 
   const onViewableItemsChanged = useRef(
     ({ viewableItems }: { viewableItems: ViewToken[] }) => {
@@ -46,28 +41,9 @@ const PitchCarousel: React.FC<PitchCarouselProps> = ({ data }) => {
   const viewabilityConfig = useRef({
     itemVisiblePercentThreshold: 50,
   }).current;
-  const handleStartSession = (pitch: PitchData) => {
-    router.push({
-      pathname: "/screens/newsession",
-      params: {
-        pitchId: pitch.id,
-        pitchName: pitch.name,
-        pitchAddress: pitch.location,
-      },
-    });
-  };
-
-  const handleCreateTournaments = (locationId: string) => {
-    router.push({
-      pathname: "/screens/tournamentform",
-      params: {
-        locationId,
-      },
-    });
-  };
 
   const handlePress = (item: PitchData) => {
-    setSelectedItem(item);
+    onSelect?.(item);
   };
 
   const renderItem = ({ item }: { item: PitchData }) => (
@@ -137,7 +113,7 @@ const PitchCarousel: React.FC<PitchCarouselProps> = ({ data }) => {
       />
 
       {/* Indicators */}
-      <View className="flex-row justify-center items-center mt-4 gap-2">
+      <View className="flex-row items-center mt-4 justify-between">
         {data.map((_, index) => (
           <View
             key={index}
@@ -149,53 +125,6 @@ const PitchCarousel: React.FC<PitchCarouselProps> = ({ data }) => {
           />
         ))}
       </View>
-      <Modal
-        visible={!!selectedItem}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setSelectedItem(null)}
-      >
-        <Pressable
-          className="flex-1 bg-black/40 justify-center px-8"
-          onPress={() => setSelectedItem(null)}
-        >
-          <Pressable
-            className="bg-white dark:bg-[#1a1a1a] rounded-2xl p-6"
-            onPress={() => {}}
-          >
-            <ThemedText className="text-lg font-bold mb-1">
-              {selectedItem?.name}
-            </ThemedText>
-            <ThemedText className="text-sm mb-5 text-gray-500 dark:text-gray-400">
-              What would you like to do?
-            </ThemedText>
-            <TouchableOpacity
-              onPress={() => {
-                const item = selectedItem;
-                setSelectedItem(null);
-                if (item) handleStartSession(item);
-              }}
-              className="bg-[#67F095] rounded-xl py-3.5 items-center mb-2.5"
-            >
-              <Text className="text-[#fff] text-[15px] font-semibold">
-                Create Session
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={() => {
-                const item = selectedItem;
-                setSelectedItem(null);
-                if (item) handleCreateTournaments(item.id);
-              }}
-              className="rounded-xl py-3.5 items-center border border-[#e5e5e5] dark:border-[#67F095]"
-            >
-              <ThemedText className="text-[15px] font-semibold">
-                Create Tournament
-              </ThemedText>
-            </TouchableOpacity>
-          </Pressable>
-        </Pressable>
-      </Modal>
     </View>
   );
 };

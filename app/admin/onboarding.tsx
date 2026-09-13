@@ -593,7 +593,7 @@ export default function AdminOnboarding() {
             </ThemedText>
 
             <SingleImageZone
-              label="ID Front Image"
+              label="Front of ID"
               sublabel="Upload a clear photo of the front of your ID"
               previewUri={frontPreview}
               fileName={frontFile?.name ?? null}
@@ -610,7 +610,7 @@ export default function AdminOnboarding() {
               accent={accent}
             />
             <SingleImageZone
-              label="ID Back Image"
+              label="Back of ID"
               sublabel="Upload a clear photo of the back of your ID"
               previewUri={backPreview}
               fileName={backFile?.name ?? null}

@@ -1,5 +1,4 @@
 import { getLocation, updateOpenHours } from "@/api/ownerDashboardThunk";
-import AdminNotificationIcon from "@/assets/svg/AdminNotificationIcon";
 import { ThemedText } from "@/components/ThemedText";
 import TimePickerField from "@/components/TimePickerField";
 import Loader from "@/components/loader";
@@ -23,19 +22,19 @@ export default function AdminOpenHoursScreen() {
 
   const [openingHour, setOpeningHour] = useState("");
   const [closingHour, setClosingHour] = useState("");
-  const [initialized, setInitialized] = useState(false);
+  //   const [initialized, setInitialized] = useState(false);
 
   useEffect(() => {
     dispatch(getLocation());
   }, [dispatch]);
 
   useEffect(() => {
-    if (location && !initialized) {
+    if (location) {
       setOpeningHour(location.openingHour || "");
       setClosingHour(location.closingHour || "");
-      setInitialized(true);
+      //   setInitialized(true);
     }
-  }, [location, initialized]);
+  }, [location]);
 
   const handleUpdate = async () => {
     if (!location?._id) return;
@@ -50,7 +49,7 @@ export default function AdminOpenHoursScreen() {
     }
 
     try {
-      const res = await dispatch(
+      await dispatch(
         updateOpenHours({
           locationId: location._id,
           openingHour,
@@ -58,11 +57,6 @@ export default function AdminOpenHoursScreen() {
         }),
       ).unwrap();
 
-      Toast.show({
-        type: "success",
-        text1: "Success",
-        text2: res.message || "Opening hours updated successfully",
-      });
       router.back();
     } catch (err: any) {
       Toast.show({
@@ -73,7 +67,7 @@ export default function AdminOpenHoursScreen() {
     }
   };
 
-  const isLoading = loadingLocation && !initialized;
+  const isLoading = loadingLocation;
 
   const screenBg = isDark ? "#000" : "#FAFAFA";
 
@@ -99,7 +93,7 @@ export default function AdminOpenHoursScreen() {
             />
           </TouchableOpacity>
           <ThemedText style={{ fontSize: 17, fontWeight: "700" }}>
-            Bank Accounts
+            Open Hours
           </ThemedText>
         </View>
 

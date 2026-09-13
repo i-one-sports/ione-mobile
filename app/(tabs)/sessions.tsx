@@ -34,7 +34,7 @@ const TABS: SegmentedTab<SessionTab>[] = [
   { key: "all", label: "All" },
   { key: "friendlies", label: "Friendly" },
   { key: "tournaments", label: "Tournament" },
-  { key: "sets", label: "Sets" },
+  //   { key: "sets", label: "Sets" },
 ];
 
 export default function SessionsScreen({
@@ -135,8 +135,8 @@ export default function SessionsScreen({
       list = list.filter((m) => m.matchType.toLowerCase() === "friendly");
     else if (activeTab === "tournaments")
       list = list.filter((m) => m.matchType.toLowerCase() === "tournament");
-    else if (activeTab === "sets")
-      list = list.filter((m) => m.matchType.toLowerCase() === "set");
+    // else if (activeTab === "sets")
+    //   list = list.filter((m) => m.matchType.toLowerCase() === "set");
     if (selectedDate) {
       list = list.filter((m) => {
         if (!m.sessionData?.startTime) return true;
@@ -155,7 +155,7 @@ export default function SessionsScreen({
     all: "",
     friendlies: "friendly",
     tournaments: "tournament",
-    sets: "set",
+    // sets: "set",
   };
 
   const tabs = useMemo(

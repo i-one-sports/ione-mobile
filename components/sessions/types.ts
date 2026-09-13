@@ -53,7 +53,7 @@ export type DateItem = {
 
 export type ExpandedState = Record<string, boolean>;
 
-export type SessionTab = "all" | "tournaments" | "friendlies" | "sets";
+export type SessionTab = "all" | "tournaments" | "friendlies";
 
 export interface ScheduleProps {
   initialTab?: SessionTab;
@@ -64,5 +64,5 @@ export const TAB_ROUTE_MAP: Record<SessionTab, string | null> = {
   all: null,
   tournaments: "screens/newsession",
   friendlies: "screens/friendly",
-  sets: "screens/set",
+  //   sets: "screens/set",
 };

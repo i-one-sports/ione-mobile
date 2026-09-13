@@ -17,10 +17,10 @@ import { useAppDispatch, useAppSelector } from "@/redux/store";
 import { formatPitchCondition } from "@/utils/formatPitchCondition";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { ImageBackground } from "expo-image";
-import { useRouter } from "expo-router";
+import { useFocusEffect, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useColorScheme } from "nativewind";
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   Modal,
   ScrollView,
@@ -30,6 +30,7 @@ import {
   AppState,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import NotificationIcon from "@/assets/svg/NotificationIcon";
 
 type ConditionIconConfig = {
   library: "Ionicons" | "MaterialIcons";
@@ -87,17 +88,19 @@ export default function AdminHomeScreen() {
 
   useEffect(() => {
     dispatch(getLocation());
-    if (location?._id) {
+    dispatch(getVerification());
+  }, [dispatch]);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (!location?._id) return;
+
       dispatch(getLocationDashboard(location._id));
       dispatch(getSummary(location._id));
       dispatch(getLastMatches(location._id));
       dispatch(getUpcomingSessions(location._id));
-    }
-  }, [dispatch, location?._id, location?.status]);
-
-  useEffect(() => {
-    dispatch(getVerification());
-  }, [dispatch]);
+    }, [dispatch, location?._id]),
+  );
 
   useEffect(() => {
     const needsRefresh =
@@ -195,8 +198,9 @@ export default function AdminHomeScreen() {
                     justifyContent: "center",
                   }}
                 >
-                  <AdminNotificationIcon />
+                  {/* <AdminNotificationIcon /> */ <NotificationIcon />}
                 </TouchableOpacity>
+
                 <TouchableOpacity
                   onPress={() => router.push("/admin/pitchcondition")}
                   style={{

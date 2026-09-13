@@ -92,18 +92,12 @@ export default function AdminPricingOptionScreen() {
     }
 
     try {
-      const res = await dispatch(
+      await dispatch(
         updatePricingOptions({
           locationId: location._id,
           ...payload,
         }),
       ).unwrap();
-
-      Toast.show({
-        type: "success",
-        text1: "Success",
-        text2: res.message || "Updated successfully",
-      });
 
       router.back();
     } catch (err: any) {

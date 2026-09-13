@@ -31,7 +31,6 @@ import { Ionicons } from "@expo/vector-icons";
 import { Toast } from "toastify-react-native";
 import PlayerInfoCard from "./playerinfocard";
 import { formatTime } from "@/utils/formatTime";
-import CustomButton from "@/components/ui/CustomButton";
 
 function buildFormationPositions(
   count: number,
@@ -432,102 +431,24 @@ export default function JoinSession() {
               )}
 
               {/* Action buttons — derived purely from server data */}
-              <View className="mx-auto mt-[45px]">
+              <View className="mx-auto mt-[40px]">
                 {loadingActiveSession &&
                 !activeSession ? null : session?.isFull && !isMember ? (
-                  <View className="flex w-[120px] items-center justify-center rounded-[5px] bg-gray-400 p-[10px]">
-                    <Text className="text-[10px] font-[400]">Session Full</Text>
+                  <View className="flex w-[120px] items-center justify-center rounded-[10px] bg-gray-400 h-[42px]">
+                    <Text className="text-[13px] font-[600]">Session Full</Text>
                   </View>
                 ) : session?.inProgress && !isMember ? (
-                  <View className="flex w-[120px] items-center justify-center rounded-[5px] bg-yellow-400 p-[10px]">
-                    <Text className="text-[10px] font-[400]">In Progress</Text>
+                  <View className="flex w-[150px] items-center justify-center rounded-[10px] bg-yellow-400 h-[42px]">
+                    <Text className="text-[13px] font-[600]">In Progress</Text>
                   </View>
                 ) : session?.finished && !isMember ? (
-                  <View className="flex w-[120px] items-center justify-center rounded-[5px] bg-gray-600 p-[10px]">
-                    <Text className="text-[10px] font-[400] text-white">
+                  <View className="flex w-[150px] items-center justify-center rounded-[10px] bg-gray-600 h-[42px]">
+                    <Text className="text-[13px] font-[600] text-white">
                       Match Ended
                     </Text>
                   </View>
                 ) : isMember ? (
-                  <View className="flex flex-col items-center gap-[8px]">
-                    {/* Assign sets */}
-                    <TouchableOpacity
-                      className="flex w-[120px] items-center justify-center rounded-[5px] bg-primary p-[10px]"
-                      onPress={() =>
-                        router.push({
-                          pathname: "/assigned",
-                          params: { session: JSON.stringify(session) },
-                        })
-                      }
-                    >
-                      <Text className="text-[10px] font-[400] text-white">
-                        View Sets
-                      </Text>
-                    </TouchableOpacity>
-
-                    {/* Reschedule — only the session captain, before match starts/ends */}
-                    {session?.captain === user?._id &&
-                      !session?.inProgress &&
-                      !session?.finished && (
-                        <TouchableOpacity
-                          className="flex w-[120px] items-center justify-center rounded-[5px] bg-primary p-[10px]"
-                          onPress={() =>
-                            router.push({
-                              pathname: "/reschedule-session",
-                              params: {
-                                sessionId,
-                                session: JSON.stringify(session),
-                              },
-                            })
-                          }
-                        >
-                          <Text className="text-[10px] font-[400] text-white">
-                            Reschedule
-                          </Text>
-                        </TouchableOpacity>
-                      )}
-
-                    {/* End match — only the session captain, while match is live */}
-                    {session?.captain === user?._id &&
-                      session?.inProgress &&
-                      !session?.finished && (
-                        <TouchableOpacity
-                          className="flex w-[120px] items-center justify-center rounded-[5px] bg-red-500 p-[10px]"
-                          onPress={handleEndSession}
-                          disabled={loadingAction}
-                        >
-                          {loadingAction ? (
-                            <ActivityIndicator size="small" color="#fff" />
-                          ) : (
-                            <Text className="text-[10px] font-[400] text-white">
-                              End Session
-                            </Text>
-                          )}
-                        </TouchableOpacity>
-                      )}
-
-                    {/* Pay Fee — only shown when server says payment is required and unpaid */}
-                    {showPayButton && (
-                      <TouchableOpacity
-                        className="flex w-[120px] items-center justify-center rounded-[5px] bg-black p-[10px]"
-                        onPress={() =>
-                          router.push({
-                            pathname: "/payment-screens/session-payment",
-                            params: {
-                              sessionId,
-                              locationName: session?.location?.name ?? "",
-                              startTime: session?.startTime ?? "",
-                              matchType: session?.matchType ?? "",
-                            },
-                          })
-                        }
-                      >
-                        <Text className="text-[10px] font-[600] text-primary">
-                          Pay Fee
-                        </Text>
-                      </TouchableOpacity>
-                    )}
-
+                  <View className="flex flex-col items-center gap-[12px]">
                     {/* Payment status badge */}
                     {paymentRequired && myPaymentStatus && (
                       <View
@@ -535,7 +456,6 @@ export default function JoinSession() {
                           flexDirection: "row",
                           alignItems: "center",
                           gap: 4,
-                          marginTop: 2,
                         }}
                       >
                         <View
@@ -549,7 +469,7 @@ export default function JoinSession() {
                         />
                         <Text
                           style={{
-                            fontSize: 10,
+                            fontSize: 13,
                             color: paymentStatusColor(myPaymentStatus),
                           }}
                         >
@@ -560,9 +480,97 @@ export default function JoinSession() {
                       </View>
                     )}
 
+                    {/* Pay Fee — only shown when server says payment is required and unpaid */}
+                    {showPayButton && (
+                      <TouchableOpacity
+                        className="flex items-center justify-center rounded-[10px] w-full h-14 bg-primary"
+                        onPress={() =>
+                          router.push({
+                            pathname: "/payment-screens/session-payment",
+                            params: {
+                              sessionId,
+                              locationName: session?.location?.name ?? "",
+                              startTime: session?.startTime ?? "",
+                              matchType: session?.matchType ?? "",
+                            },
+                          })
+                        }
+                      >
+                        <ThemedText
+                          darkColor="#6D717F"
+                          className="text-[13px] font-[600]"
+                        >
+                          Pay Fee
+                        </ThemedText>
+                      </TouchableOpacity>
+                    )}
+                    {/* Assign sets */}
+                    <View className="flex flex-row items-center gap-[8px]">
+                      <TouchableOpacity
+                        className="flex w-[150px] items-center justify-center rounded-[10px] bg-primary h-14"
+                        onPress={() =>
+                          router.push({
+                            pathname: "/assigned",
+                            params: { session: JSON.stringify(session) },
+                          })
+                        }
+                      >
+                        <ThemedText
+                          darkColor="#6D717F"
+                          className="text-[13px] font-[600]"
+                        >
+                          View Sets
+                        </ThemedText>
+                      </TouchableOpacity>
+
+                      {/* Reschedule — only the session captain, before match starts/ends */}
+                      {session?.captain === user?._id &&
+                        !session?.inProgress &&
+                        !session?.finished && (
+                          <TouchableOpacity
+                            className="flex w-[150px] items-center justify-center rounded-[10px] bg-primary h-14"
+                            onPress={() =>
+                              router.push({
+                                pathname: "/reschedule-session",
+                                params: {
+                                  sessionId,
+                                  session: JSON.stringify(session),
+                                },
+                              })
+                            }
+                          >
+                            <ThemedText
+                              darkColor="#6D717F"
+                              className="text-[13px] font-[600]"
+                            >
+                              Reschedule
+                            </ThemedText>
+                          </TouchableOpacity>
+                        )}
+                    </View>
+                    {/* End match — only the session captain, while match is live */}
+                    {session?.captain === user?._id &&
+                      session?.inProgress &&
+                      !session?.finished && (
+                        <TouchableOpacity
+                          className="flex w-[150px] items-center justify-center rounded-[10px] bg-red-500"
+                          onPress={handleEndSession}
+                          disabled={loadingAction}
+                        >
+                          {loadingAction ? (
+                            <ActivityIndicator size="small" color="#fff" />
+                          ) : (
+                            <Text className="text-[13px] font-[600] text-white">
+                              End Session
+                            </Text>
+                          )}
+                        </TouchableOpacity>
+                      )}
+
                     {/* Leave session — only before match starts */}
                     {!session?.inProgress && !session?.finished && (
                       <TouchableOpacity
+                        className="flex items-center justify-center rounded-[10px] w-full h-14 border-[#FF4444] border"
                         onPress={handleLeaveSession}
                         disabled={loadingLeave}
                         style={{ marginTop: 4 }}
@@ -570,8 +578,14 @@ export default function JoinSession() {
                         {loadingLeave ? (
                           <ActivityIndicator size="small" color="#FF4444" />
                         ) : (
-                          <Text style={{ fontSize: 10, color: "#FF4444" }}>
-                            Leave
+                          <Text
+                            style={{
+                              fontSize: 13,
+                              color: "#FF4444",
+                              fontWeight: "600",
+                            }}
+                          >
+                            Leave Session
                           </Text>
                         )}
                       </TouchableOpacity>
@@ -579,14 +593,14 @@ export default function JoinSession() {
                   </View>
                 ) : (
                   <TouchableOpacity
-                    className="flex w-[120px] items-center justify-center rounded-[5px] bg-primary p-[10px]"
+                    className="flex w-full items-center justify-center rounded-[10px] bg-primary h-14"
                     onPress={handleJoinSession}
                     disabled={loadingJoin}
                   >
                     {loadingJoin ? (
                       <ActivityIndicator size="small" color="#000" />
                     ) : (
-                      <Text className="text-[10px] font-[400]">
+                      <Text className="text-[13px] font-[600]">
                         Join session
                       </Text>
                     )}
