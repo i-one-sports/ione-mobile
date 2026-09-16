@@ -15,6 +15,7 @@ import {
   updateOpenHours,
   getLocationTeamStatus,
   getLocationTransactions,
+  updatePitchPhoto,
 } from "@/api/ownerDashboardThunk";
 import {
   ChangePasswordResponse,
@@ -35,6 +36,7 @@ import {
   PaymentDateGroup,
   SessionPaymentDetailsResponse,
   BillingPagination,
+  UpdatePitchPhotoResponse,
 } from "@/components/typings/apiResponse";
 import { createSlice } from "@reduxjs/toolkit";
 
@@ -55,6 +57,7 @@ interface State {
   sessionByDate: SessionByDateResponse[];
   sessionById: SessionByIdResponse | null;
   openingHours: UpdateOpenHoursResponse | null;
+  pitchPhotoData: UpdatePitchPhotoResponse | null;
   locationTransactions: PaymentDateGroup[];
   locationTeamStatus: SessionPaymentDetailsResponse | null;
   billingPagination: BillingPagination | null;
@@ -74,6 +77,7 @@ interface State {
   loadingSessionByDate: boolean;
   loadingSessionById: boolean;
   loadingOpenHours: boolean;
+  loadingPitchPhoto: boolean;
   loadingLocationTransactions: boolean;
   loadingLocationTeamStatus: boolean;
 
@@ -92,6 +96,7 @@ interface State {
   errorSessionByDate: string | null;
   errorSessionById: string | null;
   errorOpeningHours: string | null;
+  errorPitchPhoto: string | null;
   errorLocationTransactions: string | null;
   errorLocationTeamStatus: string | null;
 }
@@ -113,6 +118,7 @@ const initialState: State = {
   sessionByDate: [],
   sessionById: null,
   openingHours: null,
+  pitchPhotoData: null,
   locationTransactions: [],
   locationTeamStatus: null,
   billingPagination: null,
@@ -132,6 +138,7 @@ const initialState: State = {
   loadingSessionByDate: false,
   loadingSessionById: false,
   loadingOpenHours: false,
+  loadingPitchPhoto: false,
   loadingLocationTransactions: false,
   loadingLocationTeamStatus: false,
 
@@ -150,6 +157,7 @@ const initialState: State = {
   errorSessionByDate: null,
   errorSessionById: null,
   errorOpeningHours: null,
+  errorPitchPhoto: null,
   errorLocationTransactions: null,
   errorLocationTeamStatus: null,
 };
@@ -296,6 +304,21 @@ export const ownerDashboardSlice = createSlice({
       state.loadingPitchCondition = false;
       state.errorPitchCondition =
         action.error.message || "Failed to update pitch condition";
+    });
+
+    // update pitch photo
+    builder.addCase(updatePitchPhoto.pending, (state) => {
+      state.loadingPitchPhoto = true;
+      state.errorPitchPhoto = null;
+    });
+    builder.addCase(updatePitchPhoto.fulfilled, (state, { payload }) => {
+      state.pitchPhotoData = payload;
+      state.loadingPitchPhoto = false;
+    });
+    builder.addCase(updatePitchPhoto.rejected, (state, action) => {
+      state.loadingPitchPhoto = false;
+      state.errorPitchPhoto =
+        action.error.message || "Failed to update pitch photo";
     });
 
     // update opening hours

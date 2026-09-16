@@ -593,7 +593,7 @@ export default function JoinSession() {
                   </View>
                 ) : (
                   <TouchableOpacity
-                    className="flex w-full items-center justify-center rounded-[10px] bg-primary h-14"
+                    className="flex w-[150px] items-center justify-center rounded-[10px] bg-primary h-14"
                     onPress={handleJoinSession}
                     disabled={loadingJoin}
                   >
@@ -601,7 +601,7 @@ export default function JoinSession() {
                       <ActivityIndicator size="small" color="#000" />
                     ) : (
                       <Text className="text-[13px] font-[600]">
-                        Join session
+                        Join Session
                       </Text>
                     )}
                   </TouchableOpacity>

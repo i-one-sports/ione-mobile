@@ -333,6 +333,11 @@ export interface UpdatePitchConditionResponse {
   location: Location;
 }
 
+export interface UpdatePitchPhotoResponse {
+  message: string;
+  location: LocationResponse;
+}
+
 export interface ChangePasswordPayload {
   oldPassword: string;
   newPassword: string;

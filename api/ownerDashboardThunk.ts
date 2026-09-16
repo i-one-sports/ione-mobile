@@ -19,10 +19,12 @@ import {
   UpdateOpenHoursResponse,
   PaymentHistoryResponse,
   SessionPaymentDetailsResponse,
+  UpdatePitchPhotoResponse,
 } from "@/components/typings/apiResponse";
 import { createAsyncThunk } from "@reduxjs/toolkit";
+import { Platform } from "react-native";
 import apiCall from "./apiCall";
-import axiosInstance from "./axios";
+import axiosInstance, { uploadAxios } from "./axios";
 
 export const getLocation = createAsyncThunk<
   LocationResponse,
@@ -147,6 +149,32 @@ export const updatePitchCondition = createAsyncThunk<
     );
   },
 );
+
+export const updatePitchPhoto = createAsyncThunk<
+  UpdatePitchPhotoResponse,
+  { locationId: string; file: { uri: string; type: string; name: string } },
+  AsyncThunkConfig
+>("/location/pitch-photo", async ({ locationId, file }, thunkAPI) => {
+  const uri =
+    Platform.OS === "android" && !file.uri.startsWith("file://")
+      ? `file://${file.uri}`
+      : file.uri;
+
+  const formData = new FormData();
+  formData.append("file", {
+    uri,
+    name: file.name || `pitch_${Date.now()}.jpg`,
+    type: file.type || "image/jpeg",
+  } as any);
+
+  return apiCall(
+    uploadAxios.post(`/i-one/location/pitch/${locationId}`, formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+      transformRequest: (data) => data,
+    }),
+    thunkAPI,
+  );
+});
 
 export const changePassword = createAsyncThunk<
   ChangePasswordResponse,

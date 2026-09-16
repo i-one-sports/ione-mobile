@@ -6,7 +6,6 @@ import {
   getLocationDashboard,
 } from "@/api/ownerDashboardThunk";
 import { getUser, getVerification } from "@/api/authThunks";
-import AdminNotificationIcon from "@/assets/svg/AdminNotificationIcon";
 import LocationIcon from "@/assets/svg/LocationIcon";
 import ActionBanner from "@/components/ActionBanner";
 import MatchCardSkeleton from "@/components/MatchCardSkeleton";
@@ -75,7 +74,7 @@ export default function AdminHomeScreen() {
   const [modalVisible, setModalVisible] = useState(false);
 
   const {
-    // locationDashboard,
+    locationDashboard,
     dashboardSummary,
     loadingSummmary,
     location,
@@ -135,6 +134,8 @@ export default function AdminHomeScreen() {
     user?.ownerOnboardingStatus === "PENDING_VERIFICATION";
 
   const showAdminEmailVerificationBanner = !user?.emailVerified;
+
+  console.log("locationDashboard", locationDashboard);
 
   return (
     <View style={{ flex: 1, backgroundColor: isDark ? "#000" : "#fff" }}>

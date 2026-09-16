@@ -28,6 +28,7 @@ import { Toast } from "toastify-react-native";
 import CustomDatePicker from "@/components/modals/CustomDatePicker";
 import { Image } from "expo-image";
 import { Entypo, Ionicons } from "@expo/vector-icons";
+import { formatLocalDate } from "@/utils/formatLocalDate";
 
 const POSITIONS = ["GK", "DF", "MF", "ST"];
 
@@ -482,10 +483,7 @@ export default function SignUp() {
                 }
                 onChange={(date: Date) => {
                   setDatePickerVisible(false);
-                  setFieldValue(
-                    "dateOfBirth",
-                    date.toISOString().split("T")[0],
-                  );
+                  setFieldValue("dateOfBirth", formatLocalDate(date));
                 }}
                 onClose={() => setDatePickerVisible(false)}
                 maximumDate={new Date()}
