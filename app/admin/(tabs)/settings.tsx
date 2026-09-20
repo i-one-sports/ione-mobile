@@ -99,7 +99,7 @@ export default function AdminSettingsScreen() {
               await uploadSelectedImage(
                 result.assets[0].uri,
                 result.assets[0].fileName || "avatar.jpg",
-                result.assets[0].type || "image/jpeg",
+                result.assets[0].mimeType || "image/jpeg",
               );
             }
           },
@@ -180,7 +180,7 @@ export default function AdminSettingsScreen() {
               await uploadPitchPhoto(
                 result.assets[0].uri,
                 result.assets[0].fileName || "pitch.jpg",
-                result.assets[0].type || "image/jpeg",
+                result.assets[0].mimeType || "image/jpeg",
               );
             }
           },

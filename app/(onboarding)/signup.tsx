@@ -78,7 +78,7 @@ export default function SignUp() {
           uploadAvatar({
             file: {
               uri: asset.uri,
-              type: asset.type || "image/jpeg",
+              type: asset.mimeType || "image/jpeg",
               name: asset.fileName || "avatar.jpg",
             },
           }),

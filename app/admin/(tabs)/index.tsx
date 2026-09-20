@@ -74,7 +74,7 @@ export default function AdminHomeScreen() {
   const [modalVisible, setModalVisible] = useState(false);
 
   const {
-    locationDashboard,
+    // locationDashboard,
     dashboardSummary,
     loadingSummmary,
     location,
@@ -135,13 +135,15 @@ export default function AdminHomeScreen() {
 
   const showAdminEmailVerificationBanner = !user?.emailVerified;
 
-  console.log("locationDashboard", locationDashboard);
-
   return (
     <View style={{ flex: 1, backgroundColor: isDark ? "#000" : "#fff" }}>
       {/* Hero image background */}
       <ImageBackground
-        source={require("../../../assets/images/adminHeader.png")}
+        source={
+          dashboardSummary?.pitchPhoto
+            ? { uri: dashboardSummary.pitchPhoto }
+            : require("../../../assets/images/adminHeader.png")
+        }
       >
         <SafeAreaView edges={["top"]}>
           <StatusBar style="light" />
