@@ -310,7 +310,7 @@ export default function JoinSession() {
     const date = formatDate(session?.startTime);
     try {
       await Share.share({
-        message: `Join my football session at ${pitchName} on ${date} 🏟️\n${url}`,
+        message: `Join my football session at ${pitchName} on ${date} \n${url}`,
         url, // iOS only — shows a richer share card
       });
     } catch {
@@ -416,7 +416,7 @@ export default function JoinSession() {
                   style={{
                     flexDirection: "row",
                     alignItems: "center",
-                    gap: 10,
+                    gap: 20,
                   }}
                 >
                   <TouchableOpacity onPress={handleShare} activeOpacity={0.6}>
@@ -431,7 +431,7 @@ export default function JoinSession() {
                     onPress={() => setShowDetails(!showDetails)}
                     activeOpacity={0.6}
                   >
-                    <OpenIcon />
+                    <OpenIcon stroke={isDark ? "#fff" : "#111"} />
                   </TouchableOpacity>
                 </View>
               </View>
