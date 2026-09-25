@@ -11,6 +11,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.ione.mobile",
+      "associatedDomains": ["applinks:link.i-one-sports.com"],
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
@@ -26,7 +27,21 @@
         "android.permission.ACCESS_FINE_LOCATION"
       ],
       "package": "com.ione.mobile",
-      "versionCode": 7
+      "versionCode": 7,
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            {
+              "scheme": "https",
+              "host": "link.i-one-sports.com",
+              "pathPrefix": "/sessions"
+            }
+          ],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
+      ]
     },
     "web": {
       "bundler": "metro",

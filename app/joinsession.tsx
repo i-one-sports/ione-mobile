@@ -21,6 +21,7 @@ import {
   Image,
   Pressable,
   ScrollView,
+  Share,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -302,6 +303,21 @@ export default function JoinSession() {
     }
   };
 
+  const handleShare = async () => {
+    if (!sessionId) return;
+    const url = `https://link.i-one-sports.com/sessions/${sessionId}`;
+    const pitchName = session?.location?.name ?? "a pitch";
+    const date = formatDate(session?.startTime);
+    try {
+      await Share.share({
+        message: `Join my football session at ${pitchName} on ${date} 🏟️\n${url}`,
+        url, // iOS only — shows a richer share card
+      });
+    } catch {
+      // user dismissed the sheet — no-op
+    }
+  };
+
   if (!sessionId) {
     return (
       <SafeAreaScreen>
@@ -396,12 +412,28 @@ export default function JoinSession() {
                     "Session"}
                 </ThemedText>
 
-                <TouchableOpacity
-                  onPress={() => setShowDetails(!showDetails)}
-                  activeOpacity={0.6}
+                <View
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    gap: 10,
+                  }}
                 >
-                  <OpenIcon />
-                </TouchableOpacity>
+                  <TouchableOpacity onPress={handleShare} activeOpacity={0.6}>
+                    <Ionicons
+                      name="share-social-outline"
+                      size={22}
+                      color={isDark ? "#fff" : "#111"}
+                    />
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    onPress={() => setShowDetails(!showDetails)}
+                    activeOpacity={0.6}
+                  >
+                    <OpenIcon />
+                  </TouchableOpacity>
+                </View>
               </View>
 
               <View className="mt-[5px] flex w-full flex-col items-center justify-center gap-[2px]">
