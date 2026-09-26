@@ -6,7 +6,6 @@ import {
   getLocationDashboard,
 } from "@/api/ownerDashboardThunk";
 import { getUser, getVerification } from "@/api/authThunks";
-import AdminNotificationIcon from "@/assets/svg/AdminNotificationIcon";
 import LocationIcon from "@/assets/svg/LocationIcon";
 import ActionBanner from "@/components/ActionBanner";
 import MatchCardSkeleton from "@/components/MatchCardSkeleton";
@@ -140,7 +139,11 @@ export default function AdminHomeScreen() {
     <View style={{ flex: 1, backgroundColor: isDark ? "#000" : "#fff" }}>
       {/* Hero image background */}
       <ImageBackground
-        source={require("../../../assets/images/adminHeader.png")}
+        source={
+          dashboardSummary?.pitchPhoto
+            ? { uri: dashboardSummary.pitchPhoto }
+            : require("../../../assets/images/adminHeader.png")
+        }
       >
         <SafeAreaView edges={["top"]}>
           <StatusBar style="light" />

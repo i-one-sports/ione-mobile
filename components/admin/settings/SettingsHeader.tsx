@@ -1,7 +1,7 @@
 import { ThemedText } from "@/components/ThemedText";
 import { Image } from "expo-image";
 import React from "react";
-import { Text, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, Text, TouchableOpacity, View } from "react-native";
 import { SettingsHeaderProps as Props } from "./types";
 
 export function SettingsHeader({
@@ -38,7 +38,7 @@ export function SettingsHeader({
             shadowOpacity: 0.3,
             shadowRadius: 8,
             elevation: 6,
-            overflow: hasAvatar ? "hidden" : "visible",
+            overflow: hasAvatar || uploadingAvatar ? "hidden" : "visible",
           }}
         >
           {hasAvatar ? (
@@ -57,6 +57,23 @@ export function SettingsHeader({
             >
               {initials}
             </Text>
+          )}
+
+          {/* Upload loading overlay */}
+          {uploadingAvatar && (
+            <View
+              style={{
+                position: "absolute",
+                width: 76,
+                height: 76,
+                borderRadius: 38,
+                backgroundColor: "rgba(0,0,0,0.45)",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <ActivityIndicator size="small" color="#00FF94" />
+            </View>
           )}
         </View>
       </TouchableOpacity>

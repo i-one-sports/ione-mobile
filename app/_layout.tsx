@@ -12,6 +12,7 @@ import {
   ThemeProvider,
 } from "@react-navigation/native";
 import { useFonts } from "expo-font";
+import * as Linking from "expo-linking";
 import { Stack, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React, { useEffect, useRef } from "react";
@@ -40,6 +41,32 @@ function AppNavigator() {
     splashHidden.current = true;
     SplashScreen.hideAsync().catch(() => {});
   };
+
+  /** Navigate to /joinsession for a deep link URL, if it matches our pattern. */
+  const handleDeepLink = (url: string | null) => {
+    if (!url) return;
+    // Matches both https://link.i-one-sports.com/sessions/{id}
+    // and the custom-scheme fallback  i-one://sessions/{id}
+    const match = url.match(/\/sessions\/([^/?#]+)/);
+    if (!match) return;
+    const sessionId = match[1];
+    router.push({ pathname: "/joinsession", params: { sessionId } });
+  };
+
+  // Cold-start: app opened directly via a universal/app link
+  useEffect(() => {
+    Linking.getInitialURL()
+      .then(handleDeepLink)
+      .catch(() => {});
+  }, []);
+
+  // Warm-start: app already running when link is tapped
+  useEffect(() => {
+    const sub = Linking.addEventListener("url", ({ url }) =>
+      handleDeepLink(url),
+    );
+    return () => sub.remove();
+  }, []);
 
   useEffect(() => {
     if (!isAuthenticated) {

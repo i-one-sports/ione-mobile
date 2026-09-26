@@ -23,6 +23,7 @@ import * as DocumentPicker from "expo-document-picker";
 import * as ImagePicker from "expo-image-picker";
 import InputField from "@/components/InputField";
 import { getUser, updateProfile, uploadAvatar } from "@/api/authThunks";
+import { getLocation, updatePitchPhoto } from "@/api/ownerDashboardThunk";
 import { buildProfileUpdatePayload } from "@/utils/profileUpdate";
 import CustomButton from "@/components/ui/CustomButton";
 import NotificationIcon from "@/assets/svg/NotificationIcon";
@@ -35,10 +36,12 @@ export default function AdminSettingsScreen() {
   const insets = useSafeAreaInsets();
 
   const { user } = useAppSelector((state) => state.auth);
+  const { location } = useAppSelector((state) => state.ownerDashboard);
 
   const [isEditing, setIsEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [uploadingPitchPhoto, setUploadingPitchPhoto] = useState(false);
   const [avatarUri, setAvatarUri] = useState<string | null>(
     user?.avatar || null,
   );
@@ -58,6 +61,12 @@ export default function AdminSettingsScreen() {
       });
     }
   }, [user]);
+
+  useEffect(() => {
+    if (!location?._id) {
+      dispatch(getLocation());
+    }
+  }, [dispatch, location?._id]);
 
   const handlePickAvatar = async () => {
     Alert.alert(
@@ -90,7 +99,7 @@ export default function AdminSettingsScreen() {
               await uploadSelectedImage(
                 result.assets[0].uri,
                 result.assets[0].fileName || "avatar.jpg",
-                result.assets[0].type || "image/jpeg",
+                result.assets[0].mimeType || "image/jpeg",
               );
             }
           },
@@ -137,6 +146,93 @@ export default function AdminSettingsScreen() {
       Toast.show({ type: "error", text1: "Error", text2: message });
     } finally {
       setUploadingAvatar(false);
+    }
+  };
+
+  const handlePickPitchPhoto = () => {
+    Alert.alert(
+      "Choose image source",
+      "Pick a pitch photo from your gallery or a file",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Gallery",
+          onPress: async () => {
+            const { status } =
+              await ImagePicker.requestMediaLibraryPermissionsAsync();
+            if (status !== "granted") {
+              Toast.show({
+                type: "error",
+                text1: "Permission required",
+                text2: "Gallery access is required to pick an image.",
+              });
+              return;
+            }
+
+            const result = await ImagePicker.launchImageLibraryAsync({
+              mediaTypes: ImagePicker.MediaTypeOptions.Images,
+              allowsEditing: true,
+              aspect: [16, 9],
+              quality: 0.8,
+            });
+
+            if (!result.canceled && result.assets[0]) {
+              await uploadPitchPhoto(
+                result.assets[0].uri,
+                result.assets[0].fileName || "pitch.jpg",
+                result.assets[0].mimeType || "image/jpeg",
+              );
+            }
+          },
+        },
+        {
+          text: "Files",
+          onPress: async () => {
+            const result = await (DocumentPicker as any).getDocumentAsync({
+              type: ["image/*"],
+              copyToCacheDirectory: true,
+            });
+
+            if (!result.canceled && result.assets?.[0]) {
+              const asset = result.assets[0];
+              await uploadPitchPhoto(
+                asset.uri,
+                asset.name || "pitch.jpg",
+                asset.mimeType || "image/jpeg",
+              );
+            }
+          },
+        },
+      ],
+    );
+  };
+
+  const uploadPitchPhoto = async (uri: string, name: string, type: string) => {
+    if (!location?._id) {
+      dispatch(getLocation());
+      Toast.show({
+        type: "error",
+        text1: "Error",
+        text2: "Location not found",
+      });
+      return;
+    }
+
+    setUploadingPitchPhoto(true);
+    try {
+      await dispatch(
+        updatePitchPhoto({
+          locationId: location._id,
+          file: { uri, type, name },
+        }),
+      ).unwrap();
+      Toast.show({ type: "success", text1: "Pitch photo updated" });
+    } catch (error: any) {
+      const message =
+        error?.msg?.message || error?.msg || "Unable to upload pitch photo";
+      Toast.show({ type: "error", text1: "Error", text2: message });
+    } finally {
+      setUploadingPitchPhoto(false);
     }
   };
 
@@ -321,6 +417,12 @@ export default function AdminSettingsScreen() {
 
         {/* Pitch Management */}
         <SettingsSection title="Pitch">
+          <SettingsRow
+            icon="photo-camera"
+            iconColor="#00BCD4"
+            label={uploadingPitchPhoto ? "Uploading..." : "Pitch Photo"}
+            onPress={handlePickPitchPhoto}
+          />
           <SettingsRow
             icon="schedule"
             iconColor="#00FF94"
