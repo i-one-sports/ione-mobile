@@ -7,6 +7,7 @@ import {
   registerOwner,
   sendEmail,
   updateProfile,
+  logOut,
 } from "@/api/authThunks";
 import { User } from "@/components/typings";
 import {
@@ -70,7 +71,6 @@ export const authSlice = createSlice({
     success: (state) => {
       state.isVerified = true;
     },
-    logout: (state) => ({ ...initialState, isRegistered: state.isRegistered }),
   },
   extraReducers(builder) {
     // builder.addCase(getUser.fulfilled, (state, { payload }) => {
@@ -81,6 +81,12 @@ export const authSlice = createSlice({
     //   state.isAuthenticated = true;
     //   console.log("getUser payload:", payload);
     // });
+    builder.addCase(logOut.fulfilled, (state) => {
+      return {
+        ...initialState,
+        isRegistered: state.isRegistered,
+      };
+    });
     builder.addCase(getUser.fulfilled, (state, { payload }) => {
       state.user = payload;
       state.isAuthenticated = true;
@@ -163,5 +169,5 @@ export const authSlice = createSlice({
   },
 });
 
-export const { getUserDetails, success, logout } = authSlice.actions;
+export const { getUserDetails, success } = authSlice.actions;
 export default authSlice.reducer;

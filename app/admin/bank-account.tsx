@@ -3,6 +3,7 @@ import {
   ActivityIndicator,
   Alert,
   FlatList,
+  Keyboard,
   KeyboardAvoidingView,
   Modal,
   Platform,
@@ -61,7 +62,23 @@ export default function BankAccountScreen() {
   const [showBankPicker, setShowBankPicker] = useState(false);
   const [selectedBankName, setSelectedBankName] = useState("");
   const [bankSearch, setBankSearch] = useState("");
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
   const formikRef = React.useRef<any>(null);
+
+  useEffect(() => {
+    const showSub = Keyboard.addListener(
+      Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow",
+      (e) => setKeyboardHeight(e.endCoordinates.height),
+    );
+    const hideSub = Keyboard.addListener(
+      Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide",
+      () => setKeyboardHeight(0),
+    );
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, []);
 
   useEffect(() => {
     dispatch(getBankAccounts());
@@ -96,7 +113,6 @@ export default function BankAccountScreen() {
           bankName: values.bankName,
         }),
       ).unwrap();
-      Toast.show({ type: "success", text1: "Bank account added successfully" });
       setShowAddModal(false);
       setSelectedBankName("");
       dispatch(getBankAccounts());
@@ -121,7 +137,6 @@ export default function BankAccountScreen() {
           onPress: async () => {
             try {
               await dispatch(deleteBankAccount(accountId)).unwrap();
-              Toast.show({ type: "success", text1: "Bank account removed" });
               dispatch(getBankAccounts());
             } catch (err: any) {
               Toast.show({
@@ -139,7 +154,6 @@ export default function BankAccountScreen() {
   const handleSetDefault = async (accountId: string) => {
     try {
       await dispatch(defaultBankAccount(accountId)).unwrap();
-      Toast.show({ type: "success", text1: "Default bank updated" });
       dispatch(getBankAccounts());
     } catch (err: any) {
       Toast.show({
@@ -427,7 +441,7 @@ export default function BankAccountScreen() {
               borderTopLeftRadius: 24,
               borderTopRightRadius: 24,
               paddingTop: 20,
-              paddingBottom: 40,
+              paddingBottom: keyboardHeight > 0 ? keyboardHeight : 40,
               paddingHorizontal: 20,
             }}
             onPress={() => {}}

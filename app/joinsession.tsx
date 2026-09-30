@@ -467,7 +467,9 @@ export default function JoinSession() {
                 {loadingActiveSession &&
                 !activeSession ? null : session?.isFull && !isMember ? (
                   <View className="flex w-[120px] items-center justify-center rounded-[10px] bg-gray-400 h-[42px]">
-                    <Text className="text-[13px] font-[600]">Session Full</Text>
+                    <Text className="text-[13px] font-[600]">
+                      No spots left
+                    </Text>
                   </View>
                 ) : session?.inProgress && !isMember ? (
                   <View className="flex w-[150px] items-center justify-center rounded-[10px] bg-yellow-400 h-[42px]">

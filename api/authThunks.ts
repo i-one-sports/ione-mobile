@@ -214,19 +214,6 @@ export const updateProfile = createAsyncThunk<
   );
 });
 
-// export const submitVerification = createAsyncThunk<
-//   SubmitVerificationResponse,
-//   SubmitVerificationPayload,
-//   AsyncThunkConfig
-// >("user/submitVerification", async (payload, thunkAPI) => {
-//   return apiCall(
-//     axiosInstance.post("/i-one/verification/submit", payload),
-//     thunkAPI,
-//     "auth",
-//   );
-// });
-//
-
 export const submitVerification = createAsyncThunk<
   SubmitVerificationResponse,
   SubmitVerificationPayload,
