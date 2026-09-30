@@ -1,6 +1,5 @@
 import React from "react";
-import { View, Text, TouchableOpacity } from "react-native";
-import { ThemedText } from "@/components/ThemedText";
+import { View, Text, TouchableOpacity, useColorScheme } from "react-native";
 
 type PaymentStatus =
   | "PAID"
@@ -34,22 +33,67 @@ interface Props {
 }
 
 export default function PlayerInfoCard({ name, paymentStatus, index }: Props) {
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === "dark";
+
   const initials = name ? name.slice(0, 2).toUpperCase() : "?";
 
   return (
-    <TouchableOpacity className="mx-[31px] flex flex-row items-center justify-between border-b-[2px] border-[#6BF8BD] bg-[#EDFFF8] px-[16px] py-[13px]">
-      <View className="flex flex-row items-center gap-[12px]">
-        <View className="flex flex-row gap-[15px] items-center">
-          <View>
-            <Text className="font-[600] text-[13px]">{index}</Text>
-          </View>
-          <View className="h-[40px] w-[40px] rounded-full bg-black items-center justify-center">
-            <Text style={{ color: "#fff", fontSize: 13, fontWeight: "700" }}>
+    <TouchableOpacity
+      style={{
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
+        marginHorizontal: 31,
+        paddingHorizontal: 16,
+        paddingVertical: 13,
+        borderBottomWidth: 2,
+        borderBottomColor: isDark ? "#1a3d2b" : "#6BF8BD",
+        backgroundColor: isDark ? "#0D1F17" : "#EDFFF8",
+      }}
+    >
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 15 }}>
+          <Text
+            style={{
+              fontSize: 13,
+              fontWeight: "600",
+              color: isDark ? "#aaa" : "#333",
+              minWidth: 16,
+            }}
+          >
+            {index}
+          </Text>
+          <View
+            style={{
+              height: 40,
+              width: 40,
+              borderRadius: 20,
+              backgroundColor: isDark ? "#1f4d37" : "#000",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <Text
+              style={{
+                color: isDark ? "#00FF94" : "#fff",
+                fontSize: 13,
+                fontWeight: "700",
+              }}
+            >
               {initials}
             </Text>
           </View>
         </View>
-        <Text className="text-[15px] font-[500]">{name}</Text>
+        <Text
+          style={{
+            fontSize: 15,
+            fontWeight: "500",
+            color: isDark ? "#fff" : "#111",
+          }}
+        >
+          {name}
+        </Text>
       </View>
 
       {paymentStatus && paymentStatus !== "NOT_REQUIRED" && (
@@ -58,7 +102,7 @@ export default function PlayerInfoCard({ name, paymentStatus, index }: Props) {
             flexDirection: "row",
             alignItems: "center",
             gap: 4,
-            backgroundColor: `${STATUS_COLOR[paymentStatus]}18`,
+            backgroundColor: `${STATUS_COLOR[paymentStatus]}${isDark ? "25" : "18"}`,
             borderRadius: 20,
             paddingHorizontal: 8,
             paddingVertical: 3,

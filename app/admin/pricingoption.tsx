@@ -111,6 +111,10 @@ export default function AdminPricingOptionScreen() {
 
       router.back();
     } catch (err: any) {
+      if (err?.msg?.toLowerCase().includes("bank account")) {
+        router.replace("/admin/bank-account");
+        return;
+      }
       Toast.show({
         type: "error",
         text1: "Error",

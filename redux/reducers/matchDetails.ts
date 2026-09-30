@@ -1,6 +1,7 @@
 import { getMatchDetails } from "@/api/matchDetailsThunk";
 import { MatchDetails } from "@/components/typings/apiResponse";
 import { createSlice } from "@reduxjs/toolkit";
+import { logOut } from "@/api/authThunks";
 
 interface State {
   matchDetails: Record<string, MatchDetails>;
@@ -19,6 +20,8 @@ export const matchDetailsSlice = createSlice({
   initialState,
   reducers: {},
   extraReducers(builder) {
+    builder.addCase(logOut.fulfilled, () => initialState);
+
     builder.addCase(getMatchDetails.pending, (state) => {
       state.loadingMatchDetails = true;
       state.errorMatchDetails = null;

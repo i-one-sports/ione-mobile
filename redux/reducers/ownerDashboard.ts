@@ -17,6 +17,7 @@ import {
   getLocationTransactions,
   updatePitchPhoto,
 } from "@/api/ownerDashboardThunk";
+import { logOut } from "@/api/authThunks";
 import {
   ChangePasswordResponse,
   DashboardSummary,
@@ -171,6 +172,9 @@ export const ownerDashboardSlice = createSlice({
     },
   },
   extraReducers(builder) {
+    // Reset all state when the user logs out
+    builder.addCase(logOut.fulfilled, () => initialState);
+
     // get location so i can get the location ID
     builder.addCase(getLocation.pending, (state) => {
       state.loadingLocation = true;

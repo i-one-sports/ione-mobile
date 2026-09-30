@@ -1,4 +1,5 @@
 import { createSlice } from "@reduxjs/toolkit";
+import { logOut } from "@/api/authThunks";
 import {
   getAllMembersPaymentStatus,
   getMySessionPayment,
@@ -120,6 +121,8 @@ const paymentSlice = createSlice({
     clearPaymentState: () => initialState,
   },
   extraReducers(builder) {
+    builder.addCase(logOut.fulfilled, () => initialState);
+
     // Init session
     builder
       .addCase(initSessionPayment.pending, (state) => {

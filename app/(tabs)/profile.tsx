@@ -5,13 +5,12 @@ import InputField from "@/components/InputField";
 import Loader from "@/components/loader";
 import { PlayerDetailsCard } from "@/components/profile/PlayerDetailsCard";
 import { ProfileCard } from "@/components/profile/ProfileCard";
-import { getUser, updateProfile, uploadAvatar } from "@/api/authThunks";
+import { getUser, updateProfile, uploadAvatar, logOut } from "@/api/authThunks";
 import {
   convertHeightToFeet,
   formatDate,
   getPositionName,
 } from "@/components/profile/utils";
-import { logout } from "@/redux/reducers/auth";
 import { persistor, useAppDispatch, useAppSelector } from "@/redux/store";
 import { MaterialIcons } from "@expo/vector-icons";
 import * as SecureStore from "expo-secure-store";
@@ -211,14 +210,16 @@ export default function ProfileScreen() {
         {
           text: "Logout",
           style: "destructive",
-          onPress: () => {
+          onPress: async () => {
             try {
               setIsLoggingOut(true);
-              dispatch(logout());
+              await dispatch(logOut()).unwrap();
+              await Promise.all([
+                SecureStore.deleteItemAsync("i-one").catch(() => {}),
+                SecureStore.deleteItemAsync("user-data").catch(() => {}),
+                persistor.purge().catch(() => {}),
+              ]);
               router.replace("/(onboarding)/signin");
-              SecureStore.deleteItemAsync("i-one").catch(() => {});
-              SecureStore.deleteItemAsync("user-data").catch(() => {});
-              persistor.purge().catch(() => {});
             } catch {
               setIsLoggingOut(false);
               Toast.show({
