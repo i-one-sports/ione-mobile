@@ -33,8 +33,6 @@ export default function AdminWalletScreen() {
     dispatch(getMyWalletBalance());
   }, [dispatch]);
 
-  console.log(myWalletBalance, "wallet balance");
-
   return (
     <View style={{ flex: 1, backgroundColor: screenBg }}>
       <ScrollView

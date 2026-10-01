@@ -30,8 +30,9 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Toast } from "toastify-react-native";
-import PlayerInfoCard from "./playerinfocard";
+import PlayerInfoCard from "@/components/PlayerInfoCard";
 import { formatTime } from "@/utils/formatTime";
+import { Role } from "@/components/typings/apiResponse";
 
 function buildFormationPositions(
   count: number,
@@ -150,6 +151,25 @@ export default function JoinSession() {
     loadingAction,
   } = useAppSelector((state) => state.sessions);
 
+  /**
+   * Defensive back navigation.
+   * On a cold-start deep link there is no previous screen in the stack,
+   * so router.back() would crash with "Screen doesn't exist".
+   * Instead, fall back to the authenticated root for the user's role.
+   */
+  const handleBack = () => {
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      const role = user?.role;
+      if (role === Role.ADMIN) {
+        router.replace("/admin/(tabs)");
+      } else {
+        router.replace("/(tabs)");
+      }
+    }
+  };
+
   // Fetch fresh session data from server on mount
   useEffect(() => {
     if (sessionId) dispatch(getSession(sessionId));
@@ -193,12 +213,7 @@ export default function JoinSession() {
     if (!sessionId) return;
     dispatch(joinSession({ sessionId }))
       .unwrap()
-      .then((response) => {
-        Toast.show({
-          type: "success",
-          text1: "Joined!",
-          text2: response.message,
-        });
+      .then(() => {
         // Re-fetch the session so member list + payment status reflect server state
         dispatch(getSession(sessionId));
         // Keep the sessions list fresh when user navigates back
@@ -216,12 +231,7 @@ export default function JoinSession() {
     if (!sessionId) return;
     dispatch(leaveSession(sessionId))
       .unwrap()
-      .then((response) => {
-        Toast.show({
-          type: "success",
-          text1: "Left session",
-          text2: response.message,
-        });
+      .then(() => {
         dispatch(getSession(sessionId));
         if (user?.location?.coordinates) {
           const [lat, lng] = user.location.coordinates;
@@ -237,12 +247,7 @@ export default function JoinSession() {
     if (!sessionId) return;
     dispatch(endSession(sessionId))
       .unwrap()
-      .then((response) => {
-        Toast.show({
-          type: "success",
-          text1: "Session ended",
-          text2: response.message,
-        });
+      .then(() => {
         dispatch(getSession(sessionId));
         if (user?.location?.coordinates) {
           const [lat, lng] = user.location.coordinates;
@@ -326,7 +331,7 @@ export default function JoinSession() {
         >
           <Text style={{ color: "#888" }}>No session data available</Text>
           <TouchableOpacity
-            onPress={() => router.back()}
+            onPress={handleBack}
             style={{
               marginTop: 16,
               backgroundColor: "#00FF94",
@@ -394,7 +399,7 @@ export default function JoinSession() {
             {/* Header row */}
             <View>
               <View className="flex flex-row items-center justify-between">
-                <TouchableOpacity onPress={() => router.back()}>
+                <TouchableOpacity onPress={handleBack}>
                   <Ionicons
                     name="arrow-back"
                     size={22}

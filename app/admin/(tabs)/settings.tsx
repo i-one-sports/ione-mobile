@@ -225,7 +225,6 @@ export default function AdminSettingsScreen() {
           file: { uri, type, name },
         }),
       ).unwrap();
-      Toast.show({ type: "success", text1: "Pitch photo updated" });
     } catch (error: any) {
       const message =
         error?.msg?.message || error?.msg || "Unable to upload pitch photo";
@@ -249,7 +248,6 @@ export default function AdminSettingsScreen() {
 
       await dispatch(updateProfile(payload)).unwrap();
       await dispatch(getUser()).unwrap();
-      Toast.show({ type: "success", text1: "Profile updated" });
       setIsEditing(false);
     } catch (error: any) {
       const message =

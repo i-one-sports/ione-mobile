@@ -183,13 +183,6 @@ export default function TournamentRulesScreen() {
       .unwrap()
       .then((response: any) => {
         setLoading(false);
-        Toast.show({
-          type: "success",
-          props: {
-            title: "Success",
-            message: response?.message || "Tournament created successfully",
-          },
-        });
         if (response?._id) {
           router.replace({
             pathname: "/tournamentdetail",

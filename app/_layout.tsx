@@ -4,6 +4,10 @@ import "@/globals.css";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import store, { persistor, useAppSelector } from "@/redux/store";
 import { setupAxiosInterceptors } from "@/utils/SetUpAxiosInterceptors";
+import {
+  setPendingSession,
+  consumePendingSession,
+} from "@/utils/pendingDeepLink";
 import toastConfig from "@/utils/toast";
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
 import {
@@ -27,6 +31,13 @@ import ToastManager from "toastify-react-native";
 setupAxiosInterceptors();
 SplashScreen.preventAutoHideAsync();
 
+/** Extract a session ID from a deep-link URL, or return null. */
+function extractSessionId(url: string | null): string | null {
+  if (!url) return null;
+  const match = url.match(/\/sessions\/([^/?#]+)/);
+  return match ? match[1] : null;
+}
+
 function AppNavigator() {
   const router = useRouter();
   const colorScheme = useColorScheme();
@@ -35,6 +46,13 @@ function AppNavigator() {
     (state) => state.auth,
   );
   const splashHidden = useRef(false);
+  // True after the first auth effect has run its router.replace().
+  // Before this point it is not safe to call router.push() from a Linking event.
+  const navigatorReady = useRef(false);
+  // Mount timestamp — used to filter Android cold-start duplicate events.
+  const mountTime = useRef(Date.now());
+  // URL captured by getInitialURL — used to deduplicate Android's duplicate events.
+  const initialUrl = useRef<string | null>(null);
 
   const hideSplash = () => {
     if (splashHidden.current) return;
@@ -42,67 +60,95 @@ function AppNavigator() {
     SplashScreen.hideAsync().catch(() => {});
   };
 
-  /** Navigate to /joinsession for a deep link URL, if it matches our pattern. */
+  /**
+   * Handle custom-scheme deep links only (i-one://sessions/{id}).
+   * Universal https links are handled by app/sessions/[sessionId].tsx
+   * via Expo Router's file-based routing — no manual handling needed here.
+   */
   const handleDeepLink = (url: string | null) => {
-    if (!url) return;
-    // Matches both https://link.i-one-sports.com/sessions/{id}
-    // and the custom-scheme fallback  i-one://sessions/{id}
-    const match = url.match(/\/sessions\/([^/?#]+)/);
-    if (!match) return;
-    const sessionId = match[1];
-    router.push({ pathname: "/joinsession", params: { sessionId } });
+    if (!url || !url.startsWith("i-one://")) return;
+
+    const sessionId = extractSessionId(url);
+    if (!sessionId) return;
+
+    const currentlyAuthenticated = store.getState().auth.isAuthenticated;
+
+    if (navigatorReady.current && currentlyAuthenticated) {
+      router.push({ pathname: "/joinsession", params: { sessionId } });
+    } else {
+      setPendingSession(sessionId);
+      if (navigatorReady.current && !currentlyAuthenticated) {
+        router.replace("/(onboarding)/signin");
+      }
+    }
   };
 
-  // Cold-start: app opened directly via a universal/app link
+  // Cold-start via custom scheme only (i-one://sessions/{id}).
   useEffect(() => {
     Linking.getInitialURL()
-      .then(handleDeepLink)
+      .then((url) => {
+        if (!url || !url.startsWith("i-one://")) return;
+        initialUrl.current = url;
+        const sessionId = extractSessionId(url);
+        if (sessionId) setPendingSession(sessionId);
+      })
       .catch(() => {});
   }, []);
 
-  // Warm-start: app already running when link is tapped
+  // Warm-start listener — custom scheme only.
+  // Deduplicates Android's cold-start duplicate events using mount time.
   useEffect(() => {
-    const sub = Linking.addEventListener("url", ({ url }) =>
-      handleDeepLink(url),
-    );
+    const sub = Linking.addEventListener("url", ({ url }) => {
+      const isEarlyDuplicate =
+        url === initialUrl.current && Date.now() - mountTime.current < 2000;
+      if (isEarlyDuplicate) return;
+      handleDeepLink(url);
+    });
     return () => sub.remove();
   }, []);
 
+  // Auth-driven navigation — the single source of truth for routing.
+  // Deferred via setTimeout(0) so the Stack is fully mounted before
+  // any router.replace() fires.
   useEffect(() => {
-    if (!isAuthenticated) {
-      // New device / never registered → show welcome screen.
-      // Returning user who logged out → go straight to sign-in.
-      router.replace(isRegistered ? "/(onboarding)/signin" : "/(onboarding)");
-      hideSplash();
-      return;
-    }
+    const navigate = () => {
+      if (!isAuthenticated) {
+        router.replace(isRegistered ? "/(onboarding)/signin" : "/(onboarding)");
+        hideSplash();
+        navigatorReady.current = true;
+        return;
+      }
 
-    const navigateByRole = (role?: string) => {
-      if (role === Role.ADMIN) {
-        router.replace("/admin/(tabs)");
-      } else if (role === Role.USER) {
-        router.replace("/(tabs)");
-      } else if (isRegistered && !isVerified) {
-        router.replace("/(onboarding)/verify");
-      } else {
-        router.replace("/(onboarding)/signin");
+      const navigateByRole = (role?: string) => {
+        if (role === Role.ADMIN) {
+          router.replace("/admin/(tabs)");
+        } else if (role === Role.USER) {
+          router.replace("/(tabs)");
+        } else if (isRegistered && !isVerified) {
+          router.replace("/(onboarding)/verify");
+        } else {
+          router.replace("/(onboarding)/signin");
+        }
+      };
+
+      const storedRole = store.getState().auth.user?.role;
+      navigateByRole(storedRole);
+      hideSplash();
+      navigatorReady.current = true;
+
+      // Consume any pending deep-link session stored before login.
+      const pending = consumePendingSession();
+      if (pending) {
+        setTimeout(() => {
+          router.push({
+            pathname: "/joinsession",
+            params: { sessionId: pending },
+          });
+        }, 300);
       }
     };
 
-    // Use the role stored from the login response directly.
-    // Unverified accounts get a 403 from /user/profile, so we cannot rely on
-    // getUser() for routing. The login response already contains role and
-    // ownerOnboardingStatus, which are persisted in Redux.
-    const storedRole = store.getState().auth.user?.role;
-
-    if (storedRole) {
-      navigateByRole(storedRole);
-      hideSplash();
-      return;
-    }
-
-    navigateByRole(undefined);
-    hideSplash();
+    setTimeout(navigate, 0);
   }, [isAuthenticated]);
 
   return (
@@ -114,6 +160,21 @@ function AppNavigator() {
     >
       <Stack.Screen name="(tabs)" />
       <Stack.Screen name="(onboarding)" />
+      {/* <Stack.Screen name="admin" />
+      <Stack.Screen name="joinsession" />
+      <Stack.Screen name="sessions" />
+      <Stack.Screen name="captainjoinsession" />
+      <Stack.Screen name="assigned" />
+      <Stack.Screen name="reschedule-session" />
+      <Stack.Screen name="payment-screens" />
+      <Stack.Screen name="screens" />
+      <Stack.Screen name="stats" />
+      <Stack.Screen name="allfixtures" />
+      <Stack.Screen name="fixtureDetails" />
+      <Stack.Screen name="tournamentdetail" />
+      <Stack.Screen name="tournamentteam" />
+      <Stack.Screen name="teamboxes" />
+      <Stack.Screen name="view-assigned-set" /> */}
     </Stack>
   );
 }
@@ -142,7 +203,6 @@ export default function RootLayout() {
               value={colorScheme === "dark" ? DarkTheme : DefaultTheme}
             >
               <AppNavigator />
-
               <StatusBar style="auto" />
               <Toast
                 config={toastConfig}

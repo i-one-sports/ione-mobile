@@ -15,7 +15,7 @@ import BackIcon from "@/assets/svg/BackIcon";
 import OpenIcon from "@/assets/svg/OpenIcon";
 import PitchIcon from "@/assets/svg/PitchSvg";
 import { router } from "expo-router";
-import PlayerInfoCard from "./playerinfocard";
+import PlayerInfoCard from "@/components/PlayerInfoCard";
 import TeamBoxes from "./teamboxes";
 
 export default function CaptainJoinSession() {

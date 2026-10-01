@@ -20,7 +20,7 @@ import {
   useColorScheme,
   View,
 } from "react-native";
-import PlayerInfoCard from "@/app/playerinfocard";
+import PlayerInfoCard from "@/components/PlayerInfoCard";
 import TeamBoxes from "@/app/teamboxes";
 
 // ─── Pitch formation helpers ────────────────────────────────────────────────

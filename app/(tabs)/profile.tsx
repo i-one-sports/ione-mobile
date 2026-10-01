@@ -21,7 +21,6 @@ import * as DocumentPicker from "expo-document-picker";
 import * as ImagePicker from "expo-image-picker";
 import React, { useMemo, useState } from "react";
 import { Alert, ScrollView, TouchableOpacity, View } from "react-native";
-import { Image } from "expo-image";
 import { buildProfileUpdatePayload } from "@/utils/profileUpdate";
 
 export default function ProfileScreen() {
@@ -159,7 +158,6 @@ export default function ProfileScreen() {
         }),
       ).unwrap();
       setAvatarUri(response.avatar);
-      Toast.show({ type: "success", text1: "Image uploaded" });
     } catch (error: any) {
       const message =
         error?.msg?.message || error?.msg || "Unable to upload image";
@@ -189,7 +187,6 @@ export default function ProfileScreen() {
 
       await dispatch(updateProfile(payload)).unwrap();
       await dispatch(getUser()).unwrap();
-      Toast.show({ type: "success", text1: "Profile updated" });
       setIsEditing(false);
     } catch (error: any) {
       const message =
