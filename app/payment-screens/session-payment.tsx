@@ -39,10 +39,14 @@ export default function SessionPaymentScreen() {
     startTime?: string;
     matchType?: string;
     members?: string;
+    paymentAmount: string;
   }>();
 
-  const { sessionId, locationName, startTime, matchType } = params;
+  const { sessionId, locationName, startTime, matchType, paymentAmount } =
+    params;
   const members = params.members ? JSON.parse(params.members) : [];
+
+  const amount = Number(paymentAmount ?? 0);
 
   const { mySessionPayment, allMembersStatus, loadingInit, loadingStatus } =
     useAppSelector((s) => s.payment);
@@ -112,7 +116,7 @@ export default function SessionPaymentScreen() {
   };
 
   const currentStatus = polledStatus ?? mySessionPayment?.status ?? null;
-  const amount = mySessionPayment?.amount ?? 0;
+  //   const amount = mySessionPayment?.amount ?? 0;
   const showOverlay =
     polling ||
     timedOut ||

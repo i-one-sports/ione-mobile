@@ -370,7 +370,7 @@ export default function JoinSession() {
                       : session?.finished
                         ? "Match Finished"
                         : session?.isFull
-                          ? "Session Full"
+                          ? "No Spots Left"
                           : "Waiting For Players"}
                   </ThemedText>
 
@@ -531,6 +531,9 @@ export default function JoinSession() {
                               locationName: session?.location?.name ?? "",
                               startTime: session?.startTime ?? "",
                               matchType: session?.matchType ?? "",
+                              paymentPerPersonHourly: String(
+                                session?.paymentAmount ?? 0,
+                              ),
                             },
                           })
                         }
