@@ -3,7 +3,6 @@ import { ThemedText } from "@/components/ThemedText";
 import { SettingsHeader } from "@/components/admin/settings/SettingsHeader";
 import { SettingsRow } from "@/components/admin/settings/SettingsRow";
 import { SettingsSection } from "@/components/admin/settings/SettingsSection";
-import { logout } from "@/redux/reducers/auth";
 import { persistor, useAppDispatch, useAppSelector } from "@/redux/store";
 import * as SecureStore from "expo-secure-store";
 import { useRouter } from "expo-router";
@@ -22,7 +21,7 @@ import { MaterialIcons } from "@expo/vector-icons";
 import * as DocumentPicker from "expo-document-picker";
 import * as ImagePicker from "expo-image-picker";
 import InputField from "@/components/InputField";
-import { getUser, updateProfile, uploadAvatar } from "@/api/authThunks";
+import { getUser, updateProfile, uploadAvatar, logOut } from "@/api/authThunks";
 import { getLocation, updatePitchPhoto } from "@/api/ownerDashboardThunk";
 import { buildProfileUpdatePayload } from "@/utils/profileUpdate";
 import CustomButton from "@/components/ui/CustomButton";
@@ -226,7 +225,6 @@ export default function AdminSettingsScreen() {
           file: { uri, type, name },
         }),
       ).unwrap();
-      Toast.show({ type: "success", text1: "Pitch photo updated" });
     } catch (error: any) {
       const message =
         error?.msg?.message || error?.msg || "Unable to upload pitch photo";
@@ -250,7 +248,6 @@ export default function AdminSettingsScreen() {
 
       await dispatch(updateProfile(payload)).unwrap();
       await dispatch(getUser()).unwrap();
-      Toast.show({ type: "success", text1: "Profile updated" });
       setIsEditing(false);
     } catch (error: any) {
       const message =
@@ -270,13 +267,17 @@ export default function AdminSettingsScreen() {
         {
           text: "Logout",
           style: "destructive",
-          onPress: () => {
+          onPress: async () => {
             try {
-              dispatch(logout());
+              await dispatch(logOut()).unwrap();
+
+              await Promise.all([
+                SecureStore.deleteItemAsync("i-one"),
+                SecureStore.deleteItemAsync("user-data"),
+                persistor.purge(),
+              ]);
+
               router.replace("/(onboarding)/signin");
-              SecureStore.deleteItemAsync("i-one").catch(() => {});
-              SecureStore.deleteItemAsync("user-data").catch(() => {});
-              persistor.purge().catch(() => {});
             } catch {
               Toast.show({
                 type: "error",

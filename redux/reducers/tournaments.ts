@@ -6,6 +6,7 @@ import {
   deleteTeamFromTournament,
   generateTournamentBracket,
 } from "@/api/tournamentThunk";
+import { logOut } from "@/api/authThunks";
 import {
   Tournament,
   TournamentDetailsResponse,
@@ -65,6 +66,8 @@ export const tournamentSlice = createSlice({
   initialState,
   reducers: {},
   extraReducers(builder) {
+    builder.addCase(logOut.fulfilled, () => initialState);
+
     builder.addCase(getTournamentsByLocation.pending, (state) => {
       state.loadingTournamentsByLocation = true;
       state.errorTournamentsByLocation = null;

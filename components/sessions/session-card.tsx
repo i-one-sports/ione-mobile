@@ -97,10 +97,10 @@ export function SessionCard({ match, sessionData }: SessionCardProps) {
   const spotsLeft = maxPlayers - playerCount;
 
   const footerNote = (() => {
-    if (isFinished) return "Session completed";
+    if (isFinished) return "Session ended";
     if (isLive) return `Match in progress · ${match.minute}`;
     if (isPaymentStage) return "Waiting for all payments";
-    if (isFull) return "Session is full";
+    if (isFull) return "No spots left";
     return `${spotsLeft} spot${spotsLeft !== 1 ? "s" : ""} remaining`;
   })();
 

@@ -21,7 +21,7 @@ import {
   View,
 } from "react-native";
 import { Toast } from "toastify-react-native";
-import PlayerInfoCard from "./playerinfocard";
+import PlayerInfoCard from "@/components/PlayerInfoCard";
 import TeamBoxes from "./teamboxes";
 
 // ─── Pitch formation helpers ────────────────────────────────────────────────
@@ -255,7 +255,6 @@ export default function Assigned() {
     dispatch(createSets({ sessionId }))
       .unwrap()
       .then(() => {
-        Toast.show({ type: "success", text1: "Sets created!" });
         setFinalizeStatus("idle");
         dispatch(getSessionSets({ sessionId }));
       })

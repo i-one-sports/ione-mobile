@@ -80,15 +80,6 @@ export default function CreateNewTeam() {
         .then((response) => {
           setLoading(false);
           console.log("responseee", response);
-          Toast.show({
-            type: "success",
-            props: {
-              title: "Success",
-              message:
-                (response as { message?: string }).message ||
-                "Team created successfully",
-            },
-          });
           router.replace({
             pathname: "/tournamentdetail",
             params: { tournamentId },

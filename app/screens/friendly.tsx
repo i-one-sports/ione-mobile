@@ -112,13 +112,6 @@ export default function Friendly() {
           setLoading(false);
           console.log(response);
 
-          Toast.show({
-            type: "success",
-
-            text1: "Success",
-            text2: "Session created successfully",
-          });
-
           setTimeout(() => {
             router.back();
           }, 500);

@@ -55,8 +55,6 @@ export default function LedgerScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [allEntries, setAllEntries] = useState<LedgerEntry[]>([]);
 
-  console.log(activeTab, "tabs");
-
   const screenBg = isDark ? "#000" : "#FAFAFA";
   const cardBg = isDark ? "#141414" : "#fff";
   const cardBorder = isDark ? "#242424" : "#F1F1F1";

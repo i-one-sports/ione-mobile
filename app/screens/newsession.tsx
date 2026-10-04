@@ -132,13 +132,6 @@ export default function NewSession() {
             },
           }),
         ).unwrap();
-        Toast.show({
-          type: "success",
-          props: {
-            title: "Success",
-            message: response.message || "Session created successfully",
-          },
-        });
         router.replace({
           pathname: "/joinsession",
           params: { sessionId: response._id || startedSession.current! },

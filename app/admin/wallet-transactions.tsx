@@ -72,8 +72,6 @@ export default function WalletTransactionsScreen() {
     [dispatch],
   );
 
-  console.log(walletTransactions, "page");
-
   useEffect(() => {
     setAllTransactions([]);
     setPage(1);

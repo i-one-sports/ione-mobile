@@ -5,13 +5,12 @@ import InputField from "@/components/InputField";
 import Loader from "@/components/loader";
 import { PlayerDetailsCard } from "@/components/profile/PlayerDetailsCard";
 import { ProfileCard } from "@/components/profile/ProfileCard";
-import { getUser, updateProfile, uploadAvatar } from "@/api/authThunks";
+import { getUser, updateProfile, uploadAvatar, logOut } from "@/api/authThunks";
 import {
   convertHeightToFeet,
   formatDate,
   getPositionName,
 } from "@/components/profile/utils";
-import { logout } from "@/redux/reducers/auth";
 import { persistor, useAppDispatch, useAppSelector } from "@/redux/store";
 import { MaterialIcons } from "@expo/vector-icons";
 import * as SecureStore from "expo-secure-store";
@@ -22,7 +21,6 @@ import * as DocumentPicker from "expo-document-picker";
 import * as ImagePicker from "expo-image-picker";
 import React, { useMemo, useState } from "react";
 import { Alert, ScrollView, TouchableOpacity, View } from "react-native";
-import { Image } from "expo-image";
 import { buildProfileUpdatePayload } from "@/utils/profileUpdate";
 
 export default function ProfileScreen() {
@@ -160,7 +158,6 @@ export default function ProfileScreen() {
         }),
       ).unwrap();
       setAvatarUri(response.avatar);
-      Toast.show({ type: "success", text1: "Image uploaded" });
     } catch (error: any) {
       const message =
         error?.msg?.message || error?.msg || "Unable to upload image";
@@ -190,7 +187,6 @@ export default function ProfileScreen() {
 
       await dispatch(updateProfile(payload)).unwrap();
       await dispatch(getUser()).unwrap();
-      Toast.show({ type: "success", text1: "Profile updated" });
       setIsEditing(false);
     } catch (error: any) {
       const message =
@@ -211,14 +207,16 @@ export default function ProfileScreen() {
         {
           text: "Logout",
           style: "destructive",
-          onPress: () => {
+          onPress: async () => {
             try {
               setIsLoggingOut(true);
-              dispatch(logout());
+              await dispatch(logOut()).unwrap();
+              await Promise.all([
+                SecureStore.deleteItemAsync("i-one").catch(() => {}),
+                SecureStore.deleteItemAsync("user-data").catch(() => {}),
+                persistor.purge().catch(() => {}),
+              ]);
               router.replace("/(onboarding)/signin");
-              SecureStore.deleteItemAsync("i-one").catch(() => {});
-              SecureStore.deleteItemAsync("user-data").catch(() => {});
-              persistor.purge().catch(() => {});
             } catch {
               setIsLoggingOut(false);
               Toast.show({

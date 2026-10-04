@@ -83,16 +83,19 @@ export default function AdminHomeScreen() {
     errorLastMatches,
     loadingLocation,
   } = useAppSelector((state) => state.ownerDashboard);
-  const { user, verification } = useAppSelector((state) => state.auth);
+  const { user, verification, isAuthenticated } = useAppSelector(
+    (state) => state.auth,
+  );
 
   useEffect(() => {
+    if (!isAuthenticated) return;
     dispatch(getLocation());
     dispatch(getVerification());
-  }, [dispatch]);
+  }, [dispatch, isAuthenticated]);
 
   useFocusEffect(
     useCallback(() => {
-      if (!location?._id) return;
+      if (!isAuthenticated || !location?._id) return;
 
       dispatch(getLocationDashboard(location._id));
       dispatch(getSummary(location._id));
@@ -103,8 +106,9 @@ export default function AdminHomeScreen() {
 
   useEffect(() => {
     const needsRefresh =
-      user?.ownerOnboardingStatus === "PENDING_VERIFICATION" ||
-      verification?.status === "PENDING";
+      isAuthenticated &&
+      (user?.ownerOnboardingStatus === "PENDING_VERIFICATION" ||
+        verification?.status === "PENDING");
 
     if (!needsRefresh) return;
 
@@ -115,11 +119,16 @@ export default function AdminHomeScreen() {
     }, 10000);
 
     return () => clearInterval(interval);
-  }, [dispatch, user?.ownerOnboardingStatus, verification?.status]);
+  }, [
+    dispatch,
+    isAuthenticated,
+    user?.ownerOnboardingStatus,
+    verification?.status,
+  ]);
 
   useEffect(() => {
     const sub = AppState.addEventListener("change", (state) => {
-      if (state === "active") {
+      if (state === "active" && isAuthenticated) {
         dispatch(getUser());
         dispatch(getVerification());
         dispatch(getLocation());
@@ -127,7 +136,7 @@ export default function AdminHomeScreen() {
     });
 
     return () => sub.remove();
-  }, [dispatch]);
+  }, [dispatch, isAuthenticated]);
 
   const accent = isDark ? "#00FF94" : "#00cc77";
   const showOnboardingBanner =

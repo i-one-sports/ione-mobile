@@ -177,10 +177,6 @@ export default function TeamStatus() {
   const showLoading = loading && !data;
   const showError = Boolean(error) && !data;
 
-  console.log(data, "location team status");
-  console.log(sessionId, "sessionId status");
-  console.log(locationId, "location team status");
-
   return (
     <SafeAreaScreen>
       {/* Header */}

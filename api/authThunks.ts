@@ -26,6 +26,7 @@ import {
   GetVerificationResponse,
 } from "@/components/typings/apiResponse";
 import axiosInstance, { uploadAxios } from "./axios";
+import { deletePushToken } from "@/utils/pushNotifications";
 import { Platform } from "react-native";
 
 export const uploadAvatar = createAsyncThunk<
@@ -214,19 +215,6 @@ export const updateProfile = createAsyncThunk<
   );
 });
 
-// export const submitVerification = createAsyncThunk<
-//   SubmitVerificationResponse,
-//   SubmitVerificationPayload,
-//   AsyncThunkConfig
-// >("user/submitVerification", async (payload, thunkAPI) => {
-//   return apiCall(
-//     axiosInstance.post("/i-one/verification/submit", payload),
-//     thunkAPI,
-//     "auth",
-//   );
-// });
-//
-
 export const submitVerification = createAsyncThunk<
   SubmitVerificationResponse,
   SubmitVerificationPayload,
@@ -281,6 +269,21 @@ export const getVerification = createAsyncThunk<
 export const logOut = createAsyncThunk<logoutResponse, void, AsyncThunkConfig>(
   "/users/logout",
   async (_, thunkAPI) => {
+    // Drop this device's FCM token so the next user on this phone
+    // doesn't receive the previous user's notifications.
+    await deletePushToken();
     return apiCall(axiosInstance.get("/i-one/auth/user/logout"), thunkAPI);
   },
+);
+
+// PATCH /user/device-token — idempotent, overwrites the stored FCM token
+export const registerDeviceToken = createAsyncThunk<
+  { message: string },
+  string,
+  AsyncThunkConfig
+>("/users/deviceToken", async (fcmToken, thunkAPI) =>
+  apiCall(
+    axiosInstance.patch("/i-one/user/device-token", { fcmToken }),
+    thunkAPI,
+  ),
 );

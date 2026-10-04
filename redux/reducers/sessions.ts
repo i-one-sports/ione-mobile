@@ -1,4 +1,5 @@
 import { createSlice } from "@reduxjs/toolkit";
+import { logOut } from "@/api/authThunks";
 import {
   allSessions,
   cancelSession,
@@ -207,6 +208,8 @@ export const sessionSlice = createSlice({
     },
   },
   extraReducers(builder) {
+    builder.addCase(logOut.fulfilled, () => initialState);
+
     // Nearby sessions
     builder
       .addCase(nearBy.pending, (state) => {

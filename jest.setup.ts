@@ -21,3 +21,21 @@ jest.mock("expo-splash-screen", () => ({
   preventAutoHideAsync: jest.fn(),
   hideAsync: jest.fn(),
 }));
+
+jest.mock("@react-native-firebase/messaging", () => ({
+  getMessaging: jest.fn(() => ({})),
+  getToken: jest.fn().mockResolvedValue("test-fcm-token"),
+  deleteToken: jest.fn().mockResolvedValue(undefined),
+  requestPermission: jest.fn().mockResolvedValue(1),
+  getInitialNotification: jest.fn().mockResolvedValue(null),
+  onMessage: jest.fn(() => jest.fn()),
+  onNotificationOpenedApp: jest.fn(() => jest.fn()),
+  onTokenRefresh: jest.fn(() => jest.fn()),
+  AuthorizationStatus: {
+    NOT_DETERMINED: -1,
+    DENIED: 0,
+    AUTHORIZED: 1,
+    PROVISIONAL: 2,
+    EPHEMERAL: 3,
+  },
+}));

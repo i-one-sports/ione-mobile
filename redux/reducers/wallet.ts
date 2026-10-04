@@ -1,6 +1,7 @@
 import { getUserWallet, getBank } from "@/api/walletThunks";
 import { WalletResponse, BankResponse } from "@/components/typings/apiResponse";
 import { createSlice } from "@reduxjs/toolkit";
+import { logOut } from "@/api/authThunks";
 
 interface State {
   wallet: WalletResponse | null;
@@ -29,6 +30,8 @@ export const walletSlice = createSlice({
   initialState,
   reducers: {},
   extraReducers(builder) {
+    builder.addCase(logOut.fulfilled, () => initialState);
+
     builder.addCase(getUserWallet.pending, (state) => {
       state.loading = true;
       state.error = null;
