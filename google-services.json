@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "815295167059",
+    "project_id": "i-one-sports",
+    "storage_bucket": "i-one-sports.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:815295167059:android:bd2f91f166556db4fde4a6",
+        "android_client_info": {
+          "package_name": "com.ione.mobile"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD5gUOvIB64NenbhzxjHBABXdhuWE3E-vA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

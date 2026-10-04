@@ -1,4 +1,5 @@
 /* eslint-disable react-hooks/exhaustive-deps */
+import { registerDeviceToken } from "@/api/authThunks";
 import { Role } from "@/components/typings/apiResponse";
 import "@/globals.css";
 import { useColorScheme } from "@/hooks/useColorScheme";
@@ -8,8 +9,20 @@ import {
   setPendingSession,
   consumePendingSession,
 } from "@/utils/pendingDeepLink";
+import {
+  extractSessionIdFromMessage,
+  getPushToken,
+} from "@/utils/pushNotifications";
 import toastConfig from "@/utils/toast";
+import Feather from "@expo/vector-icons/Feather";
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
+import {
+  getInitialNotification,
+  getMessaging,
+  onMessage,
+  onNotificationOpenedApp,
+  onTokenRefresh,
+} from "@react-native-firebase/messaging";
 import {
   DarkTheme,
   DefaultTheme,
@@ -71,6 +84,11 @@ function AppNavigator() {
     const sessionId = extractSessionId(url);
     if (!sessionId) return;
 
+    openSession(sessionId);
+  };
+
+  /** Navigate to a session now, or hold it until the user is signed in. */
+  const openSession = (sessionId: string) => {
     const currentlyAuthenticated = store.getState().auth.isAuthenticated;
 
     if (navigatorReady.current && currentlyAuthenticated) {
@@ -107,6 +125,56 @@ function AppNavigator() {
     return () => sub.remove();
   }, []);
 
+  // Push notifications: token refresh, foreground messages, and taps.
+  useEffect(() => {
+    const messaging = getMessaging();
+
+    // App was killed and launched by tapping a notification.
+    getInitialNotification(messaging)
+      .then((message) => {
+        const sessionId = extractSessionIdFromMessage(message);
+        if (sessionId) openSession(sessionId);
+      })
+      .catch(() => {});
+
+    // App was in the background and a notification was tapped.
+    const unsubscribeOpened = onNotificationOpenedApp(messaging, (message) => {
+      const sessionId = extractSessionIdFromMessage(message);
+      if (sessionId) openSession(sessionId);
+    });
+
+    // FCM doesn't display notifications while the app is in the foreground.
+    const unsubscribeMessage = onMessage(messaging, async (message) => {
+      const sessionId = extractSessionIdFromMessage(message);
+      Toast.show({
+        type: "success",
+        props: {
+          title: message.notification?.title,
+          message: message.notification?.body ?? "",
+          icon: <Feather name="bell" size={24} color="#065F46" />,
+        },
+        onPress: sessionId
+          ? () => {
+              Toast.hide();
+              openSession(sessionId);
+            }
+          : undefined,
+      });
+    });
+
+    const unsubscribeRefresh = onTokenRefresh(messaging, (token) => {
+      if (store.getState().auth.isAuthenticated) {
+        store.dispatch(registerDeviceToken(token));
+      }
+    });
+
+    return () => {
+      unsubscribeOpened();
+      unsubscribeMessage();
+      unsubscribeRefresh();
+    };
+  }, []);
+
   // Auth-driven navigation — the single source of truth for routing.
   // Deferred via setTimeout(0) so the Stack is fully mounted before
   // any router.replace() fires.
@@ -135,6 +203,15 @@ function AppNavigator() {
       navigateByRole(storedRole);
       hideSplash();
       navigatorReady.current = true;
+
+      // Register this device for push on login and on every launch while
+      // signed in. Idempotent on the backend, never blocks navigation.
+      getPushToken()
+        .then((token) => {
+          if (token) store.dispatch(registerDeviceToken(token));
+          console.log("FCM token registration succeeded", token);
+        })
+        .catch((err) => console.log("FCM token registration failed", err));
 
       // Consume any pending deep-link session stored before login.
       const pending = consumePendingSession();
