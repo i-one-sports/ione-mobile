@@ -71,7 +71,14 @@
       "expo-font",
       "expo-web-browser",
       "expo-secure-store",
-      "@react-native-firebase/app",
+      [
+        "@react-native-firebase/app",
+        {
+          "ios": {
+            "disableSPM": true
+          }
+        }
+      ],
       "@react-native-firebase/messaging",
       [
         "expo-build-properties",
