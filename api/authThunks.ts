@@ -28,6 +28,7 @@ import {
 import axiosInstance, { uploadAxios } from "./axios";
 import { deletePushToken } from "@/utils/pushNotifications";
 import { Platform } from "react-native";
+import * as SecureStore from "expo-secure-store";
 
 export const uploadAvatar = createAsyncThunk<
   { avatar: string },
@@ -272,7 +273,17 @@ export const logOut = createAsyncThunk<logoutResponse, void, AsyncThunkConfig>(
     // Drop this device's FCM token so the next user on this phone
     // doesn't receive the previous user's notifications.
     await deletePushToken();
-    return apiCall(axiosInstance.get("/i-one/auth/user/logout"), thunkAPI);
+    try {
+      return await apiCall(
+        axiosInstance.get("/i-one/auth/user/logout"),
+        thunkAPI,
+      );
+    } finally {
+      await Promise.all([
+        SecureStore.deleteItemAsync("i-one"),
+        SecureStore.deleteItemAsync("user-data"),
+      ]).catch(() => {});
+    }
   },
 );
 
