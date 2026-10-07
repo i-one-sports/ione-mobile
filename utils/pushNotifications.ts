@@ -1,6 +1,7 @@
 import {
   AuthorizationStatus,
   deleteToken,
+  getAPNSToken,
   getMessaging,
   getToken,
   registerDeviceForRemoteMessages,
@@ -34,6 +35,20 @@ export async function askNotificationPermission(): Promise<boolean> {
 }
 
 /**
+ * iOS hands Firebase the APNs token asynchronously after registration;
+ * getToken throws "No APNS token specified" if it isn't there yet.
+ */
+async function waitForApnsToken(timeoutMs = 10000): Promise<void> {
+  if (Platform.OS !== "ios") return;
+  const messaging = getMessaging();
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    if (await getAPNSToken(messaging)) return;
+    await new Promise((resolve) => setTimeout(resolve, 500));
+  }
+}
+
+/**
  * Request permission and return this device's FCM token, or null if denied.
  * iOS needs an explicit APNs registration (separate from permission) before
  * getToken works; it's a no-op on Android.
@@ -43,6 +58,7 @@ export async function getPushToken(): Promise<string | null> {
   if (!granted) return null;
   const messaging = getMessaging();
   await registerDeviceForRemoteMessages(messaging);
+  await waitForApnsToken();
   return getToken(messaging);
 }
 

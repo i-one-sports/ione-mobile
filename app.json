@@ -11,6 +11,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.ione.mobile",
+      "appleTeamId": "9TSPYL5DKD",
       "associatedDomains": ["applinks:link.i-one-sports.com"],
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false

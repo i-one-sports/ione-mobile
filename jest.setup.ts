@@ -24,6 +24,7 @@ jest.mock("expo-splash-screen", () => ({
 
 jest.mock("@react-native-firebase/messaging", () => ({
   getMessaging: jest.fn(() => ({})),
+  getAPNSToken: jest.fn().mockResolvedValue("test-apns-token"),
   getToken: jest.fn().mockResolvedValue("test-fcm-token"),
   deleteToken: jest.fn().mockResolvedValue(undefined),
   requestPermission: jest.fn().mockResolvedValue(1),
