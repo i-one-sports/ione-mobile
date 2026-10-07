@@ -3,6 +3,7 @@ import {
   deleteToken,
   getMessaging,
   getToken,
+  registerDeviceForRemoteMessages,
   requestPermission,
   type RemoteMessage,
 } from "@react-native-firebase/messaging";
@@ -32,11 +33,17 @@ export async function askNotificationPermission(): Promise<boolean> {
   return true;
 }
 
-/** Request permission and return this device's FCM token, or null if denied. */
+/**
+ * Request permission and return this device's FCM token, or null if denied.
+ * iOS needs an explicit APNs registration (separate from permission) before
+ * getToken works; it's a no-op on Android.
+ */
 export async function getPushToken(): Promise<string | null> {
   const granted = await askNotificationPermission();
   if (!granted) return null;
-  return getToken(getMessaging());
+  const messaging = getMessaging();
+  await registerDeviceForRemoteMessages(messaging);
+  return getToken(messaging);
 }
 
 /** Best-effort removal of this device's FCM token (used on logout). */
