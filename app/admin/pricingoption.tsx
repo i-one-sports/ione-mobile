@@ -62,11 +62,30 @@ export default function AdminPricingOptionScreen() {
     dispatch(getLocation());
   }, [dispatch]);
 
+  console.log(location);
+
+  // Stored price for an option; the API keeps hourly and monthly separately.
+  const storedPriceFor = (option: PricingOptionType | null) => {
+    if (option === "hourly") return location?.paymentPerPersonHourly;
+    if (option === "monthly") return location?.paymentPerPersonMonthly;
+    return undefined;
+  };
+
+  const currentPrice =
+    location?.tier === "paid"
+      ? storedPriceFor(location.pricingOption)
+      : undefined;
+
   useEffect(() => {
     if (!location) return;
 
     setTierValue(location.tier || null);
     setPricingOptionValue(location.pricingOption || null);
+    const price =
+      location.pricingOption === "hourly"
+        ? location.paymentPerPersonHourly
+        : location.paymentPerPersonMonthly;
+    setAmount(price != null ? String(price) : "");
   }, [location]);
 
   const handleUpdatePricingOptions = async () => {
@@ -247,10 +266,12 @@ export default function AdminPricingOptionScreen() {
                   <TouchableOpacity
                     key={item.id}
                     onPress={() => {
+                      const option =
+                        item.state.toLocaleLowerCase() as PricingOptionType;
                       setOpenDropdown(false);
-                      setPricingOptionValue(
-                        item.state.toLocaleLowerCase() as PricingOptionType,
-                      );
+                      setPricingOptionValue(option);
+                      const price = storedPriceFor(option);
+                      setAmount(price != null ? String(price) : "");
                     }}
                     className="p-3"
                   >
@@ -275,6 +296,20 @@ export default function AdminPricingOptionScreen() {
               placeholderTextColor="#9CA3AF"
               keyboardType="numeric"
             />
+
+            {location && (location.tier === "free" || currentPrice != null) && (
+              <ThemedText
+                lightColor="#6B7280"
+                darkColor="#9CA3AF"
+                style={{ fontSize: 13, marginTop: 8 }}
+              >
+                {currentPrice != null
+                  ? `Current price: ₦${currentPrice.toLocaleString()} per person / ${
+                      location.pricingOption === "hourly" ? "hour" : "month"
+                    }`
+                  : "Current price: Free"}
+              </ThemedText>
+            )}
           </ScrollView>
 
           {/* Update button */}

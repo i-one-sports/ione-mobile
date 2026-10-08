@@ -21,6 +21,7 @@ import {
 
 const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
   COMPLETE: { label: "Complete", color: "#00A85A" },
+  COMPLETED: { label: "Completed", color: "#00A85A" },
   PARTIAL: { label: "Partial", color: "#CC8800" },
   UNPAID: { label: "Unpaid", color: "#FF4444" },
   PENDING: { label: "Pending", color: "#CC8800" },
@@ -265,9 +266,6 @@ export default function TeamStatus() {
                 <View>
                   <Text className="text-[24px] font-bold text-black dark:text-white">
                     {naira(data.grandPaid)}
-                  </Text>
-                  <Text className="text-[11px] text-[#6D717F]">
-                    collected of {naira(data.grandExpected)} expected
                   </Text>
                 </View>
                 <StatusText status={data.sessionPaymentStatus} />
