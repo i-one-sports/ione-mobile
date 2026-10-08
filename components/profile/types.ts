@@ -4,7 +4,6 @@ export interface FormattedUserData {
   nickname: string;
   dateOfBirth: string;
   height: string;
-  placeOfBirth: string;
   position: string;
   email: string;
   phoneNumber: string;

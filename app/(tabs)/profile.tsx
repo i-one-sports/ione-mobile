@@ -77,7 +77,6 @@ export default function ProfileScreen() {
       nickname: user.nickname || "Not set",
       dateOfBirth: formatDate(user.dateOfBirth || ""),
       height: convertHeightToFeet(user.height || 0),
-      placeOfBirth: user.placeOfBirth || "Not set",
       position: getPositionName(user.position || ""),
       email: user.email || "Not set",
       phoneNumber: user.phoneNumber || "Not set",
@@ -393,14 +392,6 @@ export default function ProfileScreen() {
                       setFormValues((prev) => ({ ...prev, height: value }))
                     }
                     placeholder="Height in cm"
-                  />
-                  <InputField
-                    label="Date of birth"
-                    value={formValues.dateOfBirth}
-                    placeholder="YYYY-MM-DD"
-                    onChangeText={(value) =>
-                      setFormValues((prev) => ({ ...prev, dateOfBirth: value }))
-                    }
                   />
                   <TouchableOpacity
                     onPress={handleSave}
