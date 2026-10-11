@@ -20,6 +20,7 @@ import {
   ActivityIndicator,
   Image,
   Pressable,
+  RefreshControl,
   ScrollView,
   Share,
   StyleSheet,
@@ -130,6 +131,7 @@ export default function JoinSession() {
   const theme = Colors[colorScheme ?? "light"];
   const [showDetails, setShowDetails] = useState(false);
   const [activeView, setActiveView] = useState<"squad" | "lineups">("squad");
+  const [refreshing, setRefreshing] = useState(false);
   const dispatch = useAppDispatch();
 
   // params only carries the sessionId + static display data (for the initial render skeleton)
@@ -177,6 +179,13 @@ export default function JoinSession() {
       dispatch(clearActiveSession());
     };
   }, [sessionId, dispatch]);
+
+  const onRefresh = useCallback(async () => {
+    if (!sessionId) return;
+    setRefreshing(true);
+    await dispatch(getSession(sessionId));
+    setRefreshing(false);
+  }, [dispatch, sessionId]);
 
   // Derive everything from the server response — no manual state flags
   const session = activeSession ?? staticSession;
@@ -353,6 +362,14 @@ export default function JoinSession() {
         className="mb-[40px] h-full flex-1 py-6"
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 40, flexGrow: 1 }}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor="#00FF94"
+            colors={["#00FF94"]}
+          />
+        }
       >
         <View className="flex flex-col gap-[31px]">
           <View className="mx-[24px] flex flex-col gap-[31px]">
@@ -531,7 +548,7 @@ export default function JoinSession() {
                               locationName: session?.location?.name ?? "",
                               startTime: session?.startTime ?? "",
                               matchType: session?.matchType ?? "",
-                              paymentPerPersonHourly: String(
+                              paymentAmount: String(
                                 session?.paymentAmount ?? 0,
                               ),
                             },

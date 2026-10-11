@@ -1,3 +1,4 @@
+import { formatKoboAsNaira } from "@/utils/currency";
 import { getLocationTeamStatus } from "@/api/ownerDashboardThunk";
 import SafeAreaScreen from "@/components/SafeAreaScreen";
 import { ThemedText } from "@/components/ThemedText";
@@ -29,7 +30,7 @@ const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
   NOT_PAID: { label: "Not Paid", color: "#FF4444" },
 };
 
-const naira = (amount: number) => `₦${Number(amount ?? 0).toLocaleString()}`;
+const naira = formatKoboAsNaira;
 
 const firstParam = (value?: string | string[]) =>
   Array.isArray(value) ? value[0] : value;

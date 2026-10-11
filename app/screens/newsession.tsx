@@ -257,11 +257,13 @@ export default function NewSession() {
             </ThemedText>
 
             <Pressable onPress={() => formik.handleSubmit()} disabled={loading}>
-              <Text
-                className={`text-[16px] font-[500] ${loading ? "text-gray-400" : "text-[#0C4D2E]"}`}
+              <ThemedText
+                lightColor={theme.text}
+                darkColor={theme.text}
+                className={`text-[16px] font-[500] ${loading && "text-gray-400"}`}
               >
                 {loading ? "Creating..." : "Next"}
-              </Text>
+              </ThemedText>
             </Pressable>
           </View>
 

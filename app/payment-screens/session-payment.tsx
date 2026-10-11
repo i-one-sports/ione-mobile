@@ -1,3 +1,4 @@
+import { koboToNaira } from "@/utils/currency";
 import React, { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -46,7 +47,9 @@ export default function SessionPaymentScreen() {
     params;
   const members = params.members ? JSON.parse(params.members) : [];
 
-  const amount = Number(paymentAmount ?? 0);
+  // paymentAmount comes from the API in kobo; show naira.
+  const amount = koboToNaira(Number(paymentAmount ?? 0));
+  console.log("[session-payment] sessionId:", sessionId, "amount:", amount);
 
   const { mySessionPayment, allMembersStatus, loadingInit, loadingStatus } =
     useAppSelector((s) => s.payment);
@@ -105,7 +108,6 @@ export default function SessionPaymentScreen() {
   const handleRetry = () => {
     stopPolling();
     setPolling(false);
-    setInitiated(false);
     handlePay();
   };
 

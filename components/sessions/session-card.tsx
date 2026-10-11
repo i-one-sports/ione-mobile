@@ -1,3 +1,4 @@
+import { koboToNaira } from "@/utils/currency";
 import React from "react";
 import { Text, TouchableOpacity, View, useColorScheme } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
@@ -272,7 +273,7 @@ export function SessionCard({ match, sessionData }: SessionCardProps) {
                 color: isPaymentStage ? "#CC8800" : primaryText,
               }}
             >
-              {Number(match.paymentAmount ?? 0).toLocaleString()}
+              {koboToNaira(Number(match.paymentAmount ?? 0)).toLocaleString()}
             </Text>
           </View>
         )}

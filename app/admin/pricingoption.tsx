@@ -1,3 +1,4 @@
+import { koboToNaira, nairaToKobo } from "@/utils/currency";
 import { getLocation, updatePricingOptions } from "@/api/ownerDashboardThunk";
 import { useColorScheme } from "nativewind";
 import { ThemedText } from "@/components/ThemedText";
@@ -62,13 +63,16 @@ export default function AdminPricingOptionScreen() {
     dispatch(getLocation());
   }, [dispatch]);
 
-  console.log(location);
-
-  // Stored price for an option; the API keeps hourly and monthly separately.
+  // Stored price in naira for an option; the API keeps hourly and monthly
+  // separately, in kobo.
   const storedPriceFor = (option: PricingOptionType | null) => {
-    if (option === "hourly") return location?.paymentPerPersonHourly;
-    if (option === "monthly") return location?.paymentPerPersonMonthly;
-    return undefined;
+    const kobo =
+      option === "hourly"
+        ? location?.paymentPerPersonHourly
+        : option === "monthly"
+          ? location?.paymentPerPersonMonthly
+          : undefined;
+    return kobo != null ? koboToNaira(kobo) : undefined;
   };
 
   const currentPrice =
@@ -81,11 +85,11 @@ export default function AdminPricingOptionScreen() {
 
     setTierValue(location.tier || null);
     setPricingOptionValue(location.pricingOption || null);
-    const price =
+    const kobo =
       location.pricingOption === "hourly"
         ? location.paymentPerPersonHourly
         : location.paymentPerPersonMonthly;
-    setAmount(price != null ? String(price) : "");
+    setAmount(kobo != null ? String(koboToNaira(kobo)) : "");
   }, [location]);
 
   const handleUpdatePricingOptions = async () => {
@@ -109,13 +113,13 @@ export default function AdminPricingOptionScreen() {
         payload = {
           tier: "paid",
           pricingOption: "hourly",
-          paymentPerPersonHourly: Number(amount),
+          paymentPerPersonHourly: nairaToKobo(Number(amount)),
         };
       } else {
         payload = {
           tier: "paid",
           pricingOption: "monthly",
-          paymentPerPersonMonthly: Number(amount),
+          paymentPerPersonMonthly: nairaToKobo(Number(amount)),
         };
       }
     }
