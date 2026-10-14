@@ -1,3 +1,4 @@
+import { formatKoboAsNaira } from "@/utils/currency";
 import React, { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -351,7 +352,7 @@ export default function WalletFundScreen() {
                   marginTop: 4,
                 }}
               >
-                Ledger: ₦{walletBalance.ledgerBalance.toLocaleString()}
+                Ledger: {formatKoboAsNaira(walletBalance.ledgerBalance)}
               </Text>
             )}
           </View>

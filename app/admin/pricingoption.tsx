@@ -64,11 +64,12 @@ export default function AdminPricingOptionScreen() {
   }, [dispatch]);
 
   // Stored price in naira for an option; the API keeps hourly and monthly
-  // separately, in kobo.
+  // separately, in kobo. Hourly is the whole-pitch price; older locations may
+  // only have the legacy per-person field.
   const storedPriceFor = (option: PricingOptionType | null) => {
     const kobo =
       option === "hourly"
-        ? location?.paymentPerPersonHourly
+        ? (location?.pricePerHour ?? location?.paymentPerPersonHourly)
         : option === "monthly"
           ? location?.paymentPerPersonMonthly
           : undefined;
@@ -87,7 +88,7 @@ export default function AdminPricingOptionScreen() {
     setPricingOptionValue(location.pricingOption || null);
     const kobo =
       location.pricingOption === "hourly"
-        ? location.paymentPerPersonHourly
+        ? (location.pricePerHour ?? location.paymentPerPersonHourly)
         : location.paymentPerPersonMonthly;
     setAmount(kobo != null ? String(koboToNaira(kobo)) : "");
   }, [location]);
@@ -113,7 +114,7 @@ export default function AdminPricingOptionScreen() {
         payload = {
           tier: "paid",
           pricingOption: "hourly",
-          paymentPerPersonHourly: nairaToKobo(Number(amount)),
+          pricePerHour: nairaToKobo(Number(amount)),
         };
       } else {
         payload = {
@@ -308,8 +309,10 @@ export default function AdminPricingOptionScreen() {
                 style={{ fontSize: 13, marginTop: 8 }}
               >
                 {currentPrice != null
-                  ? `Current price: ₦${currentPrice.toLocaleString()} per person / ${
-                      location.pricingOption === "hourly" ? "hour" : "month"
+                  ? `Current price: ₦${currentPrice.toLocaleString()} ${
+                      location.pricingOption === "hourly"
+                        ? "per hour (whole pitch)"
+                        : "per person / month"
                     }`
                   : "Current price: Free"}
               </ThemedText>

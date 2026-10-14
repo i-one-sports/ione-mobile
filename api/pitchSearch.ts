@@ -7,6 +7,8 @@ export interface SessionPitch {
   address: string;
   coordinates?: Coordinates;
   booked?: boolean;
+  /** Paid hourly pitch: sessions must be booked in whole hours. */
+  hourlyPricing?: boolean;
 }
 export interface MapArea {
   id: string;
@@ -77,6 +79,8 @@ export async function fetchPitchesInArea(
         name: pitch.name,
         address: pitch.address ?? "",
         booked: pitch.booked === true,
+        hourlyPricing:
+          pitch.tier === "paid" && pitch.pricingOption === "hourly",
         coordinates: isCoordinates(coordinates) ? coordinates : undefined,
       },
     ];

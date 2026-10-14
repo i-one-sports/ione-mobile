@@ -19,7 +19,9 @@ import CustomButton from "@/components/ui/CustomButton";
 import PaymentSummaryCard from "@/components/payment/PaymentSummaryCard";
 import PaymentPollingOverlay from "@/components/payment/PaymentPollingOverlay";
 import MemberPaymentList from "@/components/payment/MemberPaymentList";
+import PoolPaymentPanel from "@/components/payment/PoolPaymentPanel";
 import usePaymentPolling from "@/hooks/usePaymentPolling";
+import usePoolStream from "@/hooks/usePoolStream";
 import { useAppDispatch, useAppSelector } from "@/redux/store";
 import {
   getAllMembersPaymentStatus,
@@ -41,11 +43,15 @@ export default function SessionPaymentScreen() {
     matchType?: string;
     members?: string;
     paymentAmount: string;
+    paymentMode?: string;
+    paymentTarget?: string;
   }>();
 
   const { sessionId, locationName, startTime, matchType, paymentAmount } =
     params;
   const members = params.members ? JSON.parse(params.members) : [];
+  // Hourly sessions are pooled: members chip in toward one total.
+  const isPool = params.paymentMode === "POOL";
 
   // paymentAmount comes from the API in kobo; show naira.
   const amount = koboToNaira(Number(paymentAmount ?? 0));
@@ -53,18 +59,90 @@ export default function SessionPaymentScreen() {
 
   const { mySessionPayment, allMembersStatus, loadingInit, loadingStatus } =
     useAppSelector((s) => s.payment);
+  const myUserId = useAppSelector((s) => s.auth.user?._id);
 
   const [polling, setPolling] = useState(false);
 
   useEffect(() => {
     if (sessionId) {
-      dispatch(getMySessionPayment(sessionId));
+      // POOL players can have several contribution rows; my-payment only
+      // returns one of them, so the pool snapshot is used instead.
+      if (!isPool) dispatch(getMySessionPayment(sessionId));
       dispatch(getAllMembersPaymentStatus(sessionId));
     }
     return () => {
       dispatch(clearPaymentState());
     };
-  }, [sessionId, dispatch]);
+  }, [sessionId, isPool, dispatch]);
+
+  const { snapshot: streamedPool } = usePoolStream(sessionId, isPool);
+  const pool = streamedPool ?? allMembersStatus?.pool ?? null;
+  const poolTarget = pool?.target ?? Number(params.paymentTarget ?? 0);
+  const myPoolTotal =
+    pool?.contributors.find((c) => c.userId === myUserId)?.amount ?? 0;
+
+  // A POOL checkout we opened, waiting for the webhook to land in the pot.
+  const [pendingContribution, setPendingContribution] = useState<{
+    expectedTotal: number;
+    expiresAt: number;
+  } | null>(null);
+
+  useEffect(() => {
+    if (!pendingContribution) return;
+    if (myPoolTotal >= pendingContribution.expectedTotal) {
+      setPendingContribution(null);
+      Toast.show({
+        type: "success",
+        text1: "Payment confirmed",
+        text2: "Your contribution is in the pot.",
+      });
+    }
+  }, [myPoolTotal, pendingContribution]);
+
+  // The server releases an unpaid reservation at expiresAt; stop waiting then.
+  useEffect(() => {
+    if (!pendingContribution) return;
+    const ms = Math.max(pendingContribution.expiresAt - Date.now(), 0);
+    const timer = setTimeout(() => setPendingContribution(null), ms);
+    return () => clearTimeout(timer);
+  }, [pendingContribution]);
+
+  const handlePoolPay = async (amountKobo: number) => {
+    if (!sessionId) return;
+    try {
+      const result = await dispatch(
+        initSessionPayment({ sessionId, amount: amountKobo }),
+      ).unwrap();
+      if (result.alreadyPaid) {
+        Toast.show({
+          type: "info",
+          text1: "Already covered",
+          text2: "The pot is already full. You're good to go!",
+        });
+        dispatch(getAllMembersPaymentStatus(sessionId));
+        return;
+      }
+      setPendingContribution({
+        expectedTotal: myPoolTotal + (result.baseAmount ?? amountKobo),
+        expiresAt: result.expiresAt
+          ? new Date(result.expiresAt).getTime()
+          : Date.now() + 15 * 60 * 1000,
+      });
+      await WebBrowser.openBrowserAsync(result.authorizationUrl);
+    } catch (err: any) {
+      // 409: someone else reserved part of the pot first — refresh the numbers.
+      if (err?.status === 409) {
+        dispatch(getAllMembersPaymentStatus(sessionId));
+        Toast.show({
+          type: "info",
+          text1: "The pot just changed",
+          text2: "Someone else paid first. Check the new amount and try again.",
+        });
+        return;
+      }
+      Toast.show({ type: "error", text1: "Payment error", text2: err?.msg });
+    }
+  };
 
   const fetchPaymentStatus = useCallback(async () => {
     if (!sessionId) return null;
@@ -92,7 +170,7 @@ export default function SessionPaymentScreen() {
   const handlePay = async () => {
     if (!sessionId) return;
     try {
-      const result = await dispatch(initSessionPayment(sessionId)).unwrap();
+      const result = await dispatch(initSessionPayment({ sessionId })).unwrap();
       console.log("[session-payment] initSessionPayment result:", result);
       await WebBrowser.openBrowserAsync(result.authorizationUrl);
       setPolling(true);
@@ -176,7 +254,63 @@ export default function SessionPaymentScreen() {
         </ThemedText>
       </View>
 
-      {loadingStatus && !mySessionPayment && !loadingInit ? (
+      {isPool ? (
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          contentContainerStyle={{ padding: 20, paddingBottom: 40 }}
+        >
+          <PaymentSummaryCard
+            title="Pitch booking"
+            amountLabel="Session total"
+            amount={koboToNaira(poolTarget)}
+            isDark={isDark}
+            accent={accent}
+            rows={[
+              { label: "Location", value: locationName || "—" },
+              { label: "Kick-off", value: formattedTime },
+              {
+                label: "Match type",
+                value: matchType
+                  ? matchType.charAt(0).toUpperCase() + matchType.slice(1)
+                  : "—",
+              },
+            ]}
+          />
+
+          {pool ? (
+            <PoolPaymentPanel
+              pool={pool}
+              myUserId={myUserId}
+              isDark={isDark}
+              accent={accent}
+              paying={loadingInit}
+              awaitingConfirmation={pendingContribution != null}
+              onPay={handlePoolPay}
+              onDone={() => router.back()}
+            />
+          ) : allMembersStatus ? (
+            // Status loaded but no pool block: the pot isn't open yet.
+            <Text
+              style={{
+                color: mutedColor,
+                fontSize: 13,
+                textAlign: "center",
+                lineHeight: 19,
+              }}
+            >
+              Payment opens once the session is full.
+            </Text>
+          ) : (
+            <View style={{ alignItems: "center", marginTop: 20 }}>
+              <ActivityIndicator color={accent} />
+              <Text style={{ color: mutedColor, marginTop: 12, fontSize: 13 }}>
+                Loading the session pot...
+              </Text>
+            </View>
+          )}
+        </ScrollView>
+      ) : loadingStatus && !mySessionPayment && !loadingInit ? (
         <View
           style={{ flex: 1, alignItems: "center", justifyContent: "center" }}
         >

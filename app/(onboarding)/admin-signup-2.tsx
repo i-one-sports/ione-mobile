@@ -151,7 +151,7 @@ export default function AdminSignup2() {
                 location: { coordinates: values.coordinates },
                 ...(values.pricingOption === "hourly"
                   ? {
-                      paymentPerPersonHourly: nairaToKobo(Number(values.price)),
+                      pricePerHour: nairaToKobo(Number(values.price)),
                     }
                   : {
                       paymentPerPersonMonthly: nairaToKobo(
@@ -322,7 +322,7 @@ export default function AdminSignup2() {
                       label={
                         values.pricingOption === "monthly"
                           ? "Price per Person / Month (₦)"
-                          : "Price per Person / Hour (₦)"
+                          : "Pitch Price per Hour (₦)"
                       }
                       placeholder="2500"
                       value={values.price}

@@ -29,6 +29,9 @@ export function SessionCard({ match, sessionData }: SessionCardProps) {
   const isLive = match.inProgress;
   const isFinished = match.finished;
   const isFull = match.isFull;
+  // Pooled (hourly) sessions have one total; paymentAmount is 0 for them.
+  const isPool = match.paymentMode === "POOL";
+  const price = isPool ? match.paymentTarget : match.paymentAmount;
   const isPaymentStage =
     match.paymentRequired &&
     isFull &&
@@ -100,7 +103,10 @@ export function SessionCard({ match, sessionData }: SessionCardProps) {
   const footerNote = (() => {
     if (isFinished) return "Session ended";
     if (isLive) return `Match in progress · ${match.minute}`;
-    if (isPaymentStage) return "Waiting for all payments";
+    if (isPaymentStage)
+      return isPool
+        ? "Waiting for the pot to fill"
+        : "Waiting for all payments";
     if (isFull) return "No spots left";
     return `${spotsLeft} spot${spotsLeft !== 1 ? "s" : ""} remaining`;
   })();
@@ -273,7 +279,8 @@ export function SessionCard({ match, sessionData }: SessionCardProps) {
                 color: isPaymentStage ? "#CC8800" : primaryText,
               }}
             >
-              {koboToNaira(Number(match.paymentAmount ?? 0)).toLocaleString()}
+              {koboToNaira(Number(price)).toLocaleString()}
+              {isPool ? " total" : ""}
             </Text>
           </View>
         )}

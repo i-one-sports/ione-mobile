@@ -12,6 +12,7 @@ interface Row {
 interface Props {
   title: string;
   amount: number;
+  amountLabel?: string;
   rows: Row[];
   status?: PaymentStatus | null;
   isDark: boolean;
@@ -22,6 +23,7 @@ interface Props {
 export default function PaymentSummaryCard({
   title,
   amount,
+  amountLabel = "Amount due",
   rows,
   status,
   isDark,
@@ -48,7 +50,7 @@ export default function PaymentSummaryCard({
 
       <View style={[styles.amountRow, { borderColor: cardBorder }]}>
         <Text style={[styles.amountLabel, { color: mutedColor }]}>
-          Amount due
+          {amountLabel}
         </Text>
         <Text style={[styles.amount, { color: accent }]}>
           ₦{amount.toLocaleString()}

@@ -106,6 +106,17 @@ export default function NewSession() {
         setPitchError("Choose a pitch before creating your session.");
         return;
       }
+      // Hourly pitches only take whole-hour bookings (60, 120, 180, ...).
+      if (
+        selectedPitch?.hourlyPricing &&
+        Number(values.timeDuration) % 60 !== 0
+      ) {
+        formik.setFieldError(
+          "timeDuration",
+          "This pitch is booked by the hour. Use 60, 120, 180...",
+        );
+        return;
+      }
       submitting.current = true;
       setLoading(true);
       try {
@@ -342,7 +353,11 @@ export default function NewSession() {
                     required
                     label="Total Minutes"
                     keyboardType="numeric"
-                    placeholder="e.g. 120"
+                    placeholder={
+                      selectedPitch?.hourlyPricing
+                        ? "60, 120, 180..."
+                        : "e.g. 120"
+                    }
                     value={formik.values.timeDuration}
                     onChangeText={formik.handleChange("timeDuration")}
                     onBlur={formik.handleBlur("timeDuration")}

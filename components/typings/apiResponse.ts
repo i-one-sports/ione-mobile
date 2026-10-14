@@ -212,6 +212,9 @@ export interface LocationResponse {
   owner?: string;
   tier: "free" | "paid";
   pricingOption: PricingOption;
+  /** Total for the whole pitch per hour, in kobo. */
+  pricePerHour?: number;
+  /** @deprecated Legacy per-person hourly price; superseded by pricePerHour. */
   paymentPerPersonHourly?: number;
   paymentPerPersonMonthly?: number;
   openingHour?: string;
@@ -403,7 +406,7 @@ export type PricingOptionPayload =
   | {
       tier: "paid";
       pricingOption: "hourly";
-      paymentPerPersonHourly: number;
+      pricePerHour: number;
     }
   | {
       tier: "paid";
@@ -458,6 +461,10 @@ export interface SessionByIdResponse {
   _id: string;
   paymentRequired: boolean;
   paymentAmount?: number;
+  paymentMode?: "POOL" | "PER_PERSON";
+  /** POOL: total the session pays, in kobo (before commission). */
+  paymentTarget?: number;
+  paymentStatus?: "NOT_INITIATED" | "PENDING" | "COMPLETED" | "EXPIRED";
   members: Members[];
   // full session fields
   captain?: {
@@ -605,9 +612,12 @@ export type PaymentStatus = "COMPLETE" | "PARTIAL" | "UNPAID";
 export interface PaymentEntry {
   teamName: string;
   sessionId: string;
-  setId: string;
+  /** null for POOL sessions, which are one "Whole session" entry. */
+  setId: string | null;
   sessionStartTime: string;
   pricingOption: PricingOption;
+  paymentMode?: "PER_PERSON" | "POOL";
+  /** 0 for POOL sessions. */
   paymentAmount: number;
   teamSize: number;
   membersPaid: number;
@@ -649,9 +659,10 @@ export interface TeamPayment {
   totalPlayers: number;
   playersPaid: number;
   playersUnpaid: number;
-  expectedTotal: number;
+  /** null for POOL sessions — the total is owed by the session, not per team. */
+  expectedTotal: number | null;
   totalPaid: number;
-  shortfall: number;
+  shortfall: number | null;
   status: PaymentStatus;
   playerDetails: PlayerPaymentDetail[];
 }
@@ -662,6 +673,9 @@ export interface SessionPaymentDetailsResponse {
   sessionStopTime: string;
   paymentAmount: number;
   pricingOption: string;
+  paymentMode?: "PER_PERSON" | "POOL";
+  /** POOL: the session total (kobo); null otherwise. */
+  paymentTarget?: number | null;
   sessionPaymentStatus: PaymentStatus;
   grandExpected: number;
   grandPaid: number;

@@ -36,14 +36,16 @@ function logError(thunk: string, err: any) {
 
 // ─── Session payment ──────────────────────────────────────────────────────────
 
+// `amount` (kobo) is required for POOL sessions and ignored for PER_PERSON.
 export const initSessionPayment = createAsyncThunk<
   InitPaymentResponse,
-  string,
+  { sessionId: string; amount?: number },
   AsyncThunkConfig
->("payment/initSession", async (sessionId, thunkAPI) => {
+>("payment/initSession", async ({ sessionId, amount }, thunkAPI) => {
   const endpoint = `/i-one/wallet/session/${sessionId}/pay`;
-  logRequest("initSessionPayment", `POST ${endpoint}`, { sessionId });
-  const result = await apiCall(axiosInstance.post(endpoint), thunkAPI);
+  const body = amount != null ? { amount } : undefined;
+  logRequest("initSessionPayment", `POST ${endpoint}`, body);
+  const result = await apiCall(axiosInstance.post(endpoint, body), thunkAPI);
   if (result && !(result as any)?.payload)
     logResponse("initSessionPayment", result);
   else logError("initSessionPayment", result);

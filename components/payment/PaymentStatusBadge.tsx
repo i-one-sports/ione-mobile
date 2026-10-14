@@ -22,6 +22,7 @@ const CONFIG: Record<
   },
   REFUND_FAILED: { label: "Refund Failed", bg: "#2B0000", text: "#FF4444" },
   REFUNDED: { label: "Refunded", bg: "#1A2B2B", text: "#00C8FF" },
+  EXPIRED: { label: "Expired", bg: "#1A1A1A", text: "#999" },
 };
 
 export default function PaymentStatusBadge({ status, size = "sm" }: Props) {

@@ -136,6 +136,7 @@ interface State {
   // Join / Leave / End / Delete / Cancel / Reschedule
   loadingJoin: boolean;
   loadingLeave: boolean;
+  loadingDelete: boolean;
   loadingAction: boolean;
 
   errorSessions: string | null;
@@ -143,6 +144,7 @@ interface State {
   errorAll: string | null;
   errorJoin: string | null;
   errorLeave: string | null;
+  errorDelete: string | null;
 
   registeredLocations: RegisteredLocationResponse;
   loadingRegisteredLocations: boolean;
@@ -177,6 +179,7 @@ const initialState: State = {
 
   loadingJoin: false,
   loadingLeave: false,
+  loadingDelete: false,
   loadingAction: false,
 
   errorSessions: null,
@@ -184,6 +187,7 @@ const initialState: State = {
   errorAll: null,
   errorJoin: null,
   errorLeave: null,
+  errorDelete: null,
 
   registeredLocations: {
     exact: false,
@@ -369,14 +373,14 @@ export const sessionSlice = createSlice({
 
     builder
       .addCase(deleteSession.pending, (state) => {
-        state.loadingAction = true;
+        state.loadingDelete = true;
       })
       .addCase(deleteSession.fulfilled, (state) => {
-        state.loadingAction = false;
+        state.loadingDelete = false;
         state.activeSession = null;
       })
       .addCase(deleteSession.rejected, (state) => {
-        state.loadingAction = false;
+        state.loadingDelete = false;
       });
 
     builder
