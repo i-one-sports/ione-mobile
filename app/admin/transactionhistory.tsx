@@ -25,6 +25,7 @@ import {
   PaymentEntry,
   PaymentStatus,
 } from "@/components/typings/apiResponse";
+import { formatKoboAsNaira } from "@/utils/currency";
 
 const PAGE_SIZE = 20;
 
@@ -39,6 +40,10 @@ function formatDate(date: string) {
   if (dayjs(date).isSame(dayjs().subtract(1, "day"), "day")) return "Yesterday";
   return dayjs(date).format("ddd D MMM");
 }
+
+// POOL entries have no setId: they're one "Whole session" row per session.
+const entryKey = (entry: PaymentEntry) =>
+  entry.setId ?? `pool-${entry.sessionId}`;
 
 function formatPricing(pricingOption: string) {
   return pricingOption.charAt(0).toUpperCase() + pricingOption.slice(1);
@@ -151,7 +156,7 @@ function TransactionRow({
             darkColor="#fff"
             style={{ fontFamily: "Poppins_600SemiBold", fontSize: 14 }}
           >
-            ₦{entry.totalPaid.toLocaleString()}
+            {formatKoboAsNaira(entry.totalPaid)}
           </ThemedText>
           <View style={{ marginTop: 4 }}>
             <StatusBadge status={entry.paymentStatus} />
@@ -175,8 +180,9 @@ function TransactionRow({
           darkColor="#7D7D7D"
           style={{ fontFamily: "Poppins_400Regular", fontSize: 12 }}
         >
-          {entry.membersPaid}/{entry.teamSize} players paid · ₦
-          {entry.paymentAmount.toLocaleString()} per player
+          {entry.paymentMode === "POOL"
+            ? `${entry.membersPaid}/${entry.teamSize} players chipped in · shared pot`
+            : `${entry.membersPaid}/${entry.teamSize} players paid · ${formatKoboAsNaira(entry.paymentAmount)} per player`}
         </ThemedText>
         {shortfall > 0 ? (
           <ThemedText
@@ -184,7 +190,7 @@ function TransactionRow({
             darkColor="#FFB800"
             style={{ fontFamily: "Poppins_500Medium", fontSize: 12 }}
           >
-            ₦{shortfall.toLocaleString()} outstanding
+            {formatKoboAsNaira(shortfall)} outstanding
           </ThemedText>
         ) : (
           <ThemedText
@@ -192,7 +198,7 @@ function TransactionRow({
             darkColor="#00FF94"
             style={{ fontFamily: "Poppins_500Medium", fontSize: 12 }}
           >
-            ₦{entry.expectedTotal.toLocaleString()} collected
+            {formatKoboAsNaira(entry.expectedTotal)} collected
           </ThemedText>
         )}
       </View>
@@ -252,12 +258,12 @@ export default function AdminTransactionHistoryScreen() {
           byDate.set(group.date, group);
           continue;
         }
-        const seenIds = new Set(existing.entries.map((e) => e.setId));
+        const seenIds = new Set(existing.entries.map(entryKey));
         byDate.set(group.date, {
           date: existing.date,
           entries: [
             ...existing.entries,
-            ...group.entries.filter((e) => !seenIds.has(e.setId)),
+            ...group.entries.filter((e) => !seenIds.has(entryKey(e))),
           ],
         });
       }
@@ -306,7 +312,7 @@ export default function AdminTransactionHistoryScreen() {
           {formatDate(item.date)}
         </ThemedText>
         {item.entries.map((entry) => (
-          <TransactionRow key={entry.setId} entry={entry} isDark={isDark} />
+          <TransactionRow key={entryKey(entry)} entry={entry} isDark={isDark} />
         ))}
       </View>
     ),

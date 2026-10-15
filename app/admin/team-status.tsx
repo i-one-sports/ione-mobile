@@ -1,3 +1,4 @@
+import { formatKoboAsNaira } from "@/utils/currency";
 import { getLocationTeamStatus } from "@/api/ownerDashboardThunk";
 import SafeAreaScreen from "@/components/SafeAreaScreen";
 import { ThemedText } from "@/components/ThemedText";
@@ -21,14 +22,16 @@ import {
 
 const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
   COMPLETE: { label: "Complete", color: "#00A85A" },
+  COMPLETED: { label: "Completed", color: "#00A85A" },
   PARTIAL: { label: "Partial", color: "#CC8800" },
   UNPAID: { label: "Unpaid", color: "#FF4444" },
   PENDING: { label: "Pending", color: "#CC8800" },
   PAID: { label: "Paid", color: "#00A85A" },
   NOT_PAID: { label: "Not Paid", color: "#FF4444" },
+  EXPIRED: { label: "Checkout expired", color: "#999" },
 };
 
-const naira = (amount: number) => `₦${Number(amount ?? 0).toLocaleString()}`;
+const naira = formatKoboAsNaira;
 
 const firstParam = (value?: string | string[]) =>
   Array.isArray(value) ? value[0] : value;
@@ -48,11 +51,17 @@ function StatusText({ status }: { status: string }) {
 function PlayerRow({
   player,
   index,
+  isPool,
 }: {
   player: PlayerPaymentDetail;
   index: number;
+  isPool: boolean;
 }) {
-  const config = statusFor(player.status);
+  // In a pool, players who put nothing in don't owe anything.
+  const config =
+    isPool && player.status !== "PAID"
+      ? { label: "No contribution", color: "#999" }
+      : statusFor(player.status);
 
   return (
     <View className="flex-row items-center justify-between border-t border-[#EDEDED] py-[10px] dark:border-[#242424]">
@@ -69,7 +78,9 @@ function PlayerRow({
           <ThemedText className="text-[11px] text-gray-500">
             {player.paidAt
               ? `Paid at ${dayjs(player.paidAt).format("h:mm A")}`
-              : "Awaiting payment"}
+              : isPool
+                ? "Hasn't chipped in"
+                : "Awaiting payment"}
           </ThemedText>
         </View>
       </View>
@@ -86,10 +97,11 @@ function PlayerRow({
   );
 }
 
-function TeamCard({ team }: { team: TeamPayment }) {
+function TeamCard({ team, isPool }: { team: TeamPayment; isPool: boolean }) {
   const [open, setOpen] = useState(false);
 
-  const settled = team.shortfall === 0;
+  // POOL teams have no expectedTotal/shortfall; the pot is session-wide.
+  const settled = isPool || !team.shortfall;
 
   return (
     <View className="mb-[12px] rounded-[10px] border-[1px] border-[#EDEDED] bg-white dark:border-[#242424] dark:bg-[#111]">
@@ -109,8 +121,9 @@ function TeamCard({ team }: { team: TeamPayment }) {
         </View>
 
         <ThemedText className="mt-[6px] text-[11px] text-gray-500">
-          {team.playersPaid}/{team.totalPlayers} players paid •{" "}
-          {naira(team.totalPaid)} of {naira(team.expectedTotal)}
+          {isPool
+            ? `${team.playersPaid}/${team.totalPlayers} players chipped in • ${naira(team.totalPaid)} contributed`
+            : `${team.playersPaid}/${team.totalPlayers} players paid • ${naira(team.totalPaid)} of ${naira(team.expectedTotal)}`}
         </ThemedText>
 
         {!settled && (
@@ -133,6 +146,7 @@ function TeamCard({ team }: { team: TeamPayment }) {
               key={`${player.userId}-${idx}`}
               player={player}
               index={idx}
+              isPool={isPool}
             />
           ))}
         </View>
@@ -171,8 +185,9 @@ export default function TeamStatus() {
     setRefreshing(false);
   }, [dispatch, locationId, sessionId]);
 
+  const isPool = data?.paymentMode === "POOL";
   const teamsWithShortfall =
-    data?.teams.filter((t) => t.shortfall > 0).length ?? 0;
+    data?.teams.filter((t) => (t.shortfall ?? 0) > 0).length ?? 0;
 
   const showLoading = loading && !data;
   const showError = Boolean(error) && !data;
@@ -253,9 +268,11 @@ export default function TeamStatus() {
                 {data.pricingOption
                   ? `${data.pricingOption.charAt(0).toUpperCase()}${data.pricingOption.slice(1)}`
                   : ""}
-                {data.paymentAmount
-                  ? ` • ${naira(data.paymentAmount)} per player`
-                  : ""}
+                {isPool
+                  ? ` • ${naira(data.paymentTarget)} shared pot`
+                  : data.paymentAmount
+                    ? ` • ${naira(data.paymentAmount)} per player`
+                    : ""}
               </Text>
             </View>
 
@@ -266,9 +283,11 @@ export default function TeamStatus() {
                   <Text className="text-[24px] font-bold text-black dark:text-white">
                     {naira(data.grandPaid)}
                   </Text>
-                  <Text className="text-[11px] text-[#6D717F]">
-                    collected of {naira(data.grandExpected)} expected
-                  </Text>
+                  {isPool && (
+                    <Text className="mt-[2px] text-[12px] text-[#6D717F]">
+                      of {naira(data.grandExpected)}
+                    </Text>
+                  )}
                 </View>
                 <StatusText status={data.sessionPaymentStatus} />
               </View>
@@ -279,7 +298,7 @@ export default function TeamStatus() {
                   value: `${data.teams.length}`,
                 },
                 {
-                  label: "Players paid",
+                  label: isPool ? "Players chipped in" : "Players paid",
                   value: `${data.teams.reduce(
                     (sum, t) => sum + t.playersPaid,
                     0,
@@ -338,11 +357,15 @@ export default function TeamStatus() {
                   color: data.allTeamsPaid ? "#00A85A" : "#8A6508",
                 }}
               >
-                {data.allTeamsPaid
-                  ? "All teams have fully paid for this session"
-                  : `${naira(data.shortfall)} is still due from ${teamsWithShortfall} team${
-                      teamsWithShortfall === 1 ? "" : "s"
-                    }`}
+                {isPool
+                  ? data.allTeamsPaid
+                    ? "The pot is full for this session"
+                    : `${naira(data.shortfall)} still needed to fill the pot`
+                  : data.allTeamsPaid
+                    ? "All teams have fully paid for this session"
+                    : `${naira(data.shortfall)} is still due from ${teamsWithShortfall} team${
+                        teamsWithShortfall === 1 ? "" : "s"
+                      }`}
               </Text>
             </View>
 
@@ -362,7 +385,7 @@ export default function TeamStatus() {
               </View>
             ) : (
               data.teams.map((team) => (
-                <TeamCard key={team.setId} team={team} />
+                <TeamCard key={team.setId} team={team} isPool={isPool} />
               ))
             )}
           </>

@@ -133,6 +133,8 @@ export default function Schedule({
         paymentRequired: Boolean(session.paymentRequired),
         paymentStatus: session.paymentStatus,
         paymentAmount: session.paymentAmount || 0,
+        paymentMode: session.paymentMode,
+        paymentTarget: session.paymentTarget || 0,
         allPaymentsCompleted: Boolean(session.allPaymentsCompleted),
         inProgress: Boolean(session.inProgress),
         finished: Boolean(session.finished),

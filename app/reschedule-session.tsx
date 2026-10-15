@@ -98,6 +98,17 @@ export default function RescheduleSession() {
     if (!timeDuration) next.timeDuration = "Total minutes is required";
     else if (Number(timeDuration) <= 0 || Number.isNaN(Number(timeDuration)))
       next.timeDuration = "Enter a valid duration in minutes";
+    else if (
+      Number(timeDuration) !== session?.timeDuration &&
+      session?.paymentStatus &&
+      session.paymentStatus !== "NOT_INITIATED"
+    )
+      // Payment terms are frozen once payment opens; the server returns 409.
+      next.timeDuration =
+        "Payment has opened, so the duration can't change. Cancel and create a new session instead.";
+    else if (session?.paymentMode === "POOL" && Number(timeDuration) % 60 !== 0)
+      next.timeDuration =
+        "This pitch is booked by the hour. Use 60, 120, 180...";
     setErrors(next);
     return Object.keys(next).length === 0;
   };

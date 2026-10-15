@@ -1,3 +1,4 @@
+import { koboToNaira } from "@/utils/currency";
 import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -466,7 +467,7 @@ export default function WithdrawFundScreen() {
                                 }}
                               >
                                 {isCredit ? "+" : "-"}₦
-                                {tx.amount.toLocaleString()}
+                                {koboToNaira(tx.amount).toLocaleString()}
                               </Text>
                             </View>
                           );

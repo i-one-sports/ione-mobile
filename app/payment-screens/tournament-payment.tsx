@@ -1,3 +1,4 @@
+import { koboToNaira } from "@/utils/currency";
 import React, { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -116,9 +117,11 @@ export default function TournamentPaymentScreen() {
   };
 
   const currentStatus = polledStatus ?? tournamentPaymentStatus?.status ?? null;
-  const amount =
+  // Amounts come from the API in kobo; show naira.
+  const amount = koboToNaira(
     tournamentPaymentStatus?.amount ??
-    (registrationFee ? parseInt(registrationFee) : 0);
+      (registrationFee ? parseInt(registrationFee) : 0),
+  );
   const showOverlay =
     polling ||
     timedOut ||

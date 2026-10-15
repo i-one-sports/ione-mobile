@@ -209,7 +209,7 @@ function AppNavigator() {
       getPushToken()
         .then((token) => {
           if (token) store.dispatch(registerDeviceToken(token));
-          console.log("FCM token registration succeeded", token);
+          //   console.log("FCM token registration succeeded", token);
         })
         .catch((err) => console.log("FCM token registration failed", err));
 

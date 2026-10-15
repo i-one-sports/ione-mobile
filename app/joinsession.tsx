@@ -4,6 +4,7 @@ import {
   getSession,
   joinSession,
   leaveSession,
+  deleteSession,
 } from "@/api/sessions";
 import OpenIcon from "@/assets/svg/OpenIcon";
 import PitchIcon from "@/assets/svg/PitchSvg";
@@ -18,8 +19,10 @@ import { router, useLocalSearchParams } from "expo-router";
 import React, { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   Image,
   Pressable,
+  RefreshControl,
   ScrollView,
   Share,
   StyleSheet,
@@ -130,6 +133,7 @@ export default function JoinSession() {
   const theme = Colors[colorScheme ?? "light"];
   const [showDetails, setShowDetails] = useState(false);
   const [activeView, setActiveView] = useState<"squad" | "lineups">("squad");
+  const [refreshing, setRefreshing] = useState(false);
   const dispatch = useAppDispatch();
 
   // params only carries the sessionId + static display data (for the initial render skeleton)
@@ -149,6 +153,7 @@ export default function JoinSession() {
     loadingJoin,
     loadingLeave,
     loadingAction,
+    loadingDelete,
   } = useAppSelector((state) => state.sessions);
 
   /**
@@ -178,6 +183,13 @@ export default function JoinSession() {
     };
   }, [sessionId, dispatch]);
 
+  const onRefresh = useCallback(async () => {
+    if (!sessionId) return;
+    setRefreshing(true);
+    await dispatch(getSession(sessionId));
+    setRefreshing(false);
+  }, [dispatch, sessionId]);
+
   // Derive everything from the server response — no manual state flags
   const session = activeSession ?? staticSession;
   const members = activeSession?.members ?? staticSession?.members ?? [];
@@ -187,14 +199,18 @@ export default function JoinSession() {
   const myPaymentStatus = myMemberData?.paymentStatus ?? null;
 
   const paymentRequired = activeSession?.paymentRequired ?? false;
+  const isPool = activeSession?.paymentMode === "POOL";
 
   // Per docs: payment records are ONLY initialized when the session fills up.
   // Only show Pay button when the backend has created a record (PENDING or FAILED).
   // null = no record yet (session not full), PAID = done, NOT_REQUIRED = free.
+  // POOL: anyone can chip in (or top up) while the pot is open and not full.
   const showPayButton =
     isMember &&
     paymentRequired &&
-    (myPaymentStatus === "PENDING" || myPaymentStatus === "FAILED");
+    (isPool
+      ? activeSession?.paymentStatus === "PENDING"
+      : myPaymentStatus === "PENDING" || myPaymentStatus === "FAILED");
 
   const handleScoreUpdate = useCallback((data: any) => {
     Toast.show({
@@ -227,6 +243,31 @@ export default function JoinSession() {
       });
   };
 
+  // Players who've paid in get a confirmation first: in a pool that's already
+  // full their money stays in the pot; otherwise leaving requests a refund.
+  const confirmLeaveSession = () => {
+    if (!paymentRequired || myPaymentStatus !== "PAID") {
+      handleLeaveSession();
+      return;
+    }
+
+    const potFull = isPool && activeSession?.paymentStatus === "COMPLETED";
+    const [title, message] = potFull
+      ? [
+          "No refund if you leave",
+          "The pot is already full, so your contribution stays in and won't be refunded. Leave anyway?",
+        ]
+      : [
+          "Leave session?",
+          `Your ${isPool ? "contribution" : "payment"} will be refunded. Refunds can take up to 10 business days to reach you.`,
+        ];
+
+    Alert.alert(title, message, [
+      { text: "Stay", style: "cancel" },
+      { text: "Leave", style: "destructive", onPress: handleLeaveSession },
+    ]);
+  };
+
   const handleLeaveSession = () => {
     if (!sessionId) return;
     dispatch(leaveSession(sessionId))
@@ -246,6 +287,22 @@ export default function JoinSession() {
   const handleEndSession = () => {
     if (!sessionId) return;
     dispatch(endSession(sessionId))
+      .unwrap()
+      .then(() => {
+        dispatch(getSession(sessionId));
+        if (user?.location?.coordinates) {
+          const [lat, lng] = user.location.coordinates;
+          dispatch(allSessions({ lat, lng }));
+        }
+      })
+      .catch((err) => {
+        Toast.show({ type: "error", text1: "Error", text2: err?.msg });
+      });
+  };
+
+  const handleDeleteSession = () => {
+    if (!sessionId) return;
+    dispatch(deleteSession(sessionId))
       .unwrap()
       .then(() => {
         dispatch(getSession(sessionId));
@@ -353,6 +410,14 @@ export default function JoinSession() {
         className="mb-[40px] h-full flex-1 py-6"
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 40, flexGrow: 1 }}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor="#00FF94"
+            colors={["#00FF94"]}
+          />
+        }
       >
         <View className="flex flex-col gap-[31px]">
           <View className="mx-[24px] flex flex-col gap-[31px]">
@@ -489,35 +554,40 @@ export default function JoinSession() {
                 ) : isMember ? (
                   <View className="flex flex-col items-center gap-[12px]">
                     {/* Payment status badge */}
-                    {paymentRequired && myPaymentStatus && (
-                      <View
-                        style={{
-                          flexDirection: "row",
-                          alignItems: "center",
-                          gap: 4,
-                        }}
-                      >
+                    {/* In a pool, PENDING only means "hasn't contributed" — not a debt */}
+                    {paymentRequired &&
+                      myPaymentStatus &&
+                      (!isPool || myPaymentStatus === "PAID") && (
                         <View
                           style={{
-                            width: 6,
-                            height: 6,
-                            borderRadius: 3,
-                            backgroundColor:
-                              paymentStatusColor(myPaymentStatus),
-                          }}
-                        />
-                        <Text
-                          style={{
-                            fontSize: 13,
-                            color: paymentStatusColor(myPaymentStatus),
+                            flexDirection: "row",
+                            alignItems: "center",
+                            gap: 4,
                           }}
                         >
-                          {myPaymentStatus === "NOT_REQUIRED"
-                            ? "Free"
-                            : myPaymentStatus}
-                        </Text>
-                      </View>
-                    )}
+                          <View
+                            style={{
+                              width: 6,
+                              height: 6,
+                              borderRadius: 3,
+                              backgroundColor:
+                                paymentStatusColor(myPaymentStatus),
+                            }}
+                          />
+                          <Text
+                            style={{
+                              fontSize: 13,
+                              color: paymentStatusColor(myPaymentStatus),
+                            }}
+                          >
+                            {myPaymentStatus === "NOT_REQUIRED"
+                              ? "Free"
+                              : isPool
+                                ? "Contributed"
+                                : myPaymentStatus}
+                          </Text>
+                        </View>
+                      )}
 
                     {/* Pay Fee — only shown when server says payment is required and unpaid */}
                     {showPayButton && (
@@ -531,8 +601,12 @@ export default function JoinSession() {
                               locationName: session?.location?.name ?? "",
                               startTime: session?.startTime ?? "",
                               matchType: session?.matchType ?? "",
-                              paymentPerPersonHourly: String(
+                              paymentAmount: String(
                                 session?.paymentAmount ?? 0,
+                              ),
+                              paymentMode: activeSession?.paymentMode ?? "",
+                              paymentTarget: String(
+                                activeSession?.paymentTarget ?? 0,
                               ),
                             },
                           })
@@ -542,7 +616,7 @@ export default function JoinSession() {
                           darkColor="#6D717F"
                           className="text-[13px] font-[600]"
                         >
-                          Pay Fee
+                          {isPool ? "Chip In" : "Pay Fee"}
                         </ThemedText>
                       </TouchableOpacity>
                     )}
@@ -613,7 +687,7 @@ export default function JoinSession() {
                     {!session?.inProgress && !session?.finished && (
                       <TouchableOpacity
                         className="flex items-center justify-center rounded-[10px] w-full h-14 border-[#FF4444] border"
-                        onPress={handleLeaveSession}
+                        onPress={confirmLeaveSession}
                         disabled={loadingLeave}
                         style={{ marginTop: 4 }}
                       >
@@ -632,6 +706,31 @@ export default function JoinSession() {
                         )}
                       </TouchableOpacity>
                     )}
+
+                    {/* Delete session — only the session captain, and the location owner before match starts/ends */}
+                    {session?.captain === user?._id &&
+                      !session?.inProgress &&
+                      !session?.finished && (
+                        <TouchableOpacity
+                          className="flex items-center justify-center rounded-[10px] w-full h-14 border-[#FF4444] border"
+                          onPress={handleDeleteSession}
+                          disabled={loadingDelete}
+                        >
+                          {loadingDelete ? (
+                            <ActivityIndicator size="small" color="#FF4444" />
+                          ) : (
+                            <Text
+                              style={{
+                                fontSize: 13,
+                                color: "#FF4444",
+                                fontWeight: "600",
+                              }}
+                            >
+                              Delete Session
+                            </Text>
+                          )}
+                        </TouchableOpacity>
+                      )}
                   </View>
                 ) : (
                   <TouchableOpacity
@@ -805,7 +904,11 @@ export default function JoinSession() {
                   member.nickname || member.firstName || `Player ${index + 1}`
                 }
                 paymentStatus={
-                  paymentRequired ? member.paymentStatus : undefined
+                  // Pool: only show who has contributed; PENDING isn't a debt
+                  paymentRequired &&
+                  (!isPool || member.paymentStatus === "PAID")
+                    ? member.paymentStatus
+                    : undefined
                 }
               />
             ))

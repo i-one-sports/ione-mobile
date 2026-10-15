@@ -1,3 +1,4 @@
+import { nairaToKobo } from "@/utils/currency";
 import InputField from "@/components/InputField";
 import SafeAreaScreen from "@/components/SafeAreaScreen";
 import { ThemedText } from "@/components/ThemedText";
@@ -150,10 +151,12 @@ export default function AdminSignup2() {
                 location: { coordinates: values.coordinates },
                 ...(values.pricingOption === "hourly"
                   ? {
-                      paymentPerPersonHourly: Number(values.price),
+                      pricePerHour: nairaToKobo(Number(values.price)),
                     }
                   : {
-                      paymentPerPersonMonthly: Number(values.price),
+                      paymentPerPersonMonthly: nairaToKobo(
+                        Number(values.price),
+                      ),
                     }),
               },
               payout: {
@@ -319,7 +322,7 @@ export default function AdminSignup2() {
                       label={
                         values.pricingOption === "monthly"
                           ? "Price per Person / Month (₦)"
-                          : "Price per Person / Hour (₦)"
+                          : "Pitch Price per Hour (₦)"
                       }
                       placeholder="2500"
                       value={values.price}

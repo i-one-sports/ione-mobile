@@ -172,14 +172,6 @@ export function PlayerDetailsCard({ data }: Props) {
           value={data.height}
           isDark={isDark}
           accent={accent}
-          borderColor={divider}
-        />
-        <InfoRow
-          icon="public"
-          label="Place of Birth"
-          value={data.placeOfBirth}
-          isDark={isDark}
-          accent={accent}
           isLast
           borderColor={divider}
         />

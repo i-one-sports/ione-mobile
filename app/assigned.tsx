@@ -490,7 +490,10 @@ export default function Assigned() {
                       <PlayerInfoCard
                         name={player.nickname ?? player.firstName ?? "Player"}
                         paymentStatus={
-                          paymentRequired
+                          // Pool: only show who has contributed; PENDING isn't a debt
+                          paymentRequired &&
+                          (sessionData?.paymentMode !== "POOL" ||
+                            player.paymentStatus === "PAID")
                             ? (player.paymentStatus as any)
                             : undefined
                         }

@@ -27,6 +27,9 @@ export type Match = {
   paymentRequired: boolean;
   paymentStatus?: string;
   paymentAmount: number;
+  /** POOL: hourly, members chip in toward paymentTarget (paymentAmount is 0). */
+  paymentMode?: "POOL" | "PER_PERSON";
+  paymentTarget?: number;
   allPaymentsCompleted: boolean;
 
   inProgress: boolean;

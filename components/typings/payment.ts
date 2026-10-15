@@ -5,12 +5,48 @@ export type PaymentStatus =
   | "REFUND_PENDING"
   | "REFUND_NEEDS_ATTENTION"
   | "REFUND_FAILED"
-  | "REFUNDED";
+  | "REFUNDED"
+  | "EXPIRED";
+
+// POOL: hourly sessions where members chip in toward one total.
+// PER_PERSON: monthly and pre-pooling sessions with a fixed amount each.
+export type PaymentMode = "POOL" | "PER_PERSON";
+
+export interface PoolContributor {
+  userId: string;
+  name: string;
+  amount: number;
+}
+
+/** Live state of a POOL session's pot. All amounts in kobo, before commission. */
+export interface PoolSnapshot {
+  sessionId: string;
+  target: number;
+  paid: number;
+  reserved: number;
+  remaining: number;
+  /** remaining − reserved: the most anyone can start paying right now. */
+  available: number;
+  /** Suggestion only. */
+  fairShare: number;
+  /** Smallest allowed contribution, unless it exactly clears what's left. */
+  minContribution: number;
+  fullyFunded: boolean;
+  contributors: PoolContributor[];
+}
 
 export interface InitPaymentResponse {
   authorizationUrl: string;
   reference: string;
+  /** What Paystack charges (base + commission). */
   amount: number;
+  // POOL only
+  baseAmount?: number;
+  commissionAmount?: number;
+  expiresAt?: string;
+  /** POOL: the pot was already full, no checkout was created. */
+  alreadyPaid?: boolean;
+  pool?: PoolSnapshot;
 }
 
 export interface SessionPaymentStatus {
@@ -30,6 +66,8 @@ export interface AllMembersPaymentStatus {
   paid: number;
   pending: number;
   allPaid: boolean;
+  /** POOL sessions only. */
+  pool?: PoolSnapshot;
 }
 
 export interface WalletBalance {

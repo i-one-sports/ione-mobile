@@ -1,3 +1,4 @@
+import { koboToNaira, nairaToKobo } from "@/utils/currency";
 import { getLocation, updatePricingOptions } from "@/api/ownerDashboardThunk";
 import { useColorScheme } from "nativewind";
 import { ThemedText } from "@/components/ThemedText";
@@ -62,11 +63,34 @@ export default function AdminPricingOptionScreen() {
     dispatch(getLocation());
   }, [dispatch]);
 
+  // Stored price in naira for an option; the API keeps hourly and monthly
+  // separately, in kobo. Hourly is the whole-pitch price; older locations may
+  // only have the legacy per-person field.
+  const storedPriceFor = (option: PricingOptionType | null) => {
+    const kobo =
+      option === "hourly"
+        ? (location?.pricePerHour ?? location?.paymentPerPersonHourly)
+        : option === "monthly"
+          ? location?.paymentPerPersonMonthly
+          : undefined;
+    return kobo != null ? koboToNaira(kobo) : undefined;
+  };
+
+  const currentPrice =
+    location?.tier === "paid"
+      ? storedPriceFor(location.pricingOption)
+      : undefined;
+
   useEffect(() => {
     if (!location) return;
 
     setTierValue(location.tier || null);
     setPricingOptionValue(location.pricingOption || null);
+    const kobo =
+      location.pricingOption === "hourly"
+        ? (location.pricePerHour ?? location.paymentPerPersonHourly)
+        : location.paymentPerPersonMonthly;
+    setAmount(kobo != null ? String(koboToNaira(kobo)) : "");
   }, [location]);
 
   const handleUpdatePricingOptions = async () => {
@@ -90,13 +114,13 @@ export default function AdminPricingOptionScreen() {
         payload = {
           tier: "paid",
           pricingOption: "hourly",
-          paymentPerPersonHourly: Number(amount),
+          pricePerHour: nairaToKobo(Number(amount)),
         };
       } else {
         payload = {
           tier: "paid",
           pricingOption: "monthly",
-          paymentPerPersonMonthly: Number(amount),
+          paymentPerPersonMonthly: nairaToKobo(Number(amount)),
         };
       }
     }
@@ -247,10 +271,12 @@ export default function AdminPricingOptionScreen() {
                   <TouchableOpacity
                     key={item.id}
                     onPress={() => {
+                      const option =
+                        item.state.toLocaleLowerCase() as PricingOptionType;
                       setOpenDropdown(false);
-                      setPricingOptionValue(
-                        item.state.toLocaleLowerCase() as PricingOptionType,
-                      );
+                      setPricingOptionValue(option);
+                      const price = storedPriceFor(option);
+                      setAmount(price != null ? String(price) : "");
                     }}
                     className="p-3"
                   >
@@ -275,6 +301,22 @@ export default function AdminPricingOptionScreen() {
               placeholderTextColor="#9CA3AF"
               keyboardType="numeric"
             />
+
+            {location && (location.tier === "free" || currentPrice != null) && (
+              <ThemedText
+                lightColor="#6B7280"
+                darkColor="#9CA3AF"
+                style={{ fontSize: 13, marginTop: 8 }}
+              >
+                {currentPrice != null
+                  ? `Current price: ₦${currentPrice.toLocaleString()} ${
+                      location.pricingOption === "hourly"
+                        ? "per hour (whole pitch)"
+                        : "per person / month"
+                    }`
+                  : "Current price: Free"}
+              </ThemedText>
+            )}
           </ScrollView>
 
           {/* Update button */}
