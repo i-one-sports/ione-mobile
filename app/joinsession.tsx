@@ -14,8 +14,11 @@ import { ThemedText } from "@/components/ThemedText";
 import { Colors } from "@/constants/Colors";
 import useMatchScore from "@/hooks/useMatchScore";
 import { clearActiveSession } from "@/redux/reducers/sessions";
+import { getSessionVote } from "@/api/votesThunk";
+import { clearVoteState } from "@/redux/reducers/votes";
+import { formatShort } from "@/utils/vote";
 import { useAppDispatch, useAppSelector } from "@/redux/store";
-import { router, useLocalSearchParams } from "expo-router";
+import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
 import React, { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -34,8 +37,14 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { Toast } from "toastify-react-native";
 import PlayerInfoCard from "@/components/PlayerInfoCard";
+import { openPlayerStats } from "@/utils/openPlayerStats";
 import { formatTime } from "@/utils/formatTime";
 import { Role } from "@/components/typings/apiResponse";
+
+type SetsButton = {
+  title: string;
+  pathname: "/assigned" | "/match/live";
+};
 
 function buildFormationPositions(
   count: number,
@@ -180,15 +189,25 @@ export default function JoinSession() {
     if (sessionId) dispatch(getSession(sessionId));
     return () => {
       dispatch(clearActiveSession());
+      dispatch(clearVoteState());
     };
   }, [sessionId, dispatch]);
+
+  // Over when someone ended it, or when its stopTime has passed (voting opens
+  // in both cases, even if nobody tapped End Session).
+  const sessionOver = Boolean(
+    activeSession?.finished ||
+    (activeSession?.stopTime &&
+      new Date(activeSession.stopTime).getTime() < Date.now()),
+  );
 
   const onRefresh = useCallback(async () => {
     if (!sessionId) return;
     setRefreshing(true);
     await dispatch(getSession(sessionId));
+    if (sessionOver) await dispatch(getSessionVote(sessionId));
     setRefreshing(false);
-  }, [dispatch, sessionId]);
+  }, [dispatch, sessionId, sessionOver]);
 
   // Derive everything from the server response — no manual state flags
   const session = activeSession ?? staticSession;
@@ -205,12 +224,80 @@ export default function JoinSession() {
   // Only show Pay button when the backend has created a record (PENDING or FAILED).
   // null = no record yet (session not full), PAID = done, NOT_REQUIRED = free.
   // POOL: anyone can chip in (or top up) while the pot is open and not full.
+  // PER_PERSON session the server marks fully paid: everyone is settled, e.g.
+  // monthly pricing skips members who paid at this pitch in the last 30 days.
+  // Members can still show PENDING then, so trust the session, not the badge.
+  const sessionCovered =
+    paymentRequired &&
+    !isPool &&
+    (activeSession?.paymentStatus === "COMPLETED" ||
+      Boolean(activeSession?.allPaymentsCompleted));
+  // What the badges show: covered sessions read as paid.
+  const myBadgeStatus = sessionCovered ? "PAID" : myPaymentStatus;
+
   const showPayButton =
     isMember &&
     paymentRequired &&
     (isPool
       ? activeSession?.paymentStatus === "PENDING"
-      : myPaymentStatus === "PENDING" || myPaymentStatus === "FAILED");
+      : !sessionCovered &&
+        (myPaymentStatus === "PENDING" || myPaymentStatus === "FAILED"));
+
+  // The sets button follows the session's stage: the live screen while
+  // playing, the team list before kick-off and after the session. Voting gets
+  // its own button once the session is finished.
+  const setsButton: SetsButton =
+    session?.inProgress && !session?.finished
+      ? { title: "View Live Session", pathname: "/match/live" }
+      : { title: "View Teams", pathname: "/assigned" };
+
+  // Player of the Session: fetched once the session is over, and again whenever
+  // this screen regains focus (e.g. back from voting, so it shows "Vote sent").
+  const { sessionVote, voteNotOpen, loadingSessionVote, errorSessionVote } =
+    useAppSelector((state) => state.votes);
+  const isOverMember = sessionOver && isMember;
+
+  useFocusEffect(
+    useCallback(() => {
+      if (sessionId && isOverMember) dispatch(getSessionVote(sessionId));
+    }, [dispatch, sessionId, isOverMember]),
+  );
+
+  // Ignore vote data left over from another session.
+  const vote = sessionVote?.sessionId === sessionId ? sessionVote : null;
+
+  // `pathname` opens a vote screen; `retry` fetches the vote state again.
+  type VoteButton = {
+    title: string;
+    pathname?: "/match/vote" | "/match/vote-result";
+    retry?: boolean;
+  };
+  const voteButton: VoteButton | null = (() => {
+    if (!isOverMember) return null;
+    if (voteNotOpen) return { title: "Voting opens shortly", retry: true };
+    if (!vote) {
+      if (errorSessionVote)
+        return { title: "Couldn't load voting · Tap to retry", retry: true };
+      return loadingSessionVote ? { title: "Checking vote status…" } : null;
+    }
+    if (vote.result)
+      return {
+        title: "See Player of the Session",
+        pathname: "/match/vote-result",
+      };
+    if (vote.status === "CLOSED")
+      return { title: "Counting votes…", pathname: "/match/vote" };
+    if (vote.canVote)
+      return { title: "Vote Player of the Session", pathname: "/match/vote" };
+    if (vote.myVote)
+      return {
+        title: `Vote sent · closes in ${formatShort(
+          new Date(vote.closesAt).getTime() - Date.now(),
+        )}`,
+        pathname: "/match/vote",
+      };
+    return { title: "Voting in progress", pathname: "/match/vote" };
+  })();
 
   const handleScoreUpdate = useCallback((data: any) => {
     Toast.show({
@@ -337,10 +424,8 @@ export default function JoinSession() {
 
   const formatWinningDecider = (decider?: string) => {
     const map: Record<string, string> = {
-      penalties: "Shootout",
-      highestGoals: "Highest Goals",
-      goldenGoal: "Golden Goal",
-      shootout: "Shootout",
+      penalties: "Penalty Shootout",
+      both_off: "Both Teams Off",
     };
     return (decider && map[decider]) || decider || "TBD";
   };
@@ -379,6 +464,8 @@ export default function JoinSession() {
       // user dismissed the sheet — no-op
     }
   };
+
+  console.log("session", session);
 
   if (!sessionId) {
     return (
@@ -477,9 +564,7 @@ export default function JoinSession() {
                   darkColor={theme.text}
                   className="text-[20px] font-[600]"
                 >
-                  {session?.captain?.firstName ||
-                    session?.captain?.username ||
-                    "Session"}
+                  Session
                 </ThemedText>
 
                 <View
@@ -556,8 +641,8 @@ export default function JoinSession() {
                     {/* Payment status badge */}
                     {/* In a pool, PENDING only means "hasn't contributed" — not a debt */}
                     {paymentRequired &&
-                      myPaymentStatus &&
-                      (!isPool || myPaymentStatus === "PAID") && (
+                      myBadgeStatus &&
+                      (!isPool || myBadgeStatus === "PAID") && (
                         <View
                           style={{
                             flexDirection: "row",
@@ -571,20 +656,22 @@ export default function JoinSession() {
                               height: 6,
                               borderRadius: 3,
                               backgroundColor:
-                                paymentStatusColor(myPaymentStatus),
+                                paymentStatusColor(myBadgeStatus),
                             }}
                           />
                           <Text
                             style={{
                               fontSize: 13,
-                              color: paymentStatusColor(myPaymentStatus),
+                              color: paymentStatusColor(myBadgeStatus),
                             }}
                           >
-                            {myPaymentStatus === "NOT_REQUIRED"
+                            {myBadgeStatus === "NOT_REQUIRED"
                               ? "Free"
                               : isPool
                                 ? "Contributed"
-                                : myPaymentStatus}
+                                : sessionCovered
+                                  ? "Covered"
+                                  : myBadgeStatus}
                           </Text>
                         </View>
                       )}
@@ -626,8 +713,11 @@ export default function JoinSession() {
                         className="flex w-[150px] items-center justify-center rounded-[10px] bg-primary h-14"
                         onPress={() =>
                           router.push({
-                            pathname: "/assigned",
-                            params: { session: JSON.stringify(session) },
+                            pathname: setsButton.pathname,
+                            params: {
+                              sessionId,
+                              session: JSON.stringify(session),
+                            },
                           })
                         }
                       >
@@ -635,7 +725,7 @@ export default function JoinSession() {
                           darkColor="#6D717F"
                           className="text-[13px] font-[600]"
                         >
-                          View Sets
+                          {setsButton.title}
                         </ThemedText>
                       </TouchableOpacity>
 
@@ -664,6 +754,35 @@ export default function JoinSession() {
                           </TouchableOpacity>
                         )}
                     </View>
+
+                    {/* Player of the Session — members, once the session is over */}
+                    {voteButton && (
+                      <TouchableOpacity
+                        className={`flex w-full flex-row items-center justify-center gap-[8px] rounded-[10px] h-14 ${
+                          voteButton.pathname ? "bg-primary" : "bg-gray-300"
+                        }`}
+                        disabled={!voteButton.pathname && !voteButton.retry}
+                        onPress={() => {
+                          if (voteButton.pathname) {
+                            router.push({
+                              pathname: voteButton.pathname,
+                              params: { sessionId },
+                            });
+                          } else if (voteButton.retry && sessionId) {
+                            dispatch(getSessionVote(sessionId));
+                          }
+                        }}
+                      >
+                        <Ionicons
+                          name={voteButton.pathname ? "star" : "time-outline"}
+                          size={16}
+                          color="#000"
+                        />
+                        <Text className="text-[13px] font-[600]">
+                          {voteButton.title}
+                        </Text>
+                      </TouchableOpacity>
+                    )}
                     {/* End match — only the session captain, while match is live */}
                     {session?.captain === user?._id &&
                       session?.inProgress &&
@@ -680,6 +799,50 @@ export default function JoinSession() {
                               End Session
                             </Text>
                           )}
+                        </TouchableOpacity>
+                      )}
+
+                    {/* Choose a referee — only the session captain, once the session is full */}
+                    {session?.captain === user?._id &&
+                      session?.isFull &&
+                      !session?.finished && (
+                        <TouchableOpacity
+                          className="flex w-full flex-row items-center justify-center gap-[6px] rounded-[10px] bg-primary h-14"
+                          onPress={() =>
+                            router.push({
+                              pathname: "/match/choose-referee",
+                              params: { sessionId },
+                            })
+                          }
+                        >
+                          <Ionicons
+                            name="person-add-outline"
+                            size={16}
+                            color="#000"
+                          />
+                          <Text className="text-[13px] font-[600]">
+                            Choose Referee
+                          </Text>
+                        </TouchableOpacity>
+                      )}
+
+                    {/* Referee controls — the session captain, for the whole session.
+                        The referee screen decides who can record each set. */}
+                    {session?.captain === user?._id &&
+                      session?.isFull &&
+                      !session?.finished && (
+                        <TouchableOpacity
+                          className="flex w-[150px] flex-row items-center justify-center gap-[6px] rounded-[10px] bg-primary h-14"
+                          onPress={() =>
+                            router.push({
+                              pathname: "/match/referee",
+                              params: { sessionId },
+                            })
+                          }
+                        >
+                          <Text className="text-[13px] font-[600]">
+                            Referee
+                          </Text>
                         </TouchableOpacity>
                       )}
 
@@ -900,6 +1063,7 @@ export default function JoinSession() {
             members.map((member: any, index: number) => (
               <PlayerInfoCard
                 key={member._id || index}
+                onPress={() => openPlayerStats(member)}
                 name={
                   member.nickname || member.firstName || `Player ${index + 1}`
                 }
@@ -907,7 +1071,9 @@ export default function JoinSession() {
                   // Pool: only show who has contributed; PENDING isn't a debt
                   paymentRequired &&
                   (!isPool || member.paymentStatus === "PAID")
-                    ? member.paymentStatus
+                    ? sessionCovered
+                      ? "PAID"
+                      : member.paymentStatus
                     : undefined
                 }
               />

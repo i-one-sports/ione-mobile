@@ -22,6 +22,7 @@ import {
 } from "react-native";
 import { Toast } from "toastify-react-native";
 import PlayerInfoCard from "@/components/PlayerInfoCard";
+import { openPlayerStats } from "@/utils/openPlayerStats";
 import TeamBoxes from "./teamboxes";
 
 // ─── Pitch formation helpers ────────────────────────────────────────────────
@@ -326,10 +327,7 @@ export default function Assigned() {
                   darkColor={theme.text}
                   className="text-[20px] font-[600]"
                 >
-                  {sessionData?.matchType
-                    ? sessionData.matchType.charAt(0).toUpperCase() +
-                      sessionData.matchType.slice(1)
-                    : "Match"}
+                  Session
                 </ThemedText>
                 <TouchableOpacity
                   onPress={() => setShowDetails(true)}
@@ -489,6 +487,7 @@ export default function Assigned() {
                     <View key={player._id} className="flex flex-col gap-[4px]">
                       <PlayerInfoCard
                         name={player.nickname ?? player.firstName ?? "Player"}
+                        onPress={() => openPlayerStats(player)}
                         paymentStatus={
                           // Pool: only show who has contributed; PENDING isn't a debt
                           paymentRequired &&
@@ -700,7 +699,15 @@ export default function Assigned() {
               },
               {
                 label: "Winning decider",
-                value: sessionData?.winningDecider ?? "—",
+                value:
+                  (
+                    {
+                      penalties: "Penalty Shootout",
+                      both_off: "Both Teams Off",
+                    } as Record<string, string>
+                  )[sessionData?.winningDecider ?? ""] ??
+                  sessionData?.winningDecider ??
+                  "—",
               },
               {
                 label: "Payment required",

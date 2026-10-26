@@ -61,11 +61,14 @@ export interface TournamentPaymentStatus {
   paidAt: string | null;
 }
 
+/** GET /wallet/session/:sessionId/payment-status */
 export interface AllMembersPaymentStatus {
-  total: number;
-  paid: number;
-  pending: number;
-  allPaid: boolean;
+  totalPayments: number;
+  paidPayments: number;
+  pendingPayments: number;
+  /** POOL: the pot is full. */
+  allCompleted: boolean;
+  payments: unknown[];
   /** POOL sessions only. */
   pool?: PoolSnapshot;
 }

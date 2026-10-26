@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-empty-object-type */
 import { AppDispatch } from "@/redux/store";
+import { RotationFormat, WinningDecider } from "./apiResponse";
 
 export type AsyncThunkConfig = {
   /** return type for `thunkApi.getState` */
@@ -90,6 +91,21 @@ export interface sessionPayload {
 
 export interface StartSessionRequest {
   locationId: string;
+}
+
+/** Body of POST /sessions/create/:sessionId. Other decider/rotation values 400. */
+export interface CreateSessionRequest {
+  /** Number of teams. */
+  setNumber: number;
+  playersPerTeam: number;
+  /** Total minutes. */
+  timeDuration: number;
+  /** Length of one game. */
+  minsPerSet: number;
+  startTime: string;
+  winningDecider: WinningDecider;
+  /** Optional; the server defaults to winner_stays. */
+  rotationFormat?: RotationFormat;
 }
 
 export type ImageFile = {

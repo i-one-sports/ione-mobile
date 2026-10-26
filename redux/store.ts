@@ -20,6 +20,12 @@ import sessionReducer from "./reducers/sessions";
 import walletReducer from "./reducers/wallet";
 import tournamentReducer from "./reducers/tournaments";
 import paymentReducer from "./reducers/payment";
+import votesReducer from "./reducers/votes";
+import matchesReducer from "./reducers/matches";
+import refereesReducer from "./reducers/referees";
+import recordingQueueReducer from "./reducers/recordingQueue";
+import statsReducer from "./reducers/stats";
+import badgesReducer from "./reducers/badges";
 
 const authPersistConfig = {
   key: "main",
@@ -31,7 +37,18 @@ const langPersistConfig = {
   storage: AsyncStorage,
 };
 
+// Unsent referee taps must survive an app restart; only the queue is saved.
+const recordingQueuePersistConfig = {
+  key: "recordingQueue",
+  storage: AsyncStorage,
+  whitelist: ["queue"],
+};
+
 const persistedLangReducer = persistReducer(langPersistConfig, languageReducer);
+const persistedRecordingQueueReducer = persistReducer(
+  recordingQueuePersistConfig,
+  recordingQueueReducer,
+);
 const persistedAuthReducer = persistReducer(authPersistConfig, authReducer);
 
 const reducers = combineReducers({
@@ -43,6 +60,12 @@ const reducers = combineReducers({
   matchDetails: matchDetailsReducer,
   tournament: tournamentReducer,
   payment: paymentReducer,
+  votes: votesReducer,
+  matches: matchesReducer,
+  referees: refereesReducer,
+  recordingQueue: persistedRecordingQueueReducer,
+  stats: statsReducer,
+  badges: badgesReducer,
 });
 
 const store = configureStore({

@@ -90,6 +90,11 @@ const useMatchScore = (options: UseMatchScoreOptions) => {
       try {
         const data = JSON.parse(event.data || "{}");
 
+        // Score updates arrive without a `type` (only connected/heartbeat
+        // have one), so recognise them by their fields.
+        if (!data.type && data.matchId && typeof data.teamOneScore === "number")
+          data.type = "score-update";
+
         switch (data.type) {
           case "connected":
             setLastHeartbeat(Date.now());
@@ -161,7 +166,6 @@ const useMatchScore = (options: UseMatchScoreOptions) => {
       eventSource.close();
     };
     // Callbacks intentionally excluded — they live in refs above
-     
   }, [matchId, sessionId, globalStream]);
 
   // Monitor heartbeat health

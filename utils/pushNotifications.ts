@@ -87,3 +87,83 @@ export function extractSessionIdFromMessage(
     return null;
   }
 }
+
+/**
+ * Screens some notification types open instead of the session page.
+ * The type is read from `data.type` (or inside `data.payload` as a fallback).
+ */
+export function extractNotificationTarget(
+  message: RemoteMessage | null | undefined,
+):
+  | {
+      pathname: "/match/referee-invite";
+      params: { sessionId: string; refereeId: string };
+    }
+  | {
+      pathname: "/match/take-whistle";
+      params: { sessionId: string; matchId: string };
+    }
+  | {
+      pathname: "/match/result-review";
+      params: { sessionId: string; matchId: string };
+    }
+  | null {
+  const raw = message?.data?.payload;
+  let payload: any = null;
+  if (typeof raw === "string") {
+    try {
+      payload = JSON.parse(raw);
+    } catch {
+      payload = null;
+    }
+  }
+  const type = message?.data?.type ?? payload?.type;
+
+  if (
+    type === "REFEREE_INVITE" &&
+    typeof payload?.sessionId === "string" &&
+    typeof payload?.refereeId === "string"
+  ) {
+    return {
+      pathname: "/match/referee-invite",
+      params: { sessionId: payload.sessionId, refereeId: payload.refereeId },
+    };
+  }
+  // Not sent by the backend yet — requested so a referee who's handed the
+  // whistle hears about it without the app open.
+  if (
+    type === "MATCH_RESULT_REVIEW" &&
+    typeof payload?.sessionId === "string" &&
+    typeof payload?.matchId === "string"
+  ) {
+    return {
+      pathname: "/match/result-review",
+      params: { sessionId: payload.sessionId, matchId: payload.matchId },
+    };
+  }
+  if (
+    type === "REFEREE_ASSIGNED" &&
+    typeof payload?.sessionId === "string" &&
+    typeof payload?.matchId === "string"
+  ) {
+    return {
+      pathname: "/match/take-whistle",
+      params: { sessionId: payload.sessionId, matchId: payload.matchId },
+    };
+  }
+  return null;
+}
+
+/** The notification's type, from `data.type` (or inside `data.payload`). */
+export function notificationType(
+  message: RemoteMessage | null | undefined,
+): string | undefined {
+  const raw = message?.data?.payload;
+  if (typeof message?.data?.type === "string") return message.data.type;
+  if (typeof raw !== "string") return undefined;
+  try {
+    return JSON.parse(raw)?.type;
+  } catch {
+    return undefined;
+  }
+}

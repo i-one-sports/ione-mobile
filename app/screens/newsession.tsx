@@ -27,6 +27,7 @@ import TimePickerField from "@/components/TimePickerField";
 
 import SessionPitchPicker from "@/components/SessionPitchPicker";
 import type { SessionPitch } from "@/api/pitchSearch";
+import type { WinningDecider } from "@/components/typings/apiResponse";
 
 export default function NewSession() {
   const params = useLocalSearchParams();
@@ -58,10 +59,10 @@ export default function NewSession() {
   const [startTimeOfDay, setStartTimeOfDay] = useState("");
   const [showDeciderModal, setShowDeciderModal] = useState(false);
 
-  const winningDeciderOptions = [
-    { label: "Penalty Shootout", value: "PENALTY" },
-    { label: "Highest Goals", value: "highestGoals" },
-    { label: "Golden Goal", value: "goldenGoal" },
+  // The only values the API accepts; anything else returns 400.
+  const winningDeciderOptions: { label: string; value: WinningDecider }[] = [
+    { label: "Penalty Shootout", value: "penalties" },
+    { label: "Both Teams Off", value: "both_off" },
   ];
 
   const getWinningDeciderLabel = (value: string) =>
@@ -97,7 +98,9 @@ export default function NewSession() {
       timeDuration: Yup.string().required("Total minutes is required"),
       playersPerTeam: Yup.string().required("Players per team is required"),
       setNumber: Yup.string().required("Number of teams is required"),
-      winningDecider: Yup.string().required("Winning decider is required"),
+      winningDecider: Yup.string()
+        .oneOf(["penalties", "both_off"], "Choose how a draw is settled")
+        .required("Winning decider is required"),
       minsPerSet: Yup.string().required("Minutes per set is required"),
     }),
     onSubmit: async (values) => {
@@ -139,7 +142,7 @@ export default function NewSession() {
               timeDuration: Number(values.timeDuration),
               minsPerSet: Number(values.minsPerSet),
               startTime: values.startTime,
-              winningDecider: values.winningDecider,
+              winningDecider: values.winningDecider as WinningDecider,
             },
           }),
         ).unwrap();
