@@ -457,6 +457,12 @@ export interface Members {
   paymentStatus: "PAID" | "PENDING" | "FAILED" | "REFUNDED" | "NOT_REQUIRED";
 }
 
+/** How a drawn game is settled under winner_stays (ignored for round_robin). */
+export type WinningDecider = "penalties" | "both_off";
+
+/** Who plays next once a game ends. */
+export type RotationFormat = "winner_stays" | "round_robin";
+
 export interface SessionByIdResponse {
   _id: string;
   paymentRequired: boolean;
@@ -465,6 +471,15 @@ export interface SessionByIdResponse {
   /** POOL: total the session pays, in kobo (before commission). */
   paymentTarget?: number;
   paymentStatus?: "NOT_INITIATED" | "PENDING" | "COMPLETED" | "EXPIRED";
+  paymentDeadline?: string;
+  /** POOL: confirmed contributions (kobo). Use the pool snapshot for display. */
+  amountPaid?: number;
+  /** POOL: held by in-progress checkouts (kobo). */
+  amountReserved?: number;
+  /** Mirrors paymentStatus === "COMPLETED". */
+  allPaymentsCompleted?: boolean;
+  /** True once every paid member's refund has been confirmed by Paystack. */
+  allRefunded?: boolean;
   members: Members[];
   // full session fields
   captain?: {
@@ -483,10 +498,14 @@ export interface SessionByIdResponse {
   maxNumber?: number;
   timeDuration?: number;
   minsPerSet?: number;
-  winningDecider?: string;
+  winningDecider?: WinningDecider;
+  rotationFormat?: RotationFormat;
   playersPerTeam?: number;
   setNumber?: number;
-  status?: string;
+  /** Lifecycle status; absent on sessions created before it existed. */
+  status?: "OPEN" | "CANCELLED" | "COMPLETED" | "REFUNDED";
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface Tournament {

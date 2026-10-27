@@ -1,5 +1,8 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import { registerDeviceToken } from "@/api/authThunks";
+import { flushRecordingQueue } from "@/api/recordingQueueThunk";
+import { getMyBadges } from "@/api/badgesThunk";
+import BadgeUnlockWatcher from "@/components/match/BadgeUnlockWatcher";
 import { Role } from "@/components/typings/apiResponse";
 import "@/globals.css";
 import { useColorScheme } from "@/hooks/useColorScheme";
@@ -10,7 +13,9 @@ import {
   consumePendingSession,
 } from "@/utils/pendingDeepLink";
 import {
+  extractNotificationTarget,
   extractSessionIdFromMessage,
+  notificationType,
   getPushToken,
 } from "@/utils/pushNotifications";
 import toastConfig from "@/utils/toast";
@@ -22,6 +27,7 @@ import {
   onMessage,
   onNotificationOpenedApp,
   onTokenRefresh,
+  type RemoteMessage,
 } from "@react-native-firebase/messaging";
 import {
   DarkTheme,
@@ -33,6 +39,7 @@ import * as Linking from "expo-linking";
 import { Stack, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React, { useEffect, useRef } from "react";
+import { AppState } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import * as SplashScreen from "expo-splash-screen";
 import "react-native-reanimated";
@@ -59,6 +66,17 @@ function AppNavigator() {
     (state) => state.auth,
   );
   const splashHidden = useRef(false);
+  // Referee taps saved on the phone but not yet sent (bad network, app
+  // closed mid-match): send them on launch and whenever the app comes back.
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    store.dispatch(flushRecordingQueue());
+    const sub = AppState.addEventListener("change", (state) => {
+      if (state === "active") store.dispatch(flushRecordingQueue());
+    });
+    return () => sub.remove();
+  }, [isAuthenticated]);
+
   // True after the first auth effect has run its router.replace().
   // Before this point it is not safe to call router.push() from a Linking event.
   const navigatorReady = useRef(false);
@@ -125,26 +143,50 @@ function AppNavigator() {
     return () => sub.remove();
   }, []);
 
+  // Some notification types open their own screen (e.g. a referee invite);
+  // everything else opens the session. Until the app is signed in and ready,
+  // fall back to the session so the pending-session flow still works.
+  const openNotification = (message: RemoteMessage | null | undefined) => {
+    // A new badge: fetch badges and the watcher shows the pop-up.
+    if (notificationType(message) === "BADGE_UNLOCKED") {
+      if (store.getState().auth.isAuthenticated) store.dispatch(getMyBadges());
+      return;
+    }
+    const target = extractNotificationTarget(message);
+    if (
+      target &&
+      navigatorReady.current &&
+      store.getState().auth.isAuthenticated
+    ) {
+      router.push(target);
+      return;
+    }
+    const sessionId = extractSessionIdFromMessage(message);
+    if (sessionId) openSession(sessionId);
+  };
+
   // Push notifications: token refresh, foreground messages, and taps.
   useEffect(() => {
     const messaging = getMessaging();
 
     // App was killed and launched by tapping a notification.
     getInitialNotification(messaging)
-      .then((message) => {
-        const sessionId = extractSessionIdFromMessage(message);
-        if (sessionId) openSession(sessionId);
-      })
+      .then(openNotification)
       .catch(() => {});
 
     // App was in the background and a notification was tapped.
-    const unsubscribeOpened = onNotificationOpenedApp(messaging, (message) => {
-      const sessionId = extractSessionIdFromMessage(message);
-      if (sessionId) openSession(sessionId);
-    });
+    const unsubscribeOpened = onNotificationOpenedApp(
+      messaging,
+      openNotification,
+    );
 
     // FCM doesn't display notifications while the app is in the foreground.
     const unsubscribeMessage = onMessage(messaging, async (message) => {
+      // Badge pop-up instead of a toast.
+      if (notificationType(message) === "BADGE_UNLOCKED") {
+        store.dispatch(getMyBadges());
+        return;
+      }
       const sessionId = extractSessionIdFromMessage(message);
       Toast.show({
         type: "success",
@@ -153,12 +195,13 @@ function AppNavigator() {
           message: message.notification?.body ?? "",
           icon: <Feather name="bell" size={24} color="#065F46" />,
         },
-        onPress: sessionId
-          ? () => {
-              Toast.hide();
-              openSession(sessionId);
-            }
-          : undefined,
+        onPress:
+          sessionId || extractNotificationTarget(message)
+            ? () => {
+                Toast.hide();
+                openNotification(message);
+              }
+            : undefined,
       });
     });
 
@@ -229,15 +272,16 @@ function AppNavigator() {
   }, [isAuthenticated]);
 
   return (
-    <Stack
-      screenOptions={{
-        headerShown: false,
-        contentStyle: { backgroundColor: isDark ? "#000" : "#fff" },
-      }}
-    >
-      <Stack.Screen name="(tabs)" />
-      <Stack.Screen name="(onboarding)" />
-      {/* <Stack.Screen name="admin" />
+    <>
+      <Stack
+        screenOptions={{
+          headerShown: false,
+          contentStyle: { backgroundColor: isDark ? "#000" : "#fff" },
+        }}
+      >
+        <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="(onboarding)" />
+        {/* <Stack.Screen name="admin" />
       <Stack.Screen name="joinsession" />
       <Stack.Screen name="sessions" />
       <Stack.Screen name="captainjoinsession" />
@@ -252,7 +296,10 @@ function AppNavigator() {
       <Stack.Screen name="tournamentteam" />
       <Stack.Screen name="teamboxes" />
       <Stack.Screen name="view-assigned-set" /> */}
-    </Stack>
+      </Stack>
+      {/* New-badge pop-up (e.g. 007), over whatever screen is open */}
+      <BadgeUnlockWatcher />
+    </>
   );
 }
 

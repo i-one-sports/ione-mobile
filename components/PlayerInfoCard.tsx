@@ -30,9 +30,16 @@ interface Props {
   role?: string;
   paymentStatus?: PaymentStatus;
   index?: number;
+  /** e.g. open the player's stats. */
+  onPress?: () => void;
 }
 
-export default function PlayerInfoCard({ name, paymentStatus, index }: Props) {
+export default function PlayerInfoCard({
+  name,
+  paymentStatus,
+  index,
+  onPress,
+}: Props) {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
 
@@ -40,6 +47,8 @@ export default function PlayerInfoCard({ name, paymentStatus, index }: Props) {
 
   return (
     <TouchableOpacity
+      onPress={onPress}
+      disabled={!onPress}
       style={{
         flexDirection: "row",
         alignItems: "center",

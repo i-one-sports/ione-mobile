@@ -60,6 +60,18 @@ export default function SessionPaymentScreen() {
   const { mySessionPayment, allMembersStatus, loadingInit, loadingStatus } =
     useAppSelector((s) => s.payment);
   const myUserId = useAppSelector((s) => s.auth.user?._id);
+  // Joinsession is underneath with this session loaded.
+  const loadedSession = useAppSelector((s) =>
+    s.sessions.activeSession?._id === sessionId
+      ? s.sessions.activeSession
+      : null,
+  );
+  const sessionIsFull = Boolean(loadedSession?.isFull);
+  // PER_PERSON and fully paid (e.g. monthly members already covered).
+  const sessionCovered =
+    !isPool &&
+    (loadedSession?.paymentStatus === "COMPLETED" ||
+      Boolean(loadedSession?.allPaymentsCompleted));
 
   const [polling, setPolling] = useState(false);
 
@@ -424,8 +436,8 @@ export default function SessionPaymentScreen() {
               members={members}
               isDark={isDark}
               accent={accent}
-              total={allMembersStatus?.total}
-              paid={allMembersStatus?.paid}
+              total={allMembersStatus?.totalPayments}
+              paid={allMembersStatus?.paidPayments}
             />
           )}
 
@@ -446,13 +458,17 @@ export default function SessionPaymentScreen() {
               {[
                 {
                   label: "Total",
-                  value: allMembersStatus.total,
+                  value: allMembersStatus.totalPayments,
                   color: isDark ? "#fff" : "#111",
                 },
-                { label: "Paid", value: allMembersStatus.paid, color: accent },
+                {
+                  label: "Paid",
+                  value: allMembersStatus.paidPayments,
+                  color: accent,
+                },
                 {
                   label: "Pending",
-                  value: allMembersStatus.pending,
+                  value: allMembersStatus.pendingPayments,
                   color: "#FFB800",
                 },
               ].map((stat) => (
@@ -505,8 +521,13 @@ export default function SessionPaymentScreen() {
                   lineHeight: 19,
                 }}
               >
-                Your payment slot will be created automatically once all players
-                have joined the session.
+                {sessionCovered
+                  ? "Everyone's covered for this session — there's nothing to pay."
+                  : sessionIsFull
+                    ? // Full, yet no payment record: the server hasn't set up
+                      // payment for this session. Don't blame missing players.
+                      "Payment isn't ready for this session yet. Pull down on the session page to refresh, or contact the captain."
+                    : "Your payment slot will be created automatically once all players have joined the session."}
               </Text>
             </View>
           )}

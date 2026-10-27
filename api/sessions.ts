@@ -2,6 +2,7 @@ import { createAsyncThunk } from "@reduxjs/toolkit";
 import apiCall from "./apiCall";
 import {
   AsyncThunkConfig,
+  CreateSessionRequest,
   SearchRegisteredLocationParams,
   sessionPayload,
   StartSessionRequest,
@@ -108,7 +109,7 @@ export const startSession = createAsyncThunk<
 
 export const createSession = createAsyncThunk<
   any,
-  { sessionId: string; data: any },
+  { sessionId: string; data: CreateSessionRequest },
   AsyncThunkConfig
 >("/createSession", async ({ sessionId, data }, thunkAPI) =>
   apiCall(
