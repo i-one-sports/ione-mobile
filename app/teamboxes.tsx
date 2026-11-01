@@ -21,7 +21,7 @@ export default function TeamBoxes({
         return (
           <Pressable
             key={set._id}
-            onPress={() => onSelectSet(isActive ? null : set._id)}
+            onPress={() => onSelectSet(set._id)}
             className={`w-full flex-1 p-3 rounded-md items-center justify-center ${
               isActive ? "bg-[#00FF94]" : "bg-[#E4E4E4]"
             }`}

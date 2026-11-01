@@ -5,6 +5,7 @@ import {
   joinSession,
   leaveSession,
   deleteSession,
+  getSessionSets,
 } from "@/api/sessions";
 import OpenIcon from "@/assets/svg/OpenIcon";
 import PitchIcon from "@/assets/svg/PitchSvg";
@@ -13,6 +14,7 @@ import SafeAreaScreen from "@/components/SafeAreaScreen";
 import { ThemedText } from "@/components/ThemedText";
 import { Colors } from "@/constants/Colors";
 import useMatchScore from "@/hooks/useMatchScore";
+import useSessionStream from "@/hooks/useSessionStream";
 import { clearActiveSession } from "@/redux/reducers/sessions";
 import { getSessionVote } from "@/api/votesThunk";
 import { clearVoteState } from "@/redux/reducers/votes";
@@ -37,6 +39,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { Toast } from "toastify-react-native";
 import PlayerInfoCard from "@/components/PlayerInfoCard";
+import PoolSummaryCard from "@/components/payment/PoolSummaryCard";
 import { openPlayerStats } from "@/utils/openPlayerStats";
 import { formatTime } from "@/utils/formatTime";
 import { Role } from "@/components/typings/apiResponse";
@@ -215,10 +218,34 @@ export default function JoinSession() {
 
   const isMember = members.some((m: any) => m._id === user?._id);
   const myMemberData = members.find((m: any) => m._id === user?._id);
-  const myPaymentStatus = myMemberData?.paymentStatus ?? null;
-
   const paymentRequired = activeSession?.paymentRequired ?? false;
   const isPool = activeSession?.paymentMode === "POOL";
+
+  // Live session state (GET /sessions/:id/stream): who's in and each member's
+  // payment, including COVERED (a monthly pass covers them). Members only.
+  // On changes, reload what the stream doesn't carry.
+  const { snapshot: live } = useSessionStream(sessionId, isMember, (reason) => {
+    if (!sessionId) return;
+    if (reason === "teams_ready") dispatch(getSessionSets({ sessionId }));
+    else if (
+      [
+        "joined",
+        "member_left",
+        "billing_opened",
+        "paid",
+        "refund_requested",
+        "refunded",
+        "cancelled",
+      ].includes(reason)
+    )
+      dispatch(getSession(sessionId));
+  });
+  /** A member's payment: live when connected, else the session's badge. */
+  const paymentOf = (member: any) =>
+    live
+      ? (live.members.find((m) => m.userId === member?._id)?.payment ?? null)
+      : (member?.paymentStatus ?? null);
+  const myPaymentStatus = paymentOf(myMemberData);
 
   // Per docs: payment records are ONLY initialized when the session fills up.
   // Only show Pay button when the backend has created a record (PENDING or FAILED).
@@ -227,13 +254,31 @@ export default function JoinSession() {
   // PER_PERSON session the server marks fully paid: everyone is settled, e.g.
   // monthly pricing skips members who paid at this pitch in the last 30 days.
   // Members can still show PENDING then, so trust the session, not the badge.
+  // With the live stream, COVERED is exact per member; without it, fall back
+  // to the session being marked fully paid.
   const sessionCovered =
     paymentRequired &&
     !isPool &&
-    (activeSession?.paymentStatus === "COMPLETED" ||
-      Boolean(activeSession?.allPaymentsCompleted));
+    (live
+      ? myPaymentStatus === "COVERED"
+      : activeSession?.paymentStatus === "COMPLETED" ||
+        Boolean(activeSession?.allPaymentsCompleted));
   // What the badges show: covered sessions read as paid.
   const myBadgeStatus = sessionCovered ? "PAID" : myPaymentStatus;
+
+  const openPaymentScreen = () =>
+    router.push({
+      pathname: "/payment-screens/session-payment",
+      params: {
+        sessionId,
+        locationName: session?.location?.name ?? "",
+        startTime: session?.startTime ?? "",
+        matchType: session?.matchType ?? "",
+        paymentAmount: String(session?.paymentAmount ?? 0),
+        paymentMode: activeSession?.paymentMode ?? "",
+        paymentTarget: String(activeSession?.paymentTarget ?? 0),
+      },
+    });
 
   const showPayButton =
     isMember &&
@@ -676,28 +721,19 @@ export default function JoinSession() {
                         </View>
                       )}
 
+                    {/* Pooled session: the pot at a glance, live from the stream */}
+                    {isPool && live?.pool && (
+                      <PoolSummaryCard
+                        pool={live.pool}
+                        onPress={openPaymentScreen}
+                      />
+                    )}
+
                     {/* Pay Fee — only shown when server says payment is required and unpaid */}
                     {showPayButton && (
                       <TouchableOpacity
                         className="flex items-center justify-center rounded-[10px] w-full h-14 bg-primary"
-                        onPress={() =>
-                          router.push({
-                            pathname: "/payment-screens/session-payment",
-                            params: {
-                              sessionId,
-                              locationName: session?.location?.name ?? "",
-                              startTime: session?.startTime ?? "",
-                              matchType: session?.matchType ?? "",
-                              paymentAmount: String(
-                                session?.paymentAmount ?? 0,
-                              ),
-                              paymentMode: activeSession?.paymentMode ?? "",
-                              paymentTarget: String(
-                                activeSession?.paymentTarget ?? 0,
-                              ),
-                            },
-                          })
-                        }
+                        onPress={openPaymentScreen}
                       >
                         <ThemedText
                           darkColor="#6D717F"
@@ -1069,11 +1105,10 @@ export default function JoinSession() {
                 }
                 paymentStatus={
                   // Pool: only show who has contributed; PENDING isn't a debt
-                  paymentRequired &&
-                  (!isPool || member.paymentStatus === "PAID")
-                    ? sessionCovered
+                  paymentRequired && (!isPool || paymentOf(member) === "PAID")
+                    ? !live && sessionCovered
                       ? "PAID"
-                      : member.paymentStatus
+                      : (paymentOf(member) ?? undefined)
                     : undefined
                 }
               />

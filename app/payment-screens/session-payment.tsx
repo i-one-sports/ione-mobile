@@ -1,5 +1,5 @@
 import { koboToNaira } from "@/utils/currency";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   ScrollView,
@@ -20,10 +20,10 @@ import PaymentSummaryCard from "@/components/payment/PaymentSummaryCard";
 import PaymentPollingOverlay from "@/components/payment/PaymentPollingOverlay";
 import MemberPaymentList from "@/components/payment/MemberPaymentList";
 import PoolPaymentPanel from "@/components/payment/PoolPaymentPanel";
-import usePaymentPolling from "@/hooks/usePaymentPolling";
-import usePoolStream from "@/hooks/usePoolStream";
+import useSessionStream from "@/hooks/useSessionStream";
 import { useAppDispatch, useAppSelector } from "@/redux/store";
 import {
+  cancelSessionCheckout,
   getAllMembersPaymentStatus,
   getMySessionPayment,
   initSessionPayment,
@@ -73,7 +73,11 @@ export default function SessionPaymentScreen() {
     (loadedSession?.paymentStatus === "COMPLETED" ||
       Boolean(loadedSession?.allPaymentsCompleted));
 
-  const [polling, setPolling] = useState(false);
+  // After returning from Paystack: waiting for the webhook, which arrives on
+  // the session stream as reason "paid" (no polling — per the API docs).
+  const [confirming, setConfirming] = useState(false);
+  // Nothing after ~1 minute: say we'll update when Paystack confirms.
+  const [waitedLong, setWaitedLong] = useState(false);
 
   useEffect(() => {
     if (sessionId) {
@@ -87,8 +91,21 @@ export default function SessionPaymentScreen() {
     };
   }, [sessionId, isPool, dispatch]);
 
-  const { snapshot: streamedPool } = usePoolStream(sessionId, isPool);
-  const pool = streamedPool ?? allMembersStatus?.pool ?? null;
+  // Live session stream (GET /sessions/:id/stream): the pot comes as
+  // snapshot.pool; for per-person sessions, reload this player's bill and the
+  // counts when a payment lands or bills go out.
+  const { snapshot: liveSession } = useSessionStream(
+    sessionId,
+    Boolean(sessionId),
+    (reason) => {
+      if (!sessionId || isPool) return;
+      if (["paid", "billing_opened", "refunded"].includes(reason)) {
+        dispatch(getMySessionPayment(sessionId));
+        dispatch(getAllMembersPaymentStatus(sessionId));
+      }
+    },
+  );
+  const pool = liveSession?.pool ?? allMembersStatus?.pool ?? null;
   const poolTarget = pool?.target ?? Number(params.paymentTarget ?? 0);
   const myPoolTotal =
     pool?.contributors.find((c) => c.userId === myUserId)?.amount ?? 0;
@@ -97,6 +114,8 @@ export default function SessionPaymentScreen() {
   const [pendingContribution, setPendingContribution] = useState<{
     expectedTotal: number;
     expiresAt: number;
+    /** Base amount (kobo) of the open checkout. */
+    amount: number;
   } | null>(null);
 
   useEffect(() => {
@@ -119,6 +138,52 @@ export default function SessionPaymentScreen() {
     return () => clearTimeout(timer);
   }, [pendingContribution]);
 
+  const { loadingCancel } = useAppSelector((s) => s.payment);
+
+  // Closed Paystack by mistake: the server hands back the same open page.
+  const handleReopenCheckout = async () => {
+    if (!sessionId || !pendingContribution) return;
+    try {
+      const result = await dispatch(
+        initSessionPayment({ sessionId, amount: pendingContribution.amount }),
+      ).unwrap();
+      if (result.alreadyPaid) {
+        dispatch(getAllMembersPaymentStatus(sessionId));
+        return;
+      }
+      await WebBrowser.openBrowserAsync(result.authorizationUrl);
+    } catch (err: any) {
+      Toast.show({ type: "error", text1: "Payment error", text2: err?.msg });
+    }
+  };
+
+  // Pay a different amount: cancel the open checkout (releases its hold on
+  // the pot), then the amount box comes back. If that page was in fact paid,
+  // nothing is cancelled and the stream shows it shortly.
+  const handleChangeAmount = async () => {
+    if (!sessionId) return;
+    try {
+      const result = await dispatch(cancelSessionCheckout(sessionId)).unwrap();
+      if (result.alreadyPaid) {
+        Toast.show({
+          type: "success",
+          text1: "That payment went through",
+          text2: "It'll show in the pot in a moment.",
+        });
+        return;
+      }
+      setPendingContribution(null);
+      dispatch(getAllMembersPaymentStatus(sessionId));
+    } catch (err: any) {
+      // 503: Paystack couldn't confirm the page wasn't paid; nothing changed.
+      Toast.show({
+        type: "error",
+        text1: "Couldn't change the amount",
+        text2: err?.msg ?? "Try again in a moment.",
+      });
+    }
+  };
+
   const handlePoolPay = async (amountKobo: number) => {
     if (!sessionId) return;
     try {
@@ -134,11 +199,14 @@ export default function SessionPaymentScreen() {
         dispatch(getAllMembersPaymentStatus(sessionId));
         return;
       }
+      // An already-open checkout comes back as-is, so use its amount.
+      const held = result.baseAmount ?? amountKobo;
       setPendingContribution({
-        expectedTotal: myPoolTotal + (result.baseAmount ?? amountKobo),
+        expectedTotal: myPoolTotal + held,
         expiresAt: result.expiresAt
           ? new Date(result.expiresAt).getTime()
           : Date.now() + 15 * 60 * 1000,
+        amount: held,
       });
       await WebBrowser.openBrowserAsync(result.authorizationUrl);
     } catch (err: any) {
@@ -156,28 +224,12 @@ export default function SessionPaymentScreen() {
     }
   };
 
-  const fetchPaymentStatus = useCallback(async () => {
-    if (!sessionId) return null;
-    const result = await dispatch(getMySessionPayment(sessionId))
-      .unwrap()
-      .catch(() => null);
-    return result;
-  }, [sessionId, dispatch]);
-
-  const {
-    status: polledStatus,
-    timedOut,
-    stopPolling,
-  } = usePaymentPolling({
-    fetchFn: fetchPaymentStatus,
-    enabled: polling,
-    onSuccess: () => {
-      setPolling(false);
-      dispatch(getAllMembersPaymentStatus(sessionId));
-    },
-    onFailure: () => setPolling(false),
-    onTimeout: () => setPolling(false),
-  });
+  useEffect(() => {
+    if (!confirming) return;
+    setWaitedLong(false);
+    const timer = setTimeout(() => setWaitedLong(true), 60 * 1000);
+    return () => clearTimeout(timer);
+  }, [confirming]);
 
   const handlePay = async () => {
     if (!sessionId) return;
@@ -185,7 +237,8 @@ export default function SessionPaymentScreen() {
       const result = await dispatch(initSessionPayment({ sessionId })).unwrap();
       console.log("[session-payment] initSessionPayment result:", result);
       await WebBrowser.openBrowserAsync(result.authorizationUrl);
-      setPolling(true);
+      // Coming back isn't proof of payment; wait for the server.
+      setConfirming(true);
     } catch (err: any) {
       console.log(
         "[session-payment] initSessionPayment error:",
@@ -195,25 +248,37 @@ export default function SessionPaymentScreen() {
     }
   };
 
+  // Reopens the same Paystack page (the server returns the open checkout).
   const handleRetry = () => {
-    stopPolling();
-    setPolling(false);
+    setConfirming(false);
     handlePay();
   };
 
+  // The stream stays open on joinsession, so the badge still turns Paid.
   const handleDismiss = () => {
-    stopPolling();
-    setPolling(false);
+    setConfirming(false);
     router.back();
   };
 
-  const currentStatus = polledStatus ?? mySessionPayment?.status ?? null;
+  // The live stream knows first when the webhook lands.
+  const myLivePayment = liveSession?.members.find(
+    (m) => m.userId === myUserId,
+  )?.payment;
+  const currentStatus =
+    myLivePayment === "PAID" ? "PAID" : (mySessionPayment?.status ?? null);
+
+  useEffect(() => {
+    if (!confirming || !sessionId) return;
+    if (currentStatus === "PAID" || currentStatus === "FAILED") {
+      setConfirming(false);
+      dispatch(getAllMembersPaymentStatus(sessionId));
+    }
+  }, [confirming, currentStatus, sessionId, dispatch]);
+
+  const timedOut = confirming && waitedLong;
   //   const amount = mySessionPayment?.amount ?? 0;
   const showOverlay =
-    polling ||
-    timedOut ||
-    currentStatus === "PAID" ||
-    currentStatus === "FAILED";
+    confirming || currentStatus === "PAID" || currentStatus === "FAILED";
 
   const isExpired = mySessionPayment?.expiresAt
     ? new Date(mySessionPayment.expiresAt) < new Date()
@@ -300,6 +365,9 @@ export default function SessionPaymentScreen() {
               awaitingConfirmation={pendingContribution != null}
               onPay={handlePoolPay}
               onDone={() => router.back()}
+              onReopen={handleReopenCheckout}
+              onChangeAmount={handleChangeAmount}
+              cancelling={loadingCancel}
             />
           ) : allMembersStatus ? (
             // Status loaded but no pool block: the pot isn't open yet.
@@ -562,7 +630,7 @@ export default function SessionPaymentScreen() {
               }
               onPress={handlePay}
               loading={loadingInit}
-              disabled={loadingInit || isExpired || polling}
+              disabled={loadingInit || isExpired || confirming}
             />
           )}
 
@@ -577,11 +645,13 @@ export default function SessionPaymentScreen() {
           status={currentStatus}
           timedOut={timedOut}
           polling={
-            polling &&
+            confirming &&
             !timedOut &&
             currentStatus !== "PAID" &&
             currentStatus !== "FAILED"
           }
+          timedOutMessage="We'll update this when Paystack confirms. You can leave this screen — your badge turns Paid on its own."
+          retryTitle="Open payment page again"
           isDark={isDark}
           accent={accent}
           onRetry={handleRetry}

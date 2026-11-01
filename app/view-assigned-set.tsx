@@ -201,6 +201,14 @@ export default function ViewAssignedSetScreen() {
   // ── Filtering ──────────────────────────────────────────────────────────────
   const safeSets: SetDoc[] = Array.isArray(sets) ? sets : [];
 
+  // Open on the first team straight away instead of no team selected.
+  useEffect(() => {
+    if (safeSets.length === 0) return;
+    if (selectedSet && safeSets.some((s) => s._id === selectedSet)) return;
+    setSelectedSet(safeSets[0]._id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [safeSets.map((s) => s._id).join(",")]);
+
   const currentSet: SetDoc | null = selectedSet
     ? (safeSets.find((s) => s._id === selectedSet) ?? null)
     : null;

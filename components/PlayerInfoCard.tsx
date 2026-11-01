@@ -6,6 +6,8 @@ type PaymentStatus =
   | "PENDING"
   | "FAILED"
   | "REFUNDED"
+  | "REFUND_PENDING"
+  | "COVERED"
   | "NOT_REQUIRED";
 
 const STATUS_COLOR: Record<PaymentStatus, string> = {
@@ -13,6 +15,8 @@ const STATUS_COLOR: Record<PaymentStatus, string> = {
   PENDING: "#FFB800",
   FAILED: "#FF4444",
   REFUNDED: "#888",
+  REFUND_PENDING: "#8888FF",
+  COVERED: "#00C8A0",
   NOT_REQUIRED: "#888",
 };
 
@@ -21,6 +25,8 @@ const STATUS_LABEL: Record<PaymentStatus, string> = {
   PENDING: "Pending",
   FAILED: "Failed",
   REFUNDED: "Refunded",
+  REFUND_PENDING: "Refunding",
+  COVERED: "Covered",
   NOT_REQUIRED: "Free",
 };
 

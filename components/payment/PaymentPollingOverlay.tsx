@@ -12,6 +12,9 @@ interface Props {
   accent: string;
   onRetry?: () => void;
   onDismiss?: () => void;
+  /** Overrides for the "taking longer" state (defaults keep other screens as is). */
+  timedOutMessage?: string;
+  retryTitle?: string;
 }
 
 export default function PaymentPollingOverlay({
@@ -22,6 +25,8 @@ export default function PaymentPollingOverlay({
   accent,
   onRetry,
   onDismiss,
+  timedOutMessage,
+  retryTitle,
 }: Props) {
   const bg = isDark ? "rgba(0,0,0,0.92)" : "rgba(255,255,255,0.96)";
   const textColor = isDark ? "#fff" : "#111";
@@ -91,13 +96,16 @@ export default function PaymentPollingOverlay({
             Taking Longer Than Expected
           </Text>
           <Text style={[styles.sub, { color: mutedColor }]}>
-            {
-              "We're still checking your payment. Please wait a moment and check back."
-            }
+            {timedOutMessage ??
+              "We're still checking your payment. Please wait a moment and check back."}
           </Text>
           <View style={styles.btnWrap}>
             {onRetry && (
-              <CustomButton primary title="Check Again" onPress={onRetry} />
+              <CustomButton
+                primary
+                title={retryTitle ?? "Check Again"}
+                onPress={onRetry}
+              />
             )}
             {onDismiss && (
               <CustomButton
