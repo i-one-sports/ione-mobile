@@ -521,13 +521,15 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     fontSize: 12,
   },
+  // Matches the app's primary buttons: brand green, bold black text.
   confirm: {
-    backgroundColor: "#0C4D2E",
-    padding: 16,
+    backgroundColor: "#00FF94",
+    paddingVertical: 18,
+    paddingHorizontal: 16,
     margin: 16,
-    borderRadius: 12,
+    borderRadius: 10,
     alignItems: "center",
   },
   disabled: { opacity: 0.4 },
-  confirmText: { color: "#fff", fontWeight: "600" },
+  confirmText: { color: "#000", fontWeight: "700", fontSize: 16 },
 });

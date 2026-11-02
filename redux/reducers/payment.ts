@@ -1,6 +1,7 @@
 import { createSlice } from "@reduxjs/toolkit";
 import { logOut } from "@/api/authThunks";
 import {
+  cancelSessionCheckout,
   getAllMembersPaymentStatus,
   getMySessionPayment,
   getTournamentPaymentStatus,
@@ -57,6 +58,8 @@ interface PaymentState {
   walletTransactionsPagination: LedgerPagination | null;
 
   loadingInit: boolean;
+  /** Cancelling an open checkout (DELETE /wallet/session/:id/checkout). */
+  loadingCancel: boolean;
   loadingStatus: boolean;
   loadingBalance: boolean;
   loadingMyBalance: boolean;
@@ -94,6 +97,7 @@ const initialState: PaymentState = {
   walletTransactionsPagination: null,
 
   loadingInit: false,
+  loadingCancel: false,
   loadingStatus: false,
   loadingBalance: false,
   loadingMyBalance: false,
@@ -136,6 +140,18 @@ const paymentSlice = createSlice({
       .addCase(initSessionPayment.rejected, (state, action) => {
         state.loadingInit = false;
         state.errorInit = action.payload?.msg ?? "Failed to initialise payment";
+      });
+
+    // Cancel checkout
+    builder
+      .addCase(cancelSessionCheckout.pending, (state) => {
+        state.loadingCancel = true;
+      })
+      .addCase(cancelSessionCheckout.fulfilled, (state) => {
+        state.loadingCancel = false;
+      })
+      .addCase(cancelSessionCheckout.rejected, (state) => {
+        state.loadingCancel = false;
       });
 
     // My session payment status

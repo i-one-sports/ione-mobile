@@ -38,15 +38,28 @@ export interface PoolSnapshot {
 export interface InitPaymentResponse {
   authorizationUrl: string;
   reference: string;
-  /** What Paystack charges (base + commission). */
+  /** What Paystack charges (base + commission + processing fee). */
   amount: number;
+  accessCode?: string;
   // POOL only
   baseAmount?: number;
   commissionAmount?: number;
+  processingFee?: number;
   expiresAt?: string;
   /** POOL: the pot was already full, no checkout was created. */
   alreadyPaid?: boolean;
   pool?: PoolSnapshot;
+}
+
+/** DELETE /wallet/session/:sessionId/checkout */
+export interface CancelCheckoutResponse {
+  /** The open checkout is gone (pool: its hold on the pot is released). */
+  cancelled: boolean;
+  /** The old page had been paid, so nothing was cancelled. */
+  alreadyPaid?: boolean;
+  status?: string;
+  /** App-side: the server said nothing was open (404). */
+  nothingOpen?: boolean;
 }
 
 export interface SessionPaymentStatus {

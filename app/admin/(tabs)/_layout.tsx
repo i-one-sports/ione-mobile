@@ -8,12 +8,41 @@ import TabBarBackground from "@/components/ui/TabBarBackground";
 import { Colors } from "@/constants/Colors";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { Tabs } from "expo-router";
+import { Icon, Label, NativeTabs } from "expo-router/unstable-native-tabs";
 import React from "react";
-import { Platform } from "react-native";
+import { DynamicColorIOS, Platform } from "react-native";
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
+
+  // iOS: the native tab bar — on iOS 26 the floating Liquid Glass bar (as in
+  // Sofascore). Same tabs as below, with SF Symbols. Android is unchanged.
+  if (Platform.OS === "ios") {
+    return (
+      <NativeTabs
+        tintColor={DynamicColorIOS({ light: "#00A85A", dark: "#00FF94" })}
+        minimizeBehavior="onScrollDown"
+      >
+        <NativeTabs.Trigger name="index">
+          <Label>Home</Label>
+          <Icon sf={{ default: "house", selected: "house.fill" }} />
+        </NativeTabs.Trigger>
+        <NativeTabs.Trigger name="fixtures">
+          <Label>Fixtures</Label>
+          <Icon sf={{ default: "calendar", selected: "calendar" }} />
+        </NativeTabs.Trigger>
+        <NativeTabs.Trigger name="statistics">
+          <Label>Statistics</Label>
+          <Icon sf={{ default: "chart.bar", selected: "chart.bar.fill" }} />
+        </NativeTabs.Trigger>
+        <NativeTabs.Trigger name="settings">
+          <Label>Settings</Label>
+          <Icon sf={{ default: "gearshape", selected: "gearshape.fill" }} />
+        </NativeTabs.Trigger>
+      </NativeTabs>
+    );
+  }
 
   return (
     <Tabs

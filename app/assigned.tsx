@@ -211,6 +211,16 @@ export default function Assigned() {
   // ── Filtering ──────────────────────────────────────────────────────────────
   const safeSets: SetDoc[] = Array.isArray(sets) ? sets : [];
 
+  // Open on a team straight away: your own team if you're in one, else the
+  // first. Also re-picks if the selected team disappears (e.g. teams remade).
+  useEffect(() => {
+    if (safeSets.length === 0) return;
+    if (selectedSet && safeSets.some((s) => s._id === selectedSet)) return;
+    const mine = safeSets.find((s) => memberInSet(s.players, user?._id ?? ""));
+    setSelectedSet((mine ?? safeSets[0])._id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [safeSets.map((s) => s._id).join(","), user?._id]);
+
   // ── Auto-poll for team allocation (paid sessions) ──────────────────────────
   // Once every member has paid, the server auto-allocates teams (fire & forget).
   // Poll GET /sets/:sessionId until teams appear; after ~10 attempts (5s) surface

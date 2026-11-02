@@ -23,6 +23,11 @@ interface Props {
   /** Amount in kobo (base, before commission). */
   onPay: (amountKobo: number) => void;
   onDone: () => void;
+  /** Cancel the open checkout so a different amount can be paid. */
+  onChangeAmount?: () => void;
+  /** Reopen the same Paystack page (the server returns the open checkout). */
+  onReopen?: () => void;
+  cancelling?: boolean;
 }
 
 export default function PoolPaymentPanel({
@@ -34,6 +39,9 @@ export default function PoolPaymentPanel({
   awaitingConfirmation,
   onPay,
   onDone,
+  onChangeAmount,
+  onReopen,
+  cancelling = false,
 }: Props) {
   const cardBg = isDark ? "#111" : "#F9FAFB";
   const cardBorder = isDark ? "#222" : "#F0F0F0";
@@ -157,16 +165,56 @@ export default function PoolPaymentPanel({
         <View
           style={[
             styles.card,
-            styles.infoRow,
-            { backgroundColor: cardBg, borderColor: cardBorder },
+            { backgroundColor: cardBg, borderColor: cardBorder, gap: 14 },
           ]}
         >
-          <MaterialIcons name="hourglass-top" size={18} color="#FFB800" />
-          <Text style={[styles.infoText, { color: mutedColor }]}>
-            {
-              "Waiting for Paystack to confirm your payment. The pot will update automatically. If you didn't finish paying, your share is released after 15 minutes."
-            }
-          </Text>
+          <View style={styles.infoRow}>
+            <MaterialIcons name="hourglass-top" size={18} color="#FFB800" />
+            <Text style={[styles.infoText, { color: mutedColor }]}>
+              {
+                "Waiting for Paystack to confirm your payment. The pot will update automatically. If you didn't finish paying, your share is released after 15 minutes."
+              }
+            </Text>
+          </View>
+          {/* Closed the page, or want a different amount? */}
+          <View style={{ flexDirection: "row", gap: 10 }}>
+            {onReopen && (
+              <TouchableOpacity
+                onPress={onReopen}
+                disabled={paying || cancelling}
+                style={[styles.quick, { flex: 1, borderColor: accent }]}
+              >
+                <Text
+                  style={{
+                    color: accent,
+                    fontSize: 13,
+                    fontWeight: "600",
+                    textAlign: "center",
+                  }}
+                >
+                  {paying ? "Opening…" : "Open payment page again"}
+                </Text>
+              </TouchableOpacity>
+            )}
+            {onChangeAmount && (
+              <TouchableOpacity
+                onPress={onChangeAmount}
+                disabled={paying || cancelling}
+                style={[styles.quick, { flex: 1, borderColor: cardBorder }]}
+              >
+                <Text
+                  style={{
+                    color: textColor,
+                    fontSize: 13,
+                    fontWeight: "600",
+                    textAlign: "center",
+                  }}
+                >
+                  {cancelling ? "Cancelling…" : "Change amount"}
+                </Text>
+              </TouchableOpacity>
+            )}
+          </View>
         </View>
       ) : pool.available <= 0 ? (
         <View

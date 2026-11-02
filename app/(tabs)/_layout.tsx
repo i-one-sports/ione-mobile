@@ -7,11 +7,41 @@ import TabBarBackground from "@/components/ui/TabBarBackground";
 import { Colors } from "@/constants/Colors";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { Tabs } from "expo-router";
+import { Icon, Label, NativeTabs } from "expo-router/unstable-native-tabs";
 import React from "react";
-import { Platform } from "react-native";
+import { DynamicColorIOS, Platform } from "react-native";
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
+
+  // iOS: the native tab bar — on iOS 26 the floating Liquid Glass bar (as in
+  // Sofascore), which shrinks while scrolling down. Icons are SF Symbols,
+  // outline when idle and filled when selected. Android keeps the bar below.
+  if (Platform.OS === "ios") {
+    return (
+      <NativeTabs
+        tintColor={DynamicColorIOS({ light: "#00A85A", dark: "#00FF94" })}
+        minimizeBehavior="onScrollDown"
+      >
+        <NativeTabs.Trigger name="index">
+          <Label>Home</Label>
+          <Icon sf={{ default: "house", selected: "house.fill" }} />
+        </NativeTabs.Trigger>
+        <NativeTabs.Trigger name="sessions">
+          <Label>Sessions</Label>
+          <Icon sf={{ default: "sportscourt", selected: "sportscourt.fill" }} />
+        </NativeTabs.Trigger>
+        <NativeTabs.Trigger name="tournaments">
+          <Label>Tournaments</Label>
+          <Icon sf={{ default: "trophy", selected: "trophy.fill" }} />
+        </NativeTabs.Trigger>
+        <NativeTabs.Trigger name="profile">
+          <Label>Profile</Label>
+          <Icon sf={{ default: "person", selected: "person.fill" }} />
+        </NativeTabs.Trigger>
+      </NativeTabs>
+    );
+  }
 
   return (
     <Tabs
