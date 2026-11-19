@@ -18,10 +18,12 @@ import {
   searchRegisteredLocation,
 } from "@/api/sessions";
 import {
+  SessionByDateResponse,
   SessionByIdResponse,
   SessionSet,
   RegisteredLocationResponse,
 } from "@/components/typings/apiResponse";
+import { locationDayKey } from "@/utils/pitchSlots";
 // import { Team } from "@/components/typings";
 
 // export interface MatchSession {
@@ -118,9 +120,9 @@ interface State {
   myCurrentSession: SessionByIdResponse | null;
   loadingMyCurrentSession: boolean;
 
-  // Location-based sessions
-  locationSessions: any[];
-  loadingLocationSessions: boolean;
+  // Bookings at a pitch per day, keyed by locationDayKey(locationId, date)
+  locationSessionsByDay: Record<string, SessionByDateResponse[]>;
+  loadingLocationDays: Record<string, boolean>;
 
   // Sets state
   sets: SessionSet[];
@@ -164,8 +166,8 @@ const initialState: State = {
   myCurrentSession: null,
   loadingMyCurrentSession: false,
 
-  locationSessions: [],
-  loadingLocationSessions: false,
+  locationSessionsByDay: {},
+  loadingLocationDays: {},
 
   sets: [],
   loadingSets: false,
@@ -308,15 +310,20 @@ export const sessionSlice = createSlice({
 
     // Get sessions by location
     builder
-      .addCase(getSessionsByLocation.pending, (state) => {
-        state.loadingLocationSessions = true;
+      .addCase(getSessionsByLocation.pending, (state, { meta }) => {
+        const key = locationDayKey(meta.arg.locationId, meta.arg.date);
+        state.loadingLocationDays[key] = true;
       })
-      .addCase(getSessionsByLocation.fulfilled, (state, { payload }) => {
-        state.locationSessions = payload;
-        state.loadingLocationSessions = false;
+      .addCase(getSessionsByLocation.fulfilled, (state, { payload, meta }) => {
+        const key = locationDayKey(meta.arg.locationId, meta.arg.date);
+        state.locationSessionsByDay[key] = Array.isArray(payload)
+          ? payload
+          : [];
+        state.loadingLocationDays[key] = false;
       })
-      .addCase(getSessionsByLocation.rejected, (state) => {
-        state.loadingLocationSessions = false;
+      .addCase(getSessionsByLocation.rejected, (state, { meta }) => {
+        const key = locationDayKey(meta.arg.locationId, meta.arg.date);
+        state.loadingLocationDays[key] = false;
       });
 
     // Join session — response has { message, session }; re-use activeSession

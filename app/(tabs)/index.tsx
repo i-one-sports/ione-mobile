@@ -2,12 +2,10 @@ import {
   nearBy,
   nearByLocation,
   searchRegisteredLocation,
-  startSession,
 } from "@/api/sessions";
 import FilterSvg from "@/assets/svg/FilterSvg";
 import NotificationIcon from "@/assets/svg/NotificationIcon";
 import FixtureList from "@/components/FixtureList";
-import Loader from "@/components/loader";
 import PitchCarousel, { PitchData } from "@/components/PitchCarousel";
 import SafeAreaScreen from "@/components/SafeAreaScreen";
 import ShimmerCarousel from "@/components/ShimmerCarousel";
@@ -27,7 +25,6 @@ import {
   View,
   useColorScheme,
 } from "react-native";
-import Toast from "react-native-toast-message";
 import ActionBanner from "@/components/ActionBanner";
 
 export default function HomeScreen() {
@@ -46,28 +43,43 @@ export default function HomeScreen() {
   const [searchQuery, setSearchQuery] = useState("");
   const searchDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [selectedItem, setSelectedItem] = useState<PitchData | null>(null);
-  const [loadingId, setLoadingId] = useState(false);
 
-  const handleStartSession = (locationId: string) => {
-    setLoadingId(true);
-    dispatch(startSession({ locationId }))
-      .unwrap()
-      .then((response: any) => {
-        setLoadingId(false);
-        router.push(`/screens/newsession?locationId=${response._id}`);
-      })
-      .catch((err: any) => {
-        setLoadingId(false);
-        const message =
-          err?.msg?.message || err?.msg || "Failed to start session";
-        Toast.show({
-          type: "error",
-          props: {
-            title: "Error",
-            message,
-          },
-        });
-      });
+  // Open New Session with this pitch chosen. Nothing is created until the
+  // captain submits the form (it starts and configures the session then), so
+  // backing out leaves no empty session behind, and the form knows the pitch
+  // to show its bookings.
+  const handleStartSession = (pitch: PitchData) => {
+    router.push({
+      pathname: "/screens/newsession",
+      params: {
+        pitchId: pitch.id,
+        pitchName: pitch.name,
+        pitchAddress: pitch.location ?? "",
+        ...(pitch.openingHour ? { pitchOpening: pitch.openingHour } : {}),
+        ...(pitch.closingHour ? { pitchClosing: pitch.closingHour } : {}),
+        ...(pitch.hourlyPricing ? { pitchHourly: "1" } : {}),
+        ...(pitch.pricePerHour
+          ? { pitchPrice: String(pitch.pricePerHour) }
+          : {}),
+      },
+    });
+  };
+
+  const handleSeeBookings = (pitch: PitchData) => {
+    router.push({
+      pathname: "/pitch-bookings",
+      params: {
+        pitchId: pitch.id,
+        pitchName: pitch.name,
+        pitchAddress: pitch.location ?? "",
+        ...(pitch.openingHour ? { pitchOpening: pitch.openingHour } : {}),
+        ...(pitch.closingHour ? { pitchClosing: pitch.closingHour } : {}),
+        ...(pitch.hourlyPricing ? { pitchHourly: "1" } : {}),
+        ...(pitch.pricePerHour
+          ? { pitchPrice: String(pitch.pricePerHour) }
+          : {}),
+      },
+    });
   };
 
   const handleCreateTournaments = (locationId: string) => {
@@ -131,6 +143,10 @@ export default function HomeScreen() {
       location: p.address,
       image: { uri: p.pitchPhoto },
       isBooked: p.booked,
+      hourlyPricing: p.tier === "paid" && p.pricingOption === "hourly",
+      pricePerHour: p.pricePerHour,
+      openingHour: p.openingHour,
+      closingHour: p.closingHour,
     })) || [];
 
   const accent = isDark ? "#00FF94" : "#00cc77";
@@ -260,8 +276,14 @@ export default function HomeScreen() {
                       setSelectedItem({
                         id: item._id,
                         name: item.name,
-                        location: "",
+                        location: (item as any).address ?? "",
                         isBooked: false,
+                        hourlyPricing:
+                          (item as any).tier === "paid" &&
+                          (item as any).pricingOption === "hourly",
+                        pricePerHour: (item as any).pricePerHour,
+                        openingHour: (item as any).openingHour,
+                        closingHour: (item as any).closingHour,
                       })
                     }
                     style={{
@@ -383,7 +405,6 @@ export default function HomeScreen() {
         <FixtureList limit={4} />
       </View>
 
-      <Loader visible={loadingId} />
       <Modal
         visible={!!selectedItem}
         transparent
@@ -408,7 +429,7 @@ export default function HomeScreen() {
               onPress={() => {
                 const item = selectedItem;
                 setSelectedItem(null);
-                if (item) handleStartSession(item.id);
+                if (item) handleStartSession(item);
               }}
               className="bg-[#67F095] rounded-xl py-3.5 items-center mb-2.5"
             >
@@ -426,6 +447,18 @@ export default function HomeScreen() {
             >
               <ThemedText className="text-[15px] font-semibold">
                 Create Tournament
+              </ThemedText>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => {
+                const item = selectedItem;
+                setSelectedItem(null);
+                if (item) handleSeeBookings(item);
+              }}
+              className="rounded-xl py-3.5 items-center mt-2.5 border border-[#e5e5e5] dark:border-[#67F095]"
+            >
+              <ThemedText className="text-[15px] font-semibold">
+                See bookings
               </ThemedText>
             </TouchableOpacity>
           </Pressable>
