@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -9,6 +9,7 @@ import {
   KeyboardAvoidingView,
   Modal,
   TouchableOpacity,
+  ActivityIndicator,
 } from "react-native";
 import { useFormik } from "formik";
 import * as Yup from "yup";
@@ -18,16 +19,54 @@ import { Colors } from "@/constants/Colors";
 import InputField from "@/components/InputField";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
-import { useAppDispatch } from "@/redux/store";
-import { createSession, startSession } from "@/api/sessions";
+import { useAppDispatch, useAppSelector } from "@/redux/store";
+import {
+  createSession,
+  getSessionsByLocation,
+  startSession,
+} from "@/api/sessions";
 import Toast from "react-native-toast-message";
 import Loader from "@/components/loader";
 import SectionCard from "@/components/ui/SectionCard";
 import TimePickerField from "@/components/TimePickerField";
+import CustomButton from "@/components/ui/CustomButton";
 
 import SessionPitchPicker from "@/components/SessionPitchPicker";
 import type { SessionPitch } from "@/api/pitchSearch";
-import type { WinningDecider } from "@/components/typings/apiResponse";
+import type {
+  SessionByDateResponse,
+  WinningDecider,
+} from "@/components/typings/apiResponse";
+import DayStrip, { type DayStatus } from "@/components/booking/DayStrip";
+import DurationChips from "@/components/booking/DurationChips";
+import StartTimeGrid from "@/components/booking/StartTimeGrid";
+import DayFullNotice, {
+  type Suggestion,
+} from "@/components/booking/DayFullNotice";
+import SlotSummaryCard from "@/components/booking/SlotSummaryCard";
+import SlotTakenSheet from "@/components/booking/SlotTakenSheet";
+import SeeTheDayModal from "@/components/booking/SeeTheDayModal";
+import { formatKoboAsNaira } from "@/utils/currency";
+import {
+  formatClock,
+  formatDayShort,
+  formatDuration,
+  formatRange,
+  freeGaps,
+  freeStarts,
+  isValidDayKey,
+  locationDayKey,
+  longestGap,
+  startDate,
+  startTimeOptions,
+  todayKey,
+  toMinutes,
+  upcomingDays,
+} from "@/utils/pitchSlots";
+
+type Slot = { day: string; start: number; duration: number };
+
+const str = (v: unknown) => (typeof v === "string" && v ? v : undefined);
 
 export default function NewSession() {
   const params = useLocalSearchParams();
@@ -38,12 +77,12 @@ export default function NewSession() {
     typeof params.pitchId === "string"
       ? {
           id: params.pitchId,
-          name:
-            typeof params.pitchName === "string"
-              ? params.pitchName
-              : "Selected pitch",
-          address:
-            typeof params.pitchAddress === "string" ? params.pitchAddress : "",
+          name: str(params.pitchName) ?? "Selected pitch",
+          address: str(params.pitchAddress) ?? "",
+          openingHour: str(params.pitchOpening),
+          closingHour: str(params.pitchClosing),
+          hourlyPricing: params.pitchHourly === "1",
+          pricePerHour: Number(params.pitchPrice) || undefined,
         }
       : null,
   );
@@ -54,10 +93,118 @@ export default function NewSession() {
   const dispatch = useAppDispatch();
   const colorScheme = useColorScheme();
   const theme = Colors[colorScheme ?? "light"];
+  const isDark = colorScheme === "dark";
+  const mutedColor = isDark ? "#9BA1A6" : "#6D717F";
+  const accent = isDark ? "#00FF94" : "#00A85A";
   const [loading, setLoading] = useState(false);
-
-  const [startTimeOfDay, setStartTimeOfDay] = useState("");
   const [showDeciderModal, setShowDeciderModal] = useState(false);
+
+  // ── Slot: day, length and start time ──────────────────────────────────
+  const days = useMemo(() => upcomingDays(), []);
+  const [step, setStep] = useState<"slot" | "details">("slot");
+  const [day, setDay] = useState(
+    isValidDayKey(params.date) ? (params.date as string) : todayKey(),
+  );
+  const wholeHours = !!selectedPitch?.hourlyPricing;
+  const [duration, setDuration] = useState(120);
+  const [start, setStart] = useState<number | null>(null);
+  // Sessions without a known pitch (old links) pick a time by hand.
+  const [manualTime, setManualTime] = useState("");
+  const [seeDay, setSeeDay] = useState(false);
+  const [taken, setTaken] = useState<{
+    start: number;
+    alternatives: number[];
+  } | null>(null);
+
+  const pitchId = selectedPitch?.id;
+  const opening = selectedPitch?.openingHour;
+  const closing = selectedPitch?.closingHour;
+
+  // Hourly pitches only take whole hours.
+  useEffect(() => {
+    if (wholeHours && duration % 60) setDuration(Math.ceil(duration / 60) * 60);
+  }, [wholeHours, duration]);
+
+  // Load the next 14 days at this pitch, for the day dots and suggestions.
+  const loadDays = () => {
+    if (!pitchId) return;
+    days.forEach((d) =>
+      dispatch(getSessionsByLocation({ locationId: pitchId, date: d })),
+    );
+  };
+  useEffect(loadDays, [dispatch, pitchId, days]);
+
+  const byDay = useAppSelector((state) => state.sessions.locationSessionsByDay);
+  const loadingDays = useAppSelector(
+    (state) => state.sessions.loadingLocationDays,
+  );
+  const sessionsOn = (d: string): SessionByDateResponse[] | undefined =>
+    pitchId ? byDay[locationDayKey(pitchId, d)] : undefined;
+
+  const daySessions = sessionsOn(day);
+  const dayLoading = pitchId
+    ? !!loadingDays[locationDayKey(pitchId, day)]
+    : false;
+  const options = daySessions
+    ? startTimeOptions(daySessions, day, opening, closing, duration)
+    : [];
+  const hasFree = options.some((o) => o.free);
+
+  const dayStatus: Record<string, DayStatus> = {};
+  for (const d of days) {
+    const s = sessionsOn(d);
+    if (s)
+      dayStatus[d] = freeStarts(s, d, opening, closing, duration).length
+        ? "free"
+        : "full";
+  }
+
+  // B05 · nothing of this length fits: a shorter game, or another day.
+  const suggestions: Suggestion[] = [];
+  const gaps = daySessions ? freeGaps(daySessions, day, opening, closing) : [];
+  const longest = longestGap(gaps);
+  if (daySessions && !hasFree) {
+    const unit = wholeHours ? 60 : 30;
+    const shorter = longest
+      ? Math.floor((longest.end - longest.start) / unit) * unit
+      : 0;
+    if (shorter >= unit && shorter < duration) {
+      const starts = freeStarts(daySessions, day, opening, closing, shorter);
+      if (starts.length)
+        suggestions.push({
+          key: "shorter",
+          title: `${formatDuration(shorter)} on ${formatDayShort(day)}`,
+          subtitle:
+            starts.length === 1
+              ? formatRange(starts[0], starts[0] + shorter)
+              : starts.slice(0, 3).map(formatClock).join(", "),
+          onPress: () => setDuration(shorter),
+        });
+    }
+    // Nearest days first: the day after, the day before, two after...
+    const i = days.indexOf(day);
+    for (let k = 1; k < days.length && suggestions.length < 3; k++) {
+      for (const d of [days[i + k], days[i - k]]) {
+        const s = d ? sessionsOn(d) : undefined;
+        if (!d || !s || suggestions.length >= 3) continue;
+        const starts = freeStarts(s, d, opening, closing, duration);
+        if (starts.length)
+          suggestions.push({
+            key: d,
+            title: `${formatDuration(duration)} on ${formatDayShort(d)}`,
+            subtitle: starts.slice(0, 3).map(formatClock).join(", "),
+            onPress: () => setDay(d),
+          });
+      }
+    }
+  }
+
+  const pickStart = (minute: number) => {
+    setStart(minute);
+    setStep("details");
+  };
+
+  // ── Details form ───────────────────────────────────────────────────────
 
   // The only values the API accepts; anything else returns 400.
   const winningDeciderOptions: { label: string; value: WinningDecider }[] = [
@@ -68,89 +215,90 @@ export default function NewSession() {
   const getWinningDeciderLabel = (value: string) =>
     winningDeciderOptions.find((o) => o.value === value)?.label ?? value;
 
-  const buildStartTime = (time: string) => {
-    if (!time) return "";
-    const [h, m] = time.split(":").map(Number);
-    const d = new Date();
-    d.setHours(h || 0, m || 0, 0, 0);
-    return d.toISOString();
+  type Values = {
+    playersPerTeam: string;
+    setNumber: string;
+    winningDecider: string;
+    minsPerSet: string;
   };
 
-  const handleTimeChange = (time: string) => {
-    setStartTimeOfDay(time);
-    formik.setFieldValue("startTime", buildStartTime(time));
-  };
-
-  // Formik setup
-  const formik = useFormik({
-    initialValues: {
-      //   tournamentName: "",
-      startTime: "",
-      timeDuration: "",
-      playersPerTeam: "",
-      setNumber: "",
-      winningDecider: "",
-      minsPerSet: "",
-    },
-    validationSchema: Yup.object({
-      //   tournamentName: Yup.string().required("Tournament name is required"),
-      startTime: Yup.string().required("Start date and time is required"),
-      timeDuration: Yup.string().required("Total minutes is required"),
-      playersPerTeam: Yup.string().required("Players per team is required"),
-      setNumber: Yup.string().required("Number of teams is required"),
-      winningDecider: Yup.string()
-        .oneOf(["penalties", "both_off"], "Choose how a draw is settled")
-        .required("Winning decider is required"),
-      minsPerSet: Yup.string().required("Minutes per set is required"),
-    }),
-    onSubmit: async (values) => {
-      if (submitting.current) return;
-      if (!startedSession.current && !selectedPitch) {
-        setPitchError("Choose a pitch before creating your session.");
-        return;
-      }
-      // Hourly pitches only take whole-hour bookings (60, 120, 180, ...).
-      if (
-        selectedPitch?.hourlyPricing &&
-        Number(values.timeDuration) % 60 !== 0
-      ) {
-        formik.setFieldError(
-          "timeDuration",
-          "This pitch is booked by the hour. Use 60, 120, 180...",
-        );
-        return;
-      }
-      submitting.current = true;
-      setLoading(true);
-      try {
-        if (!startedSession.current && selectedPitch) {
-          const started = await dispatch(
-            startSession({ locationId: selectedPitch.id }),
-          ).unwrap();
-          if (!started?._id)
-            throw new Error("The server did not return a session ID.");
-          // Reuse this ID if completing the session fails and the user retries.
-          startedSession.current = started._id;
-          setPitchLocked(true);
-        }
-        const response = await dispatch(
-          createSession({
-            sessionId: startedSession.current!,
-            data: {
-              setNumber: Number(values.setNumber),
-              playersPerTeam: Number(values.playersPerTeam),
-              timeDuration: Number(values.timeDuration),
-              minsPerSet: Number(values.minsPerSet),
-              startTime: values.startTime,
-              winningDecider: values.winningDecider as WinningDecider,
-            },
-          }),
+  // Starts (once) and configures the session for `slot`. A 409 means the
+  // slot went while the captain was filling the form: offer the next free
+  // times that day instead of an error.
+  const submitWith = async (values: Values, slot: Slot) => {
+    if (submitting.current) return;
+    if (!startedSession.current && !selectedPitch) {
+      setPitchError("Choose a pitch before creating your session.");
+      setStep("slot");
+      return;
+    }
+    // Hourly pitches only take whole-hour bookings (60, 120, 180, ...).
+    if (selectedPitch?.hourlyPricing && slot.duration % 60 !== 0) {
+      Toast.show({
+        type: "error",
+        props: {
+          title: "Whole hours only",
+          message: "This pitch is booked by the hour. Pick 1, 2, 3... hours.",
+        },
+      });
+      setStep("slot");
+      return;
+    }
+    submitting.current = true;
+    setLoading(true);
+    try {
+      if (!startedSession.current && selectedPitch) {
+        const started = await dispatch(
+          startSession({ locationId: selectedPitch.id }),
         ).unwrap();
-        router.replace({
-          pathname: "/joinsession",
-          params: { sessionId: response._id || startedSession.current! },
+        if (!started?._id)
+          throw new Error("The server did not return a session ID.");
+        // Reuse this ID if completing the session fails and the user retries.
+        startedSession.current = started._id;
+        setPitchLocked(true);
+      }
+      const response = await dispatch(
+        createSession({
+          sessionId: startedSession.current!,
+          data: {
+            setNumber: Number(values.setNumber),
+            playersPerTeam: Number(values.playersPerTeam),
+            timeDuration: slot.duration,
+            minsPerSet: Number(values.minsPerSet),
+            startTime: startDate(slot.day, slot.start).toISOString(),
+            winningDecider: values.winningDecider as WinningDecider,
+          },
+        }),
+      ).unwrap();
+      router.replace({
+        pathname: "/joinsession",
+        params: { sessionId: response._id || startedSession.current! },
+      });
+    } catch (err: any) {
+      if (err?.status === 409 && pitchId) {
+        let fresh: SessionByDateResponse[] = sessionsOn(slot.day) ?? [];
+        try {
+          fresh = await dispatch(
+            getSessionsByLocation({ locationId: pitchId, date: slot.day }),
+          ).unwrap();
+        } catch {
+          // Fall back to what was loaded before.
+        }
+        const free = freeStarts(
+          fresh,
+          slot.day,
+          opening,
+          closing,
+          slot.duration,
+        );
+        setTaken({
+          start: slot.start,
+          alternatives: [
+            ...free.filter((m) => m > slot.start),
+            ...free.filter((m) => m < slot.start).reverse(),
+          ].slice(0, 3),
         });
-      } catch (err: any) {
+      } else {
         Toast.show({
           type: "error",
           props: {
@@ -162,10 +310,34 @@ export default function NewSession() {
               "Failed to create session",
           },
         });
-      } finally {
-        submitting.current = false;
-        setLoading(false);
       }
+    } finally {
+      submitting.current = false;
+      setLoading(false);
+    }
+  };
+
+  const formik = useFormik<Values>({
+    initialValues: {
+      playersPerTeam: "",
+      setNumber: "",
+      winningDecider: "",
+      minsPerSet: "",
+    },
+    validationSchema: Yup.object({
+      playersPerTeam: Yup.string().required("Players per team is required"),
+      setNumber: Yup.string().required("Number of teams is required"),
+      winningDecider: Yup.string()
+        .oneOf(["penalties", "both_off"], "Choose how a draw is settled")
+        .required("Winning decider is required"),
+      minsPerSet: Yup.string().required("Minutes per set is required"),
+    }),
+    onSubmit: async (values) => {
+      if (start == null) {
+        setStep("slot");
+        return;
+      }
+      await submitWith(values, { day, start, duration });
     },
   });
 
@@ -235,6 +407,272 @@ export default function NewSession() {
     </Modal>
   );
 
+  const pitchMeta = [
+    selectedPitch?.openingHour && selectedPitch?.closingHour
+      ? `Open ${formatClock(toMinutes(selectedPitch.openingHour)!)} – ${formatClock(
+          toMinutes(selectedPitch.closingHour)!,
+        )}`
+      : null,
+    selectedPitch?.hourlyPricing && selectedPitch.pricePerHour
+      ? `${formatKoboAsNaira(selectedPitch.pricePerHour)}/hr`
+      : null,
+  ]
+    .filter(Boolean)
+    .join(" · ");
+
+  const pitchSection = (
+    <SectionCard title="Session Pitch">
+      {pitchLocked || step === "details" ? (
+        <View>
+          <ThemedText>
+            {selectedPitch?.name || "Pitch linked to this session"}
+          </ThemedText>
+          {!!selectedPitch?.address && (
+            <ThemedText className="mt-1 text-xs">
+              {selectedPitch.address}
+            </ThemedText>
+          )}
+        </View>
+      ) : (
+        <SessionPitchPicker
+          value={selectedPitch}
+          onChange={(pitch) => {
+            setSelectedPitch(pitch);
+            setPitchError("");
+            setStart(null);
+          }}
+        />
+      )}
+      {!!pitchMeta && (
+        <Text style={{ color: mutedColor, fontSize: 12, marginTop: 6 }}>
+          {pitchMeta}
+        </Text>
+      )}
+      {!!pitchError && (
+        <Text accessibilityRole="alert" className="text-xs text-red-600">
+          {pitchError}
+        </Text>
+      )}
+    </SectionCard>
+  );
+
+  // B01 / B05 · pick day, length and start time.
+  const slotStep = (
+    <View style={{ gap: 24 }}>
+      <DayStrip
+        days={days}
+        selected={day}
+        onSelect={(d) => {
+          setDay(d);
+          setStart(null);
+        }}
+        status={pitchId ? dayStatus : undefined}
+      />
+      <DurationChips
+        value={duration}
+        onChange={(m) => {
+          setDuration(m);
+          setStart(null);
+        }}
+        wholeHours={wholeHours}
+      />
+
+      {!pitchId ? (
+        // No pitch to check bookings against (older links): pick by hand.
+        <View style={{ gap: 12 }}>
+          {!pitchLocked ? (
+            <Text style={{ color: mutedColor, fontSize: 13 }}>
+              Choose a pitch above to see its free times.
+            </Text>
+          ) : (
+            <>
+              <TimePickerField
+                label="Start Time"
+                value={manualTime}
+                onChange={setManualTime}
+              />
+              <CustomButton
+                primary
+                title="Continue"
+                disabled={!manualTime}
+                onPress={() => {
+                  const m = toMinutes(manualTime);
+                  if (m != null) pickStart(m);
+                }}
+                style={{ borderRadius: 10, paddingVertical: 16 }}
+                titleStyle={{ color: "#000", fontWeight: "700" }}
+              />
+            </>
+          )}
+        </View>
+      ) : !daySessions ? (
+        dayLoading ? (
+          <ActivityIndicator color={accent} style={{ paddingVertical: 24 }} />
+        ) : (
+          <View style={{ alignItems: "center", gap: 10, paddingVertical: 16 }}>
+            <Text style={{ color: mutedColor, fontSize: 13 }}>
+              {"Couldn't load this pitch's bookings."}
+            </Text>
+            <TouchableOpacity onPress={loadDays} hitSlop={8}>
+              <Text style={{ color: accent, fontWeight: "700" }}>
+                Try again
+              </Text>
+            </TouchableOpacity>
+          </View>
+        )
+      ) : hasFree ? (
+        <>
+          <StartTimeGrid
+            day={day}
+            duration={duration}
+            options={options}
+            selected={start}
+            onPick={pickStart}
+          />
+          <TouchableOpacity
+            onPress={() => setSeeDay(true)}
+            accessibilityRole="button"
+            style={{
+              paddingVertical: 16,
+              borderRadius: 10,
+              alignItems: "center",
+              borderWidth: 1.5,
+              borderColor: accent,
+            }}
+          >
+            <Text style={{ color: accent, fontSize: 16, fontWeight: "600" }}>
+              See the day
+            </Text>
+          </TouchableOpacity>
+        </>
+      ) : (
+        <DayFullNotice
+          day={day}
+          duration={duration}
+          longest={longest}
+          suggestions={suggestions}
+        />
+      )}
+    </View>
+  );
+
+  // B03 · the chosen slot, then the session details.
+  const detailsStep = start != null && (
+    <View style={{ gap: 20 }}>
+      <SlotSummaryCard
+        day={day}
+        start={start}
+        duration={duration}
+        pricePerHour={
+          selectedPitch?.hourlyPricing ? selectedPitch.pricePerHour : undefined
+        }
+        onChange={() => setStep("slot")}
+      />
+
+      <View>
+        <Text
+          style={{
+            color: theme.text,
+            fontSize: 16,
+            fontWeight: "700",
+            marginBottom: 8,
+          }}
+        >
+          Session details
+        </Text>
+        <View className="flex-row gap-3">
+          <View className="flex-1">
+            <InputField
+              required
+              label="Players / Team"
+              keyboardType="numeric"
+              placeholder="e.g. 5"
+              value={formik.values.playersPerTeam}
+              onChangeText={formik.handleChange("playersPerTeam")}
+              onBlur={formik.handleBlur("playersPerTeam")}
+              errorMessage={
+                formik.touched.playersPerTeam && formik.errors.playersPerTeam
+                  ? formik.errors.playersPerTeam
+                  : ""
+              }
+            />
+          </View>
+          <View className="flex-1">
+            <InputField
+              required
+              label="Number of Teams"
+              keyboardType="numeric"
+              placeholder="e.g. 3"
+              value={formik.values.setNumber}
+              onChangeText={formik.handleChange("setNumber")}
+              onBlur={formik.handleBlur("setNumber")}
+              errorMessage={
+                formik.touched.setNumber && formik.errors.setNumber
+                  ? formik.errors.setNumber
+                  : ""
+              }
+            />
+          </View>
+        </View>
+
+        <View className="flex-row gap-3">
+          <View className="flex-1">
+            <InputField
+              required
+              label="Minutes Per Set"
+              keyboardType="numeric"
+              placeholder="e.g. 10"
+              value={formik.values.minsPerSet}
+              onChangeText={formik.handleChange("minsPerSet")}
+              onBlur={formik.handleBlur("minsPerSet")}
+              errorMessage={
+                formik.touched.minsPerSet && formik.errors.minsPerSet
+                  ? formik.errors.minsPerSet
+                  : ""
+              }
+            />
+          </View>
+          <View className="flex-1">
+            <InputField
+              required
+              label="Draw Decided By"
+              selectPicker
+              placeholder="Select"
+              value={
+                formik.values.winningDecider
+                  ? getWinningDeciderLabel(formik.values.winningDecider)
+                  : ""
+              }
+              pickerPressed={() => setShowDeciderModal(true)}
+              rightIcon={
+                <Ionicons name="chevron-down" size={16} color="gray" />
+              }
+              errorMessage={
+                formik.touched.winningDecider && formik.errors.winningDecider
+                  ? formik.errors.winningDecider
+                  : ""
+              }
+            />
+          </View>
+        </View>
+
+        <Text style={{ color: mutedColor, fontSize: 12, lineHeight: 17 }}>
+          {"The time isn't booked until you create the session. If someone " +
+            "else books it first, we'll show you the next free times."}
+        </Text>
+      </View>
+
+      <CustomButton
+        primary
+        title={loading ? "Creating..." : "Create session"}
+        disabled={loading}
+        onPress={() => formik.handleSubmit()}
+        style={{ borderRadius: 10, paddingVertical: 18 }}
+        titleStyle={{ color: "#000", fontWeight: "700" }}
+      />
+    </View>
+  );
+
   return (
     <SafeAreaScreen>
       <KeyboardAvoidingView
@@ -245,21 +683,22 @@ export default function NewSession() {
         <ScrollView
           className="mb-[40px] h-full flex-1 py-6"
           showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
           contentContainerStyle={{
             paddingBottom: 40,
-            paddingHorizontal: 32,
+            paddingHorizontal: 24,
             flexGrow: 1,
           }}
         >
-          <View className="flex flex-row items-center justify-between">
-            <Pressable onPress={() => router.back()}>
-              <ThemedText
-                lightColor={theme.text}
-                darkColor={theme.text}
-                className="text-[16px] font-[500] text-black"
-              >
-                Back
-              </ThemedText>
+          <View className="mb-[20px] flex flex-row items-center justify-between">
+            <Pressable
+              onPress={() =>
+                step === "details" ? setStep("slot") : router.back()
+              }
+              hitSlop={10}
+              accessibilityLabel="Back"
+            >
+              <Ionicons name="arrow-back" size={24} color={theme.text} />
             </Pressable>
 
             <ThemedText
@@ -270,186 +709,31 @@ export default function NewSession() {
               New Session
             </ThemedText>
 
-            <Pressable onPress={() => formik.handleSubmit()} disabled={loading}>
+            <View style={{ width: 24 }} />
+          </View>
+
+          {step === "slot" && (
+            <View className="mb-[20px] flex w-full flex-col items-center gap-2 rounded-[4px] bg-[#03EA8926] px-[17px] py-[16px] text-center ">
               <ThemedText
-                lightColor={theme.text}
                 darkColor={theme.text}
-                className={`text-[16px] font-[500] ${loading && "text-gray-400"}`}
+                className="text-[14px] text-center text-[#0C4D2E]"
               >
-                {loading ? "Creating..." : "Next"}
+                You are officially the captain of this ball session!
               </ThemedText>
-            </Pressable>
-          </View>
-
-          <View className="mt-[19px] mb-[32px] flex w-full flex-col items-center gap-2 rounded-[4px] bg-[#03EA8926] px-[17px] py-[21px] text-center ">
-            <ThemedText
-              darkColor={theme.text}
-              className="text-[14px] text-center text-[#0C4D2E]"
-            >
-              You are officially the captain of this ball session!
-            </ThemedText>
-
-            <ThemedText
-              darkColor={theme.text}
-              className="text-[11px] text-[#0C4D2E]"
-            >
-              Team Names Will Be Assigned Randomly
-            </ThemedText>
-          </View>
-
-          <SectionCard title="Session Pitch">
-            {pitchLocked ? (
-              <View>
-                <ThemedText>
-                  {selectedPitch?.name || "Pitch linked to this session"}
-                </ThemedText>
-                {!!selectedPitch?.address && (
-                  <ThemedText className="mt-1 text-xs">
-                    {selectedPitch.address}
-                  </ThemedText>
-                )}
-              </View>
-            ) : (
-              <SessionPitchPicker
-                value={selectedPitch}
-                onChange={(pitch) => {
-                  setSelectedPitch(pitch);
-                  setPitchError("");
-                }}
-              />
-            )}
-            {!!pitchError && (
-              <Text accessibilityRole="alert" className="text-xs text-red-600">
-                {pitchError}
-              </Text>
-            )}
-          </SectionCard>
-
-          <SectionCard title="Session Details">
-            <View>
-              {/* <InputField
-                required
-                label="Tournament Name"
-                autoCapitalize="none"
-                placeholder="Tournament Name"
-                value={formik.values.tournamentName}
-                onChangeText={formik.handleChange("tournamentName")}
-                onBlur={formik.handleBlur("tournamentName")}
-                errorMessage={
-                  formik.touched.tournamentName && formik.errors.tournamentName
-                    ? formik.errors.tournamentName
-                    : ""
-                }
-              /> */}
-
-              {/* Start Time & Total Minutes */}
-              <View className="flex-row gap-3">
-                <View className="flex-1">
-                  <TimePickerField
-                    label="Start Time"
-                    value={startTimeOfDay}
-                    onChange={handleTimeChange}
-                  />
-                </View>
-                <View className="flex-1">
-                  <InputField
-                    required
-                    label="Total Minutes"
-                    keyboardType="numeric"
-                    placeholder={
-                      selectedPitch?.hourlyPricing
-                        ? "60, 120, 180..."
-                        : "e.g. 120"
-                    }
-                    value={formik.values.timeDuration}
-                    onChangeText={formik.handleChange("timeDuration")}
-                    onBlur={formik.handleBlur("timeDuration")}
-                    errorMessage={
-                      formik.touched.timeDuration && formik.errors.timeDuration
-                        ? formik.errors.timeDuration
-                        : ""
-                    }
-                  />
-                </View>
-              </View>
-
-              {/* Players per Team & Number of Teams */}
-              <View className="flex-row gap-3">
-                <View className="flex-1">
-                  <InputField
-                    required
-                    label="Players / Team"
-                    keyboardType="numeric"
-                    placeholder="e.g. 5"
-                    value={formik.values.playersPerTeam}
-                    onChangeText={formik.handleChange("playersPerTeam")}
-                    onBlur={formik.handleBlur("playersPerTeam")}
-                    errorMessage={
-                      formik.touched.playersPerTeam &&
-                      formik.errors.playersPerTeam
-                        ? formik.errors.playersPerTeam
-                        : ""
-                    }
-                  />
-                </View>
-                <View className="flex-1">
-                  <InputField
-                    required
-                    label="Number of Teams"
-                    keyboardType="numeric"
-                    placeholder="e.g. 3"
-                    value={formik.values.setNumber}
-                    onChangeText={formik.handleChange("setNumber")}
-                    onBlur={formik.handleBlur("setNumber")}
-                    errorMessage={
-                      formik.touched.setNumber && formik.errors.setNumber
-                        ? formik.errors.setNumber
-                        : ""
-                    }
-                  />
-                </View>
-              </View>
-
-              {/* Minutes Per Set */}
-              <InputField
-                required
-                label="Minutes Per Set"
-                keyboardType="numeric"
-                placeholder="e.g. 30"
-                value={formik.values.minsPerSet}
-                onChangeText={formik.handleChange("minsPerSet")}
-                onBlur={formik.handleBlur("minsPerSet")}
-                errorMessage={
-                  formik.touched.minsPerSet && formik.errors.minsPerSet
-                    ? formik.errors.minsPerSet
-                    : ""
-                }
-              />
-
-              {/* Winning Decider */}
-              <InputField
-                required
-                label="Winning Decider"
-                selectPicker
-                placeholder="Select decider"
-                value={
-                  formik.values.winningDecider
-                    ? getWinningDeciderLabel(formik.values.winningDecider)
-                    : ""
-                }
-                pickerPressed={() => setShowDeciderModal(true)}
-                rightIcon={
-                  <Ionicons name="chevron-down" size={16} color="gray" />
-                }
-                errorMessage={
-                  formik.touched.winningDecider && formik.errors.winningDecider
-                    ? formik.errors.winningDecider
-                    : ""
-                }
-              />
+              <ThemedText
+                darkColor={theme.text}
+                className="text-[11px] text-[#0C4D2E]"
+              >
+                Team Names Will Be Assigned Randomly
+              </ThemedText>
             </View>
-          </SectionCard>
+          )}
+
+          {pitchSection}
+
+          {step === "slot" ? slotStep : detailsStep}
         </ScrollView>
+
         <SelectModal
           visible={showDeciderModal}
           options={winningDeciderOptions}
@@ -460,6 +744,51 @@ export default function NewSession() {
           }}
           onClose={() => setShowDeciderModal(false)}
         />
+
+        {!!pitchId && (
+          <SeeTheDayModal
+            visible={seeDay}
+            locationId={pitchId}
+            pitchName={selectedPitch?.name ?? "Pitch"}
+            day={day}
+            duration={duration}
+            sessions={daySessions ?? []}
+            openingHour={opening}
+            closingHour={closing}
+            pricePerHour={
+              selectedPitch?.hourlyPricing
+                ? selectedPitch.pricePerHour
+                : undefined
+            }
+            step={wholeHours ? 60 : 30}
+            initialStart={start}
+            onBook={(m) => {
+              setSeeDay(false);
+              pickStart(m);
+            }}
+            onClose={() => setSeeDay(false)}
+          />
+        )}
+
+        <SlotTakenSheet
+          visible={!!taken}
+          day={day}
+          takenStart={taken?.start ?? 0}
+          duration={duration}
+          alternatives={taken?.alternatives ?? []}
+          onBook={(m) => {
+            setTaken(null);
+            setStart(m);
+            submitWith(formik.values, { day, start: m, duration });
+          }}
+          onOtherDays={() => {
+            setTaken(null);
+            setStart(null);
+            setStep("slot");
+          }}
+          onClose={() => setTaken(null)}
+        />
+
         <Loader visible={loading} />
       </KeyboardAvoidingView>
     </SafeAreaScreen>

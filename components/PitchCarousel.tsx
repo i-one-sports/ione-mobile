@@ -19,6 +19,13 @@ export interface PitchData {
   location: string;
   image?: any;
   isBooked: boolean;
+  /** Paid hourly pitch: booked in whole hours. */
+  hourlyPricing?: boolean;
+  /** Whole-pitch price per hour, in kobo. */
+  pricePerHour?: number;
+  /** "HH:mm" operating hours (Lagos time). */
+  openingHour?: string;
+  closingHour?: string;
 }
 
 interface PitchCarouselProps {

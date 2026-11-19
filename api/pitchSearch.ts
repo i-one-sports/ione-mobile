@@ -9,6 +9,11 @@ export interface SessionPitch {
   booked?: boolean;
   /** Paid hourly pitch: sessions must be booked in whole hours. */
   hourlyPricing?: boolean;
+  /** Whole-pitch price per hour, in kobo (hourly pitches). */
+  pricePerHour?: number;
+  /** "HH:mm" operating hours (Lagos time). */
+  openingHour?: string;
+  closingHour?: string;
 }
 export interface MapArea {
   id: string;
@@ -81,7 +86,13 @@ export async function fetchPitchesInArea(
         booked: pitch.booked === true,
         hourlyPricing:
           pitch.tier === "paid" && pitch.pricingOption === "hourly",
+        pricePerHour:
+          typeof pitch.pricePerHour === "number"
+            ? pitch.pricePerHour
+            : undefined,
         coordinates: isCoordinates(coordinates) ? coordinates : undefined,
+        openingHour: pitch.openingHour,
+        closingHour: pitch.closingHour,
       },
     ];
   });
