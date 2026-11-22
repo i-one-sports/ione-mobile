@@ -43,6 +43,7 @@ import PlayerInfoCard from "@/components/PlayerInfoCard";
 import PoolSummaryCard from "@/components/payment/PoolSummaryCard";
 import PassRequiredPanel from "@/components/sessions/PassRequiredPanel";
 import { getMyMonthlyPass } from "@/api/monthlyPassThunks";
+import { getUser } from "@/api/authThunks";
 import { openPlayerStats } from "@/utils/openPlayerStats";
 import { formatTime } from "@/utils/formatTime";
 import { Role } from "@/components/typings/apiResponse";
@@ -222,6 +223,19 @@ export default function JoinSession() {
   // Derive everything from the server response — no manual state flags
   const session = activeSession ?? staticSession;
   const members = activeSession?.members ?? staticSession?.members ?? [];
+
+  // Signed in, but the server sent the guest view (no members list): the
+  // login has expired. /user/profile then returns 401, which signs the user
+  // out and opens sign-in.
+  useEffect(() => {
+    if (
+      isAuthenticated &&
+      activeSession &&
+      !Array.isArray(activeSession.members)
+    ) {
+      dispatch(getUser());
+    }
+  }, [isAuthenticated, activeSession, dispatch]);
 
   const isMember = !isGuest && members.some((m: any) => m._id === user?._id);
   const joinedCount: number = members.length || session?.memberCount || 0;
@@ -727,9 +741,9 @@ export default function JoinSession() {
               <View className="mx-auto mt-[40px]">
                 {loadingActiveSession &&
                 !activeSession ? null : session?.isFull && !isMember ? (
-                  <View className="flex w-[120px] items-center justify-center rounded-[10px] bg-gray-400 h-[42px]">
+                  <View className="flex w-[140px] items-center justify-center rounded-[10px] bg-gray-400 h-[42px]">
                     <Text className="text-[13px] font-[600]">
-                      No spots left
+                      Session is full
                     </Text>
                   </View>
                 ) : session?.inProgress && !isMember ? (

@@ -296,7 +296,8 @@ export default function AdminSettingsScreen() {
     );
   };
 
-  const handleDeleteAccount = () => confirmDeleteAccount(dispatch, setDeleting);
+  const handleDeleteAccount = () =>
+    confirmDeleteAccount(dispatch, setDeleting, true);
 
   const paddingTop = Platform.OS === "ios" ? insets.top + 12 : 52;
   const paddingBottom = insets.bottom + 100;
