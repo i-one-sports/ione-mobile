@@ -75,7 +75,7 @@ export const initSessionPayment = createAsyncThunk<
   { sessionId: string; amount?: number },
   AsyncThunkConfig
 >("payment/initSession", async ({ sessionId, amount }, thunkAPI) => {
-  const endpoint = `/i-one/wallet/session/${sessionId}/pay`;
+  const endpoint = `/wallet/session/${sessionId}/pay`;
   const body = amount != null ? { amount } : undefined;
   logRequest("initSessionPayment", `POST ${endpoint}`, body);
   // A repeat call returns the same open checkout (same page), never a new one.
@@ -97,7 +97,7 @@ export const cancelSessionCheckout = createAsyncThunk<
   string,
   AsyncThunkConfig
 >("payment/cancelCheckout", async (sessionId, thunkAPI) => {
-  const endpoint = `/i-one/wallet/session/${sessionId}/checkout`;
+  const endpoint = `/wallet/session/${sessionId}/checkout`;
   logRequest("cancelSessionCheckout", `DELETE ${endpoint}`);
   const result = await withCheckoutRetry(
     () => axiosInstance.delete(endpoint),
@@ -118,7 +118,7 @@ export const getMySessionPayment = createAsyncThunk<
   string,
   AsyncThunkConfig
 >("payment/mySessionStatus", async (sessionId, thunkAPI) => {
-  const endpoint = `/i-one/wallet/session/${sessionId}/my-payment`;
+  const endpoint = `/wallet/session/${sessionId}/my-payment`;
   logRequest("getMySessionPayment", `GET ${endpoint}`, { sessionId });
   const result = await apiCall(axiosInstance.get(endpoint), thunkAPI);
   if (result && !(result as any)?.payload)
@@ -132,7 +132,7 @@ export const getAllMembersPaymentStatus = createAsyncThunk<
   string,
   AsyncThunkConfig
 >("payment/allMembersStatus", async (sessionId, thunkAPI) => {
-  const endpoint = `/i-one/wallet/session/${sessionId}/payment-status`;
+  const endpoint = `/wallet/session/${sessionId}/payment-status`;
   logRequest("getAllMembersPaymentStatus", `GET ${endpoint}`, { sessionId });
   const result = await apiCall(axiosInstance.get(endpoint), thunkAPI);
   if (result && !(result as any)?.payload)
@@ -148,7 +148,7 @@ export const initTournamentPayment = createAsyncThunk<
   { tournamentId: string; teamId: string },
   AsyncThunkConfig
 >("payment/initTournament", async ({ tournamentId, teamId }, thunkAPI) => {
-  const endpoint = `/i-one/tournaments/${tournamentId}/team/${teamId}/pay`;
+  const endpoint = `/tournaments/${tournamentId}/team/${teamId}/pay`;
   logRequest("initTournamentPayment", `POST ${endpoint}`, {
     tournamentId,
     teamId,
@@ -165,7 +165,7 @@ export const getTournamentPaymentStatus = createAsyncThunk<
   { tournamentId: string; teamId: string },
   AsyncThunkConfig
 >("payment/tournamentStatus", async ({ tournamentId, teamId }, thunkAPI) => {
-  const endpoint = `/i-one/tournaments/${tournamentId}/team/${teamId}/payment-status`;
+  const endpoint = `/tournaments/${tournamentId}/team/${teamId}/payment-status`;
   logRequest("getTournamentPaymentStatus", `GET ${endpoint}`, {
     tournamentId,
     teamId,
@@ -184,7 +184,7 @@ export const initWalletFund = createAsyncThunk<
   number,
   AsyncThunkConfig
 >("payment/initFund", async (amount, thunkAPI) => {
-  const endpoint = `/i-one/wallet/fund`;
+  const endpoint = `/wallet/fund`;
   logRequest("initWalletFund", `POST ${endpoint}`, { amount });
   const result = await apiCall(
     axiosInstance.post(endpoint, { amount }),
@@ -201,7 +201,7 @@ export const getWalletBalance = createAsyncThunk<
   void,
   AsyncThunkConfig
 >("payment/walletBalance", async (_, thunkAPI) => {
-  const endpoint = `/i-one/wallet/balance`;
+  const endpoint = `/wallet/balance`;
   logRequest("getWalletBalance", `GET ${endpoint}`);
   const result = await apiCall(axiosInstance.get(endpoint), thunkAPI);
   if (result && !(result as any)?.payload)
@@ -215,7 +215,7 @@ export const getMyWalletBalance = createAsyncThunk<
   void,
   AsyncThunkConfig
 >("payment/myWalletBalance", async (_, thunkAPI) => {
-  const endpoint = `/i-one/wallet/me`;
+  const endpoint = `/wallet/me`;
   logRequest("getMyWalletBalance", `GET ${endpoint}`);
   const result = await apiCall(axiosInstance.get(endpoint), thunkAPI);
   if (result && !(result as any)?.payload)
@@ -232,7 +232,7 @@ export const getWalletTransactions = createAsyncThunk<
   "payment/walletTransactions",
   async ({ page = 1, limit = 10, type }, thunkAPI) => {
     const params = `page=${page}&limit=${limit}${type ? `&type=${type}` : ""}`;
-    const endpoint = `/i-one/wallet/transactions?${params}`;
+    const endpoint = `/wallet/transactions?${params}`;
     logRequest("getWalletTransactions", `GET ${endpoint}`, {
       page,
       limit,
@@ -257,7 +257,7 @@ export const withdrawFunds = createAsyncThunk<
 >(
   "payment/withdrawFunds",
   async ({ amount, bankAccountId, reason }, thunkAPI) => {
-    const endpoint = `/i-one/wallet/withdraw`;
+    const endpoint = `/wallet/withdraw`;
 
     const payload = {
       amount,
@@ -292,7 +292,7 @@ export const initBankAccount = createAsyncThunk<
 >(
   "payment/initBankAccount",
   async ({ accountNumber, bankCode, bankName }, thunkAPI) => {
-    const endpoint = `/i-one/wallet/bank-accounts`;
+    const endpoint = `/wallet/bank-accounts`;
 
     const payload = {
       accountNumber,
@@ -320,7 +320,7 @@ export const getBankAccounts = createAsyncThunk<
   void,
   AsyncThunkConfig
 >("payment/bankAccounts", async (_, thunkAPI) => {
-  const endpoint = `/i-one/wallet/bank-accounts`;
+  const endpoint = `/wallet/bank-accounts`;
   logRequest("getBankAccounts", `GET ${endpoint}`);
   const result = await apiCall(axiosInstance.get(endpoint), thunkAPI);
   if (result && !(result as any)?.payload)
@@ -334,7 +334,7 @@ export const deleteBankAccount = createAsyncThunk<
   string,
   AsyncThunkConfig
 >("payment/deleteBankAccount", async (bankAccountId, thunkAPI) => {
-  const endpoint = `/i-one/wallet/bank-accounts/${bankAccountId}`;
+  const endpoint = `/wallet/bank-accounts/${bankAccountId}`;
   logRequest("deleteBankAccount", `DELETE ${endpoint}`);
   const result = await apiCall(axiosInstance.delete(endpoint), thunkAPI);
   if (result && !(result as any)?.payload)
@@ -349,7 +349,7 @@ export const defaultBankAccount = createAsyncThunk<
   string,
   AsyncThunkConfig
 >("payment/defaultBankAccount", async (bankAccountId, thunkAPI) => {
-  const endpoint = `/i-one/wallet/bank-accounts/${bankAccountId}/default`;
+  const endpoint = `/wallet/bank-accounts/${bankAccountId}/default`;
   logRequest("defaultBankAccount", `PATCH ${endpoint}`);
   const result = await apiCall(axiosInstance.patch(endpoint), thunkAPI);
   if (result && !(result as any)?.payload)
@@ -363,7 +363,7 @@ export const getBanks = createAsyncThunk<
   void,
   AsyncThunkConfig
 >("payment/banks", async (_, thunkAPI) => {
-  const endpoint = `/i-one/banks`;
+  const endpoint = `/banks`;
   logRequest("getBanks", `GET ${endpoint}`);
   const result = await apiCall(axiosInstance.get(endpoint), thunkAPI);
   if (result && !(result as any)?.payload) logResponse("getBanks", result);
@@ -377,7 +377,7 @@ export const getWalletLedger = createAsyncThunk<
   AsyncThunkConfig
 >("payment/walletLedger", async ({ page = 1, limit = 50, type }, thunkAPI) => {
   const params = `page=${page}&limit=${limit}${type ? `&type=${type}` : ""}`;
-  const endpoint = `/i-one/wallet/ledger?${params}`;
+  const endpoint = `/wallet/ledger?${params}`;
   logRequest("getWalletLedger", `GET ${endpoint}`, { page, limit, type });
   const result = await apiCall(axiosInstance.get(endpoint), thunkAPI);
   if (result && !(result as any)?.payload)

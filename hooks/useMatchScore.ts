@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import EventSource from "react-native-sse";
+import { apiUrl } from "@/constants/api";
 
 interface TeamScore {
   id: string;
@@ -61,14 +62,13 @@ const useMatchScore = (options: UseMatchScoreOptions) => {
     }
 
     let streamUrl = "";
-    const baseUrl = "https://i-one-server-v1.onrender.com";
 
     if (globalStream) {
-      streamUrl = `${baseUrl}/i-one/matches/stream`;
+      streamUrl = apiUrl("matches/stream");
     } else if (sessionId) {
-      streamUrl = `${baseUrl}/i-one/matches/stream/session/${sessionId}`;
+      streamUrl = apiUrl(`matches/stream/session/${sessionId}`);
     } else if (matchId) {
-      streamUrl = `${baseUrl}/i-one/matches/stream/${matchId}`;
+      streamUrl = apiUrl(`matches/stream/${matchId}`);
     }
 
     console.log("🔌 Connecting to SSE:", streamUrl);

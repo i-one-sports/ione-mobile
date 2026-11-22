@@ -10,7 +10,7 @@ export const getReferees = createAsyncThunk<
   string,
   AsyncThunkConfig
 >("referees/getReferees", async (sessionId, thunkApi) => {
-  return apiCall(axiosInstance.get(`/i-one/referees/${sessionId}`), thunkApi);
+  return apiCall(axiosInstance.get(`/referees/${sessionId}`), thunkApi);
 });
 
 // POST /referees/:sessionId/invite — captain invites an i-One user (own phone).
@@ -20,7 +20,7 @@ export const inviteReferee = createAsyncThunk<
   AsyncThunkConfig
 >("referees/inviteReferee", async ({ sessionId, userId }, thunkApi) => {
   return apiCall(
-    axiosInstance.post(`/i-one/referees/${sessionId}/invite`, { userId }),
+    axiosInstance.post(`/referees/${sessionId}/invite`, { userId }),
     thunkApi,
   );
 });
@@ -31,10 +31,7 @@ export const acceptRefereeInvite = createAsyncThunk<
   string,
   AsyncThunkConfig
 >("referees/acceptRefereeInvite", async (refereeId, thunkApi) => {
-  return apiCall(
-    axiosInstance.post(`/i-one/referees/${refereeId}/accept`),
-    thunkApi,
-  );
+  return apiCall(axiosInstance.post(`/referees/${refereeId}/accept`), thunkApi);
 });
 
 // POST /referees/:refereeId/decline — the invited user declines.
@@ -44,7 +41,7 @@ export const declineRefereeInvite = createAsyncThunk<
   AsyncThunkConfig
 >("referees/declineRefereeInvite", async (refereeId, thunkApi) => {
   return apiCall(
-    axiosInstance.post(`/i-one/referees/${refereeId}/decline`),
+    axiosInstance.post(`/referees/${refereeId}/decline`),
     thunkApi,
   );
 });
@@ -58,7 +55,7 @@ export const startRefereeMode = createAsyncThunk<
   "referees/startRefereeMode",
   async ({ sessionId, guestName, guestPhone }, thunkApi) => {
     return apiCall(
-      axiosInstance.post(`/i-one/referees/${sessionId}/device`, {
+      axiosInstance.post(`/referees/${sessionId}/device`, {
         guestName,
         guestPhone,
       }),
@@ -73,8 +70,5 @@ export const getRefereeHistory = createAsyncThunk<
   string,
   AsyncThunkConfig
 >("referees/getRefereeHistory", async (userId, thunkApi) => {
-  return apiCall(
-    axiosInstance.get(`/i-one/referees/history/${userId}`),
-    thunkApi,
-  );
+  return apiCall(axiosInstance.get(`/referees/history/${userId}`), thunkApi);
 });

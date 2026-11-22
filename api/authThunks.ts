@@ -50,7 +50,7 @@ export const uploadAvatar = createAsyncThunk<
   } as any);
 
   const result = await apiCall(
-    uploadAxios.post("/i-one/user/avatar", formData, {
+    uploadAxios.post("/user/avatar", formData, {
       headers: { "Content-Type": "multipart/form-data" },
       transformRequest: (data) => data,
     }),
@@ -66,7 +66,7 @@ export const register = createAsyncThunk<
   AsyncThunkConfig
 >("user/register", async (payload, thunkAPI) => {
   return apiCall(
-    axiosInstance.post("/i-one/user/register", payload),
+    axiosInstance.post("/user/register", payload),
     thunkAPI,
     "auth",
   );
@@ -78,7 +78,7 @@ export const registerOwner = createAsyncThunk<
   AsyncThunkConfig
 >("user/registerOwner", async (payload, thunkAPI) => {
   return apiCall(
-    axiosInstance.post("/i-one/user/register-owner", payload),
+    axiosInstance.post("/user/register-owner", payload),
     thunkAPI,
     "auth",
   );
@@ -87,7 +87,7 @@ export const registerOwner = createAsyncThunk<
 export const getUser = createAsyncThunk<UserResponse, void, AsyncThunkConfig>(
   "user/getUser",
   async (_, thunkAPI) => {
-    return apiCall(axiosInstance.get("/i-one/user/profile"), thunkAPI, "auth");
+    return apiCall(axiosInstance.get("/user/profile"), thunkAPI, "auth");
   },
 );
 
@@ -97,7 +97,7 @@ export const login = createAsyncThunk<
   AsyncThunkConfig
 >("user/login", async (payload, thunkAPI) => {
   return apiCall(
-    axiosInstance.post("/i-one/auth/user/login", payload),
+    axiosInstance.post("/auth/user/login", payload),
     thunkAPI,
     "auth",
   );
@@ -109,7 +109,7 @@ export const forgotPassword = createAsyncThunk<
   AsyncThunkConfig
 >("/users/forget-password", async (payload, thunkAPI) => {
   return apiCall(
-    axiosInstance.post("/i-one/user/forget-Password", payload),
+    axiosInstance.post("/user/forget-Password", payload),
     thunkAPI,
   );
 });
@@ -152,7 +152,7 @@ export const sendEmail = createAsyncThunk<
   AsyncThunkConfig
 >("/users/send-verify-email", async (payload, thunkAPI) => {
   return apiCall(
-    axiosInstance.post("/i-one/user/verify-email/send", payload),
+    axiosInstance.post("/user/verify-email/send", payload),
     thunkAPI,
   );
 });
@@ -163,7 +163,7 @@ export const confirmEmail = createAsyncThunk<
   AsyncThunkConfig
 >("/users/confirm-verify-email", async (payload, thunkAPI) => {
   return apiCall(
-    axiosInstance.post("/i-one/user/verify-email/confirm", payload),
+    axiosInstance.post("/user/verify-email/confirm", payload),
     thunkAPI,
   );
 });
@@ -174,7 +174,7 @@ export const verifyOtp = createAsyncThunk<
   AsyncThunkConfig
 >("/users/verify-otp", async (payload, thunkAPI) => {
   return apiCall(
-    axiosInstance.post("/i-one/user/verify-otp", normalizeOtpPayload(payload)),
+    axiosInstance.post("/user/verify-otp", normalizeOtpPayload(payload)),
     thunkAPI,
   );
 });
@@ -186,7 +186,7 @@ export const reset = createAsyncThunk<
 >("/users/reset-password", async (payload, thunkAPI) => {
   return apiCall(
     axiosInstance.put(
-      "/i-one/user/reset-password",
+      "/user/reset-password",
       normalizeResetPasswordPayload(payload),
     ),
     thunkAPI,
@@ -210,7 +210,7 @@ export const updateProfile = createAsyncThunk<
   AsyncThunkConfig
 >("user/updateProfile", async (payload, thunkAPI) => {
   return apiCall(
-    axiosInstance.patch("/i-one/user/profile", payload),
+    axiosInstance.patch("/user/profile", payload),
     thunkAPI,
     "auth",
   );
@@ -248,7 +248,7 @@ export const submitVerification = createAsyncThunk<
   });
 
   return await apiCall(
-    axiosInstance.post("/i-one/verification/submit", formData, {
+    axiosInstance.post("/verification/submit", formData, {
       headers: {
         "Content-Type": "multipart/form-data",
       },
@@ -264,7 +264,7 @@ export const getVerification = createAsyncThunk<
   void,
   AsyncThunkConfig
 >("user/getVerification", async (_, thunkAPI) => {
-  return apiCall(axiosInstance.get("/i-one/verification/me"), thunkAPI, "auth");
+  return apiCall(axiosInstance.get("/verification/me"), thunkAPI, "auth");
 });
 
 export const logOut = createAsyncThunk<logoutResponse, void, AsyncThunkConfig>(
@@ -274,10 +274,7 @@ export const logOut = createAsyncThunk<logoutResponse, void, AsyncThunkConfig>(
     // doesn't receive the previous user's notifications.
     await deletePushToken();
     try {
-      return await apiCall(
-        axiosInstance.get("/i-one/auth/user/logout"),
-        thunkAPI,
-      );
+      return await apiCall(axiosInstance.get("/auth/user/logout"), thunkAPI);
     } finally {
       await Promise.all([
         SecureStore.deleteItemAsync("i-one"),
@@ -300,10 +297,7 @@ export const deleteAccount = createAsyncThunk<
   void,
   AsyncThunkConfig
 >("/users/deleteAccount", async (_, thunkAPI) => {
-  const result = await apiCall(
-    axiosInstance.delete("/i-one/user/account"),
-    thunkAPI,
-  );
+  const result = await apiCall(axiosInstance.delete("/user/account"), thunkAPI);
   // apiCall returns rejectWithValue(...) on failure instead of throwing:
   // keep the user signed in and let the caller show the server's reason.
   const failed =
@@ -332,8 +326,5 @@ export const registerDeviceToken = createAsyncThunk<
   string,
   AsyncThunkConfig
 >("/users/deviceToken", async (fcmToken, thunkAPI) =>
-  apiCall(
-    axiosInstance.patch("/i-one/user/device-token", { fcmToken }),
-    thunkAPI,
-  ),
+  apiCall(axiosInstance.patch("/user/device-token", { fcmToken }), thunkAPI),
 );

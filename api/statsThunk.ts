@@ -11,7 +11,7 @@ export const getUserStats = createAsyncThunk<
   AsyncThunkConfig
 >("stats/getUserStats", async ({ userId, season }, thunkApi) => {
   return apiCall(
-    axiosInstance.get(`/i-one/stats/${userId}`, {
+    axiosInstance.get(`/stats/${userId}`, {
       params: season ? { season } : undefined,
     }),
     thunkApi,
@@ -24,5 +24,5 @@ export const getUserRating = createAsyncThunk<
   string,
   AsyncThunkConfig
 >("stats/getUserRating", async (userId, thunkApi) => {
-  return apiCall(axiosInstance.get(`/i-one/stats/${userId}/rating`), thunkApi);
+  return apiCall(axiosInstance.get(`/stats/${userId}/rating`), thunkApi);
 });

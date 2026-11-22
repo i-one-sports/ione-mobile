@@ -14,13 +14,13 @@ export const getUserWallet = createAsyncThunk<
   void,
   AsyncThunkConfig
 >("wallet/getUserWallet", async (_, thunkAPI) => {
-  return apiCall(axiosInstance.get(`/i-one/wallet/me`), thunkAPI);
+  return apiCall(axiosInstance.get(`/wallet/me`), thunkAPI);
 });
 
 export const getBank = createAsyncThunk<BankResponse, void, AsyncThunkConfig>(
   "user/getBank",
   async (_, thunkAPI) => {
-    return apiCall(axiosInstance.get("/i-one/user/banks"), thunkAPI, "auth");
+    return apiCall(axiosInstance.get("/user/banks"), thunkAPI, "auth");
   },
 );
 
@@ -29,7 +29,7 @@ export const getWalletLedger = createAsyncThunk<
   void,
   AsyncThunkConfig
 >("wallet/getUserLedger", async (_, thunkAPI) => {
-  return apiCall(axiosInstance.get(`/i-one/wallet/ledger`), thunkAPI);
+  return apiCall(axiosInstance.get(`/wallet/ledger`), thunkAPI);
 });
 
 export const getWalletTransactions = createAsyncThunk<
@@ -37,5 +37,5 @@ export const getWalletTransactions = createAsyncThunk<
   void,
   AsyncThunkConfig
 >("wallet/getWalletTransactions", async (_, thunkAPI) => {
-  return apiCall(axiosInstance.get(`/i-one/wallet/transactions`), thunkAPI);
+  return apiCall(axiosInstance.get(`/wallet/transactions`), thunkAPI);
 });

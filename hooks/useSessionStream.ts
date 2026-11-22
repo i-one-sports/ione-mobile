@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import EventSource from "react-native-sse";
 import * as SecureStore from "expo-secure-store";
 import { PoolSnapshot } from "@/components/typings/payment";
+import { apiUrl } from "@/constants/api";
 
 /** Each member's payment on GET /sessions/:sessionId/stream. */
 export type MemberPayment =
@@ -72,17 +73,14 @@ export default function useSessionStream(
       const token = await SecureStore.getItemAsync("i-one");
       if (cancelled) return;
 
-      es = new EventSource(
-        `${process.env.EXPO_PUBLIC_API_URL}/i-one/sessions/${sessionId}/stream`,
-        {
-          withCredentials: true,
-          headers: {
-            Accept: "text/event-stream",
-            "Cache-Control": "no-cache",
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          },
+      es = new EventSource(apiUrl(`sessions/${sessionId}/stream`), {
+        withCredentials: true,
+        headers: {
+          Accept: "text/event-stream",
+          "Cache-Control": "no-cache",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
-      );
+      });
 
       es.addEventListener("open", () => setConnected(true));
 

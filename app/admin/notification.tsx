@@ -8,6 +8,7 @@ import { useAppDispatch, useAppSelector } from "@/redux/store";
 import { setNotification } from "@/redux/reducers/ownerDashboard";
 import EventSource from "react-native-sse";
 import * as SecureStore from "expo-secure-store";
+import { apiUrl } from "@/constants/api";
 
 export default function Notification() {
   const { colorScheme } = useColorScheme();
@@ -27,16 +28,13 @@ export default function Notification() {
       const token = await SecureStore.getItemAsync("i-one");
       if (!token) return;
 
-      es = new EventSource(
-        `${process.env.EXPO_PUBLIC_API_URL}/notifications/stream`,
-        {
-          headers: {
-            Accept: "text/event-stream",
-            "Cache-Control": "no-cache",
-            Authorization: `Bearer ${token}`,
-          },
+      es = new EventSource(apiUrl("notifications/stream"), {
+        headers: {
+          Accept: "text/event-stream",
+          "Cache-Control": "no-cache",
+          Authorization: `Bearer ${token}`,
         },
-      );
+      });
 
       es.addEventListener("message", (event) => {
         try {

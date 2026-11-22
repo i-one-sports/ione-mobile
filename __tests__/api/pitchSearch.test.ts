@@ -44,7 +44,7 @@ it("passes longitude/latitude correctly to the nearby endpoint and preserves bac
   });
   const signal = new AbortController().signal;
   const results = await fetchPitchesInArea([3.47, 6.44], signal);
-  expect(axiosInstance.get).toHaveBeenCalledWith("/i-one/location/nearby", {
+  expect(axiosInstance.get).toHaveBeenCalledWith("/location/nearby", {
     params: { lat: 6.44, lng: 3.47 },
     signal,
   });

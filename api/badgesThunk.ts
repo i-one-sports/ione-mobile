@@ -8,7 +8,7 @@ import axiosInstance from "./axios";
 export const getMyBadges = createAsyncThunk<Badge[], void, AsyncThunkConfig>(
   "badges/getMyBadges",
   async (_, thunkApi) => {
-    return apiCall(axiosInstance.get("/i-one/badges/me"), thunkApi);
+    return apiCall(axiosInstance.get("/badges/me"), thunkApi);
   },
 );
 
@@ -18,17 +18,14 @@ export const getUserBadges = createAsyncThunk<
   string,
   AsyncThunkConfig
 >("badges/getUserBadges", async (userId, thunkApi) => {
-  return apiCall(axiosInstance.get(`/i-one/badges/user/${userId}`), thunkApi);
+  return apiCall(axiosInstance.get(`/badges/user/${userId}`), thunkApi);
 });
 
 // POST /badges/:badgeId/seen — the unlock pop-up was shown.
 export const markBadgeSeen = createAsyncThunk<Badge, string, AsyncThunkConfig>(
   "badges/markBadgeSeen",
   async (badgeId, thunkApi) => {
-    return apiCall(
-      axiosInstance.post(`/i-one/badges/${badgeId}/seen`),
-      thunkApi,
-    );
+    return apiCall(axiosInstance.post(`/badges/${badgeId}/seen`), thunkApi);
   },
 );
 
@@ -39,7 +36,7 @@ export const shareBadge = createAsyncThunk<
   AsyncThunkConfig
 >("badges/shareBadge", async ({ badgeId, shared }, thunkApi) => {
   return apiCall(
-    axiosInstance.patch(`/i-one/badges/${badgeId}/share`, { shared }),
+    axiosInstance.patch(`/badges/${badgeId}/share`, { shared }),
     thunkApi,
   );
 });

@@ -9,8 +9,5 @@ export const getMatchDetails = createAsyncThunk<
   string,
   AsyncThunkConfig
 >("matches/getMatchDetails", async (matchId, thunkApi) => {
-  return apiCall(
-    axiosInstance.get(`/i-one/matches/details/${matchId}`),
-    thunkApi,
-  );
+  return apiCall(axiosInstance.get(`/matches/details/${matchId}`), thunkApi);
 });

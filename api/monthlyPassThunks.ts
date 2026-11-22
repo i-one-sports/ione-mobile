@@ -17,7 +17,7 @@ export const getMyMonthlyPass = createAsyncThunk<
   AsyncThunkConfig
 >("monthlyPass/me", async ({ locationId }, thunkAPI) => {
   return apiCall(
-    axiosInstance.get(`/i-one/location/${locationId}/monthly-pass/me`),
+    axiosInstance.get(`/location/${locationId}/monthly-pass/me`),
     thunkAPI,
   );
 });
@@ -29,7 +29,7 @@ export const getUserMonthlyPasses = createAsyncThunk<
   void,
   AsyncThunkConfig
 >("monthlyPass/userPasses", async (_, thunkAPI) => {
-  return apiCall(axiosInstance.get(`/i-one/user/monthly-passes`), thunkAPI);
+  return apiCall(axiosInstance.get(`/user/monthly-passes`), thunkAPI);
 });
 
 // POST /location/:locationId/monthly-pass/checkout — opens (or returns the
@@ -44,10 +44,7 @@ export const checkoutMonthlyPass = createAsyncThunk<
   const body = holdSessionId ? { holdSessionId } : undefined;
   return withCheckoutRetry(
     () =>
-      axiosInstance.post(
-        `/i-one/location/${locationId}/monthly-pass/checkout`,
-        body,
-      ),
+      axiosInstance.post(`/location/${locationId}/monthly-pass/checkout`, body),
     thunkAPI,
   );
 });

@@ -69,7 +69,7 @@ export async function fetchPitchesInArea(
   [lng, lat]: Coordinates,
   signal: AbortSignal,
 ): Promise<SessionPitch[]> {
-  const { data } = await axiosInstance.get("/i-one/location/nearby", {
+  const { data } = await axiosInstance.get("/location/nearby", {
     params: { lat, lng },
     signal,
   });

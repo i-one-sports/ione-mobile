@@ -6,7 +6,10 @@
   "build": {
     "development": {
       "developmentClient": true,
-      "distribution": "internal"
+      "distribution": "internal",
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://api.i-one-sports.com/i-one/"
+      }
     },
     "preview": {
       "distribution": "internal",
@@ -14,7 +17,7 @@
         "buildType": "apk"
       },
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://i-one-server-v1.onrender.com",
+        "EXPO_PUBLIC_API_URL": "https://api.i-one-sports.com/i-one/",
         "EXPO_PUBLIC_MAPBOX_TOKEN": "pk.eyJ1IjoiYWZrem9ybyIsImEiOiJjbXBjeG9xb2IwNjM1MnJyMHI0aTBrOGt6In0.pJ0RCWF9P9bNNeiUvuXayQ"
       }
     },
@@ -24,7 +27,7 @@
         "buildType": "app-bundle"
       },
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://i-one-server-v1.onrender.com",
+        "EXPO_PUBLIC_API_URL": "https://api.i-one-sports.com/i-one/",
         "EXPO_PUBLIC_MAPBOX_TOKEN": "pk.eyJ1IjoiYWZrem9ybyIsImEiOiJjbXBjeG9xb2IwNjM1MnJyMHI0aTBrOGt6In0.pJ0RCWF9P9bNNeiUvuXayQ"
       }
     }

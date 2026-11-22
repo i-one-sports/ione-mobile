@@ -26,10 +26,7 @@ export const createMatchup = createAsyncThunk<
   string,
   AsyncThunkConfig
 >("matches/createMatchup", async (sessionId, thunkApi) => {
-  return apiCall(
-    axiosInstance.post(`/i-one/matches/matchup/${sessionId}`),
-    thunkApi,
-  );
+  return apiCall(axiosInstance.post(`/matches/matchup/${sessionId}`), thunkApi);
 });
 
 // GET /matches/matchups/:sessionId — every game so far, by sequence.
@@ -38,7 +35,7 @@ export const createMatchup = createAsyncThunk<
 export const getMatchups = createAsyncThunk<Match[], string, AsyncThunkConfig>(
   "matches/getMatchups",
   async (sessionId, thunkApi) => {
-    const request = axiosInstance.get(`/i-one/matches/matchups/${sessionId}`);
+    const request = axiosInstance.get(`/matches/matchups/${sessionId}`);
     try {
       const { data } = await request;
       return data;
@@ -53,10 +50,7 @@ export const getMatchups = createAsyncThunk<Match[], string, AsyncThunkConfig>(
 export const getMatch = createAsyncThunk<Match, string, AsyncThunkConfig>(
   "matches/getMatch",
   async (matchId, thunkApi) => {
-    return apiCall(
-      axiosInstance.get(`/i-one/matches/details/${matchId}`),
-      thunkApi,
-    );
+    return apiCall(axiosInstance.get(`/matches/details/${matchId}`), thunkApi);
   },
 );
 
@@ -66,10 +60,7 @@ export const startMatch = createAsyncThunk<
   string,
   AsyncThunkConfig
 >("matches/startMatch", async (matchId, thunkApi) => {
-  return apiCall(
-    axiosInstance.post(`/i-one/matches/start/${matchId}`),
-    thunkApi,
-  );
+  return apiCall(axiosInstance.post(`/matches/start/${matchId}`), thunkApi);
 });
 
 // POST /matches/end/:matchId — records the result and creates the next game.
@@ -81,7 +72,7 @@ export const endMatch = createAsyncThunk<
   "matches/endMatch",
   async ({ matchId, expectedScoreVersion, penaltyWinner }, thunkApi) => {
     return apiCall(
-      axiosInstance.post(`/i-one/matches/end/${matchId}`, {
+      axiosInstance.post(`/matches/end/${matchId}`, {
         expectedScoreVersion,
         ...(penaltyWinner && { penaltyWinner }),
       }),
@@ -103,7 +94,7 @@ export const recordGoal = createAsyncThunk<
     thunkApi,
   ) => {
     return apiCall(
-      axiosInstance.post(`/i-one/matches/goal-scorer/${matchId}`, {
+      axiosInstance.post(`/matches/goal-scorer/${matchId}`, {
         playerId,
         team,
         ...(assistedBy && { assistedBy }),
@@ -125,7 +116,7 @@ export const incrementScore = createAsyncThunk<
   async ({ matchId, team, eventId, expectedScoreVersion }, thunkApi) => {
     return apiCall(
       axiosInstance.put(
-        `/i-one/matches/increment-score/${matchId}`,
+        `/matches/increment-score/${matchId}`,
         { eventId, expectedScoreVersion },
         { params: { team } },
       ),
@@ -144,7 +135,7 @@ export const decrementScore = createAsyncThunk<
   async ({ matchId, team, eventId, expectedScoreVersion }, thunkApi) => {
     return apiCall(
       axiosInstance.put(
-        `/i-one/matches/decrement-score/${matchId}`,
+        `/matches/decrement-score/${matchId}`,
         { eventId, expectedScoreVersion },
         { params: { team } },
       ),
@@ -160,7 +151,7 @@ export const assignReferee = createAsyncThunk<
   AsyncThunkConfig
 >("matches/assignReferee", async ({ matchId, refereeId }, thunkApi) => {
   return apiCall(
-    axiosInstance.put(`/i-one/matches/${matchId}/referee`, { refereeId }),
+    axiosInstance.put(`/matches/${matchId}/referee`, { refereeId }),
     thunkApi,
   );
 });
@@ -170,7 +161,7 @@ export const removeReferee = createAsyncThunk<Match, string, AsyncThunkConfig>(
   "matches/removeReferee",
   async (matchId, thunkApi) => {
     return apiCall(
-      axiosInstance.delete(`/i-one/matches/${matchId}/referee`),
+      axiosInstance.delete(`/matches/${matchId}/referee`),
       thunkApi,
     );
   },
@@ -182,10 +173,7 @@ export const confirmMatchResult = createAsyncThunk<
   string,
   AsyncThunkConfig
 >("matches/confirmMatchResult", async (matchId, thunkApi) => {
-  return apiCall(
-    axiosInstance.post(`/i-one/matches/${matchId}/confirm`),
-    thunkApi,
-  );
+  return apiCall(axiosInstance.post(`/matches/${matchId}/confirm`), thunkApi);
 });
 
 export const disputeMatchResult = createAsyncThunk<
@@ -193,10 +181,7 @@ export const disputeMatchResult = createAsyncThunk<
   string,
   AsyncThunkConfig
 >("matches/disputeMatchResult", async (matchId, thunkApi) => {
-  return apiCall(
-    axiosInstance.post(`/i-one/matches/${matchId}/dispute`),
-    thunkApi,
-  );
+  return apiCall(axiosInstance.post(`/matches/${matchId}/dispute`), thunkApi);
 });
 
 /**

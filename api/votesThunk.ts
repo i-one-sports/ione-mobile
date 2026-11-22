@@ -10,7 +10,7 @@ export const getSessionVote = createAsyncThunk<
   string,
   AsyncThunkConfig
 >("votes/getSessionVote", async (sessionId, thunkApi) => {
-  return apiCall(axiosInstance.get(`/i-one/votes/${sessionId}`), thunkApi);
+  return apiCall(axiosInstance.get(`/votes/${sessionId}`), thunkApi);
 });
 
 // POST /votes/:sessionId — final; returns the same shape as the GET.
@@ -20,7 +20,7 @@ export const castSessionVote = createAsyncThunk<
   AsyncThunkConfig
 >("votes/castSessionVote", async ({ sessionId, candidateId }, thunkApi) => {
   return apiCall(
-    axiosInstance.post(`/i-one/votes/${sessionId}`, { candidateId }),
+    axiosInstance.post(`/votes/${sessionId}`, { candidateId }),
     thunkApi,
   );
 });

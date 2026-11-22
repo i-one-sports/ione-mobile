@@ -21,7 +21,7 @@ export const nearBy = createAsyncThunk<any[], sessionPayload, AsyncThunkConfig>(
   "/nearby",
   async (payload, thunkAPI) =>
     apiCall(
-      axiosInstance.get("/i-one/sessions/nearby-sessions", { params: payload }),
+      axiosInstance.get("/sessions/nearby-sessions", { params: payload }),
       thunkAPI,
     ),
 );
@@ -32,7 +32,7 @@ export const searchRegisteredLocation = createAsyncThunk<
   AsyncThunkConfig
 >("/searchRegisteredLocation", async ({ name }, thunkAPI) =>
   apiCall(
-    axiosInstance.get("/i-one/location/search", { params: { name } }),
+    axiosInstance.get("/location/search", { params: { name } }),
     thunkAPI,
   ),
 );
@@ -42,10 +42,7 @@ export const nearByLocation = createAsyncThunk<
   sessionPayload,
   AsyncThunkConfig
 >("/nearbyLocation", async (payload, thunkAPI) =>
-  apiCall(
-    axiosInstance.get("/i-one/location/nearby", { params: payload }),
-    thunkAPI,
-  ),
+  apiCall(axiosInstance.get("/location/nearby", { params: payload }), thunkAPI),
 );
 
 export const allSessions = createAsyncThunk<
@@ -53,10 +50,7 @@ export const allSessions = createAsyncThunk<
   sessionPayload,
   AsyncThunkConfig
 >("/all", async (payload, thunkAPI) =>
-  apiCall(
-    axiosInstance.get("/i-one/sessions/all", { params: payload }),
-    thunkAPI,
-  ),
+  apiCall(axiosInstance.get("/sessions/all", { params: payload }), thunkAPI),
 );
 
 // GET /sessions/my-current — the calling user's active session (or null)
@@ -65,7 +59,7 @@ export const getMyCurrentSession = createAsyncThunk<
   void,
   AsyncThunkConfig
 >("sessions/myCurrent", async (_, thunkAPI) =>
-  apiCall(axiosInstance.get("/i-one/sessions/my-current"), thunkAPI),
+  apiCall(axiosInstance.get("/sessions/my-current"), thunkAPI),
 );
 
 // GET /sessions/:sessionId — full session with member paymentStatus fields
@@ -74,7 +68,7 @@ export const getSession = createAsyncThunk<
   string,
   AsyncThunkConfig
 >("sessions/getOne", async (sessionId, thunkAPI) =>
-  apiCall(axiosInstance.get(`/i-one/sessions/${sessionId}`), thunkAPI),
+  apiCall(axiosInstance.get(`/sessions/${sessionId}`), thunkAPI),
 );
 
 // GET /sessions/members/:sessionId — member list (nickname only)
@@ -83,7 +77,7 @@ export const getSessionMembers = createAsyncThunk<
   string,
   AsyncThunkConfig
 >("sessions/members", async (sessionId, thunkAPI) =>
-  apiCall(axiosInstance.get(`/i-one/sessions/members/${sessionId}`), thunkAPI),
+  apiCall(axiosInstance.get(`/sessions/members/${sessionId}`), thunkAPI),
 );
 
 // GET /location/:locationId — one pitch (photo, address, hours, prices in
@@ -93,7 +87,7 @@ export const getPitchDetails = createAsyncThunk<
   string,
   AsyncThunkConfig
 >("location/details", async (locationId, thunkAPI) =>
-  apiCall(axiosInstance.get(`/i-one/location/${locationId}`), thunkAPI),
+  apiCall(axiosInstance.get(`/location/${locationId}`), thunkAPI),
 );
 
 // GET /sessions/by-location/:locationId?date=YYYY-MM-DD
@@ -103,7 +97,7 @@ export const getSessionsByLocation = createAsyncThunk<
   AsyncThunkConfig
 >("sessions/byLocation", async ({ locationId, date }, thunkAPI) =>
   apiCall(
-    axiosInstance.get(`/i-one/sessions/by-location/${locationId}`, {
+    axiosInstance.get(`/sessions/by-location/${locationId}`, {
       params: { date },
     }),
     thunkAPI,
@@ -115,7 +109,7 @@ export const startSession = createAsyncThunk<
   StartSessionRequest,
   AsyncThunkConfig
 >("/startSession", async (payload, thunkAPI) =>
-  apiCall(axiosInstance.post("/i-one/sessions/start", payload), thunkAPI),
+  apiCall(axiosInstance.post("/sessions/start", payload), thunkAPI),
 );
 
 export const createSession = createAsyncThunk<
@@ -123,10 +117,7 @@ export const createSession = createAsyncThunk<
   { sessionId: string; data: CreateSessionRequest },
   AsyncThunkConfig
 >("/createSession", async ({ sessionId, data }, thunkAPI) =>
-  apiCall(
-    axiosInstance.post(`/i-one/sessions/create/${sessionId}`, data),
-    thunkAPI,
-  ),
+  apiCall(axiosInstance.post(`/sessions/create/${sessionId}`, data), thunkAPI),
 );
 
 // POST /sessions/join/:sessionId — returns { message, session }
@@ -135,7 +126,7 @@ export const joinSession = createAsyncThunk<
   { sessionId: string },
   AsyncThunkConfig
 >("/joinSession", async ({ sessionId }, thunkAPI) =>
-  apiCall(axiosInstance.post(`/i-one/sessions/join/${sessionId}`), thunkAPI),
+  apiCall(axiosInstance.post(`/sessions/join/${sessionId}`), thunkAPI),
 );
 
 // DELETE /sessions/leave/:sessionId — returns { message, session }
@@ -144,7 +135,7 @@ export const leaveSession = createAsyncThunk<
   string,
   AsyncThunkConfig
 >("sessions/leave", async (sessionId, thunkAPI) =>
-  apiCall(axiosInstance.delete(`/i-one/sessions/leave/${sessionId}`), thunkAPI),
+  apiCall(axiosInstance.delete(`/sessions/leave/${sessionId}`), thunkAPI),
 );
 
 // POST /sessions/end/:sessionId
@@ -153,7 +144,7 @@ export const endSession = createAsyncThunk<
   string,
   AsyncThunkConfig
 >("sessions/end", async (sessionId, thunkAPI) =>
-  apiCall(axiosInstance.post(`/i-one/sessions/end/${sessionId}`), thunkAPI),
+  apiCall(axiosInstance.post(`/sessions/end/${sessionId}`), thunkAPI),
 );
 
 // DELETE /sessions/delete/:sessionId
@@ -162,20 +153,14 @@ export const deleteSession = createAsyncThunk<
   string,
   AsyncThunkConfig
 >("sessions/delete", async (sessionId, thunkAPI) =>
-  apiCall(
-    axiosInstance.delete(`/i-one/sessions/delete/${sessionId}`),
-    thunkAPI,
-  ),
+  apiCall(axiosInstance.delete(`/sessions/delete/${sessionId}`), thunkAPI),
 );
 
 // POST /sessions/cancel/:sessionId
 export const cancelSession = createAsyncThunk<any, string, AsyncThunkConfig>(
   "sessions/cancel",
   async (sessionId, thunkAPI) =>
-    apiCall(
-      axiosInstance.post(`/i-one/sessions/cancel/${sessionId}`),
-      thunkAPI,
-    ),
+    apiCall(axiosInstance.post(`/sessions/cancel/${sessionId}`), thunkAPI),
 );
 
 // PATCH /sessions/reschedule/:sessionId
@@ -187,7 +172,7 @@ export const rescheduleSession = createAsyncThunk<
   "sessions/reschedule",
   async ({ sessionId, startTime, timeDuration }, thunkAPI) =>
     apiCall(
-      axiosInstance.patch(`/i-one/sessions/reschedule/${sessionId}`, {
+      axiosInstance.patch(`/sessions/reschedule/${sessionId}`, {
         startTime,
         timeDuration,
       }),
@@ -200,7 +185,7 @@ export const createSets = createAsyncThunk<
   { sessionId: string },
   AsyncThunkConfig
 >("/createSets", async ({ sessionId }, thunkAPI) =>
-  apiCall(axiosInstance.post(`/i-one/sets/create/${sessionId}`), thunkAPI),
+  apiCall(axiosInstance.post(`/sets/create/${sessionId}`), thunkAPI),
 );
 
 export const getSessionSets = createAsyncThunk<
@@ -208,5 +193,5 @@ export const getSessionSets = createAsyncThunk<
   { sessionId: string },
   AsyncThunkConfig
 >("/getSessionSets", async ({ sessionId }, thunkAPI) =>
-  apiCall(axiosInstance.get(`/i-one/sets/${sessionId}`), thunkAPI),
+  apiCall(axiosInstance.get(`/sets/${sessionId}`), thunkAPI),
 );

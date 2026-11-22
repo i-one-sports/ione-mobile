@@ -34,7 +34,7 @@ export const getTournamentsByLocation = createAsyncThunk<
   AsyncThunkConfig
 >("tournaments/getTournaments", async (locationId, thunkAPI) => {
   return apiCall(
-    axiosInstance.get(`/i-one/tournaments/location/${locationId}`),
+    axiosInstance.get(`/tournaments/location/${locationId}`),
     thunkAPI,
   );
 });
@@ -44,10 +44,7 @@ export const getTournamentsDetails = createAsyncThunk<
   string,
   AsyncThunkConfig
 >("tournaments/getTournamentsDetails", async (tournamentId, thunkAPI) => {
-  return apiCall(
-    axiosInstance.get(`/i-one/tournaments/${tournamentId}`),
-    thunkAPI,
-  );
+  return apiCall(axiosInstance.get(`/tournaments/${tournamentId}`), thunkAPI);
 });
 
 export const createTournament = createAsyncThunk<
@@ -56,7 +53,7 @@ export const createTournament = createAsyncThunk<
   AsyncThunkConfig
 >("tournaments/createTournament", async ({ locationId, payload }, thunkAPI) => {
   return apiCall(
-    axiosInstance.post(`/i-one/tournaments/create/${locationId}`, payload),
+    axiosInstance.post(`/tournaments/create/${locationId}`, payload),
     thunkAPI,
   );
 });
@@ -67,7 +64,7 @@ export const createTeam = createAsyncThunk<
   AsyncThunkConfig
 >("tournaments/createTeam", async ({ tournamentId, payload }, thunkAPI) => {
   return apiCall(
-    axiosInstance.post(`/i-one/tournaments/${tournamentId}/team`, payload),
+    axiosInstance.post(`/tournaments/${tournamentId}/team`, payload),
     thunkAPI,
   );
 });
@@ -80,7 +77,7 @@ export const deleteTeamFromTournament = createAsyncThunk<
   "tournaments/deleteTeamTournament",
   async ({ tournamentId, teamId }, thunkAPI) => {
     return apiCall(
-      axiosInstance.delete(`/i-one/tournaments/${tournamentId}/team/${teamId}`),
+      axiosInstance.delete(`/tournaments/${tournamentId}/team/${teamId}`),
       thunkAPI,
     );
   },
@@ -91,8 +88,5 @@ export const generateTournamentBracket = createAsyncThunk<
   string,
   AsyncThunkConfig
 >("tournaments/generateTournamentBracket", async (teamId, thunkAPI) => {
-  return apiCall(
-    axiosInstance.post(`/i-one/tournaments/${teamId}/start`),
-    thunkAPI,
-  );
+  return apiCall(axiosInstance.post(`/tournaments/${teamId}/start`), thunkAPI);
 });

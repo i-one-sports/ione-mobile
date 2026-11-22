@@ -33,7 +33,7 @@ export const getLocation = createAsyncThunk<
   void,
   AsyncThunkConfig
 >("location/getLocation", async (_, thunkAPI) => {
-  return apiCall(axiosInstance.get(`/i-one/location`), thunkAPI);
+  return apiCall(axiosInstance.get(`/location`), thunkAPI);
 });
 
 export const getLocationDashboard = createAsyncThunk<
@@ -42,7 +42,7 @@ export const getLocationDashboard = createAsyncThunk<
   AsyncThunkConfig
 >("location/getLocationDashboard", async (locationId, thunkAPI) => {
   return apiCall(
-    axiosInstance.get(`/i-one/location/${locationId}/dashboard`),
+    axiosInstance.get(`/location/${locationId}/dashboard`),
     thunkAPI,
   );
 });
@@ -53,7 +53,7 @@ export const getSummary = createAsyncThunk<
   AsyncThunkConfig
 >("location/getSummary", async (locationId, thunkAPI) => {
   return apiCall(
-    axiosInstance.get(`/i-one/location/${locationId}/dashboard/summary`),
+    axiosInstance.get(`/location/${locationId}/dashboard/summary`),
     thunkAPI,
   );
 });
@@ -64,7 +64,7 @@ export const getLastMatches = createAsyncThunk<
   AsyncThunkConfig
 >("location/getLastMatches", async (locationId, thunkAPI) => {
   return apiCall(
-    axiosInstance.get(`/i-one/location/${locationId}/dashboard/last-matches`),
+    axiosInstance.get(`/location/${locationId}/dashboard/last-matches`),
     thunkAPI,
   );
 });
@@ -75,7 +75,7 @@ export const getVisitorsCount = createAsyncThunk<
   AsyncThunkConfig
 >("location/getVisitorsCount", async (locationId, thunkAPI) => {
   return apiCall(
-    axiosInstance.get(`/i-one/location/${locationId}/dashboard/visitors`),
+    axiosInstance.get(`/location/${locationId}/dashboard/visitors`),
     thunkAPI,
   );
 });
@@ -86,7 +86,7 @@ export const getSessionByDate = createAsyncThunk<
   AsyncThunkConfig
 >("/sessionbydate", async ({ locationId, date }, thunkAPI) => {
   return apiCall(
-    axiosInstance.get(`/i-one/sessions/by-location/${locationId}`, {
+    axiosInstance.get(`/sessions/by-location/${locationId}`, {
       params: { date },
     }),
     thunkAPI,
@@ -98,7 +98,7 @@ export const getSessionById = createAsyncThunk<
   string,
   AsyncThunkConfig
 >("/sessionbyid", async (sessionId, thunkAPI) => {
-  return apiCall(axiosInstance.get(`/i-one/sessions/${sessionId}`), thunkAPI);
+  return apiCall(axiosInstance.get(`/sessions/${sessionId}`), thunkAPI);
 });
 
 export const getUpcomingSessions = createAsyncThunk<
@@ -107,9 +107,7 @@ export const getUpcomingSessions = createAsyncThunk<
   AsyncThunkConfig
 >("location/getUpcomingSessions", async (locationId, thunkAPI) => {
   return apiCall(
-    axiosInstance.get(
-      `/i-one/location/${locationId}/dashboard/upcoming-sessions`,
-    ),
+    axiosInstance.get(`/location/${locationId}/dashboard/upcoming-sessions`),
     thunkAPI,
   );
 });
@@ -120,7 +118,7 @@ export const getRevenue = createAsyncThunk<
   AsyncThunkConfig
 >("location/getRevenue", async (locationId, thunkAPI) => {
   return apiCall(
-    axiosInstance.get(`/i-one/location/${locationId}/dashboard/revenue`),
+    axiosInstance.get(`/location/${locationId}/dashboard/revenue`),
     thunkAPI,
   );
 });
@@ -131,7 +129,7 @@ export const getUsersChart = createAsyncThunk<
   AsyncThunkConfig
 >("location/getUsersChart", async (locationId, thunkAPI) => {
   return apiCall(
-    axiosInstance.get(`/i-one/location/${locationId}/dashboard/users-chart`),
+    axiosInstance.get(`/location/${locationId}/dashboard/users-chart`),
     thunkAPI,
   );
 });
@@ -144,7 +142,7 @@ export const updatePitchCondition = createAsyncThunk<
   "/location/pitch-condition",
   async ({ locationId, pitchCondition }, thunkAPI) => {
     return apiCall(
-      axiosInstance.patch(`/i-one/location/${locationId}/pitch-condition`, {
+      axiosInstance.patch(`/location/${locationId}/pitch-condition`, {
         pitchCondition,
       }),
       thunkAPI,
@@ -170,7 +168,7 @@ export const updatePitchPhoto = createAsyncThunk<
   } as any);
 
   return apiCall(
-    uploadAxios.post(`/i-one/location/pitch/${locationId}`, formData, {
+    uploadAxios.post(`/location/pitch/${locationId}`, formData, {
       headers: { "Content-Type": "multipart/form-data" },
       transformRequest: (data) => data,
     }),
@@ -184,7 +182,7 @@ export const changePassword = createAsyncThunk<
   AsyncThunkConfig
 >("/user/change-password", async (payload, thunkAPI) => {
   return apiCall(
-    axiosInstance.patch(`/i-one/user/change-password`, payload),
+    axiosInstance.patch(`/user/change-password`, payload),
     thunkAPI,
   );
 });
@@ -197,7 +195,7 @@ export const getLocationTransactions = createAsyncThunk<
   "billing/LocationTransactions",
   async ({ locationId, page = 1, limit = 10, type }, thunkAPI) => {
     const params = `page=${page}&limit=${limit}${type ? `&type=${type}` : ""}`;
-    const endpoint = `/i-one/billing/location/${locationId}/transactions?${params}`;
+    const endpoint = `/billing/location/${locationId}/transactions?${params}`;
     const result = await apiCall(axiosInstance.get(endpoint), thunkAPI);
     return result;
   },
@@ -209,10 +207,7 @@ export const updatePricingOptions = createAsyncThunk<
   AsyncThunkConfig
 >("/location/pricing-options", async ({ locationId, ...payload }, thunkAPI) => {
   return apiCall(
-    axiosInstance.patch(
-      `/i-one/location/${locationId}/pricing-options`,
-      payload,
-    ),
+    axiosInstance.patch(`/location/${locationId}/pricing-options`, payload),
     thunkAPI,
   );
 });
@@ -223,7 +218,7 @@ export const getOwnerMonthlyPasses = createAsyncThunk<
   AsyncThunkConfig
 >("/location/monthly-passes", async ({ locationId }, thunkAPI) => {
   return apiCall(
-    axiosInstance.get(`/i-one/location/${locationId}/monthly-passes`),
+    axiosInstance.get(`/location/${locationId}/monthly-passes`),
     thunkAPI,
   );
 });
@@ -234,7 +229,7 @@ export const updateMonthlyPassSales = createAsyncThunk<
   AsyncThunkConfig
 >("/location/monthly-pass-sales", async ({ locationId, paused }, thunkAPI) => {
   return apiCall(
-    axiosInstance.patch(`/i-one/location/${locationId}/monthly-pass-sales`, {
+    axiosInstance.patch(`/location/${locationId}/monthly-pass-sales`, {
       paused,
     }),
     thunkAPI,
@@ -247,7 +242,7 @@ export const updateOpenHours = createAsyncThunk<
   AsyncThunkConfig
 >("/location/opening-hours", async ({ locationId, ...payload }, thunkAPI) => {
   return apiCall(
-    axiosInstance.patch(`/i-one/location/${locationId}/opening-hours`, payload),
+    axiosInstance.patch(`/location/${locationId}/opening-hours`, payload),
     thunkAPI,
   );
 });
@@ -259,7 +254,7 @@ export const getLocationTeamStatus = createAsyncThunk<
 >(
   "/billing/LocationTeamStatus",
   async ({ locationId, sessionId }, thunkAPI) => {
-    const endpoint = `/i-one/billing/location/${locationId}/sessions/${sessionId}/team-status`;
+    const endpoint = `/billing/location/${locationId}/sessions/${sessionId}/team-status`;
     const result = await apiCall(axiosInstance.get(endpoint), thunkAPI);
     return result;
   },
