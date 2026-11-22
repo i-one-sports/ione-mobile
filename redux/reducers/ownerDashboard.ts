@@ -16,6 +16,8 @@ import {
   getLocationTeamStatus,
   getLocationTransactions,
   updatePitchPhoto,
+  getOwnerMonthlyPasses,
+  updateMonthlyPassSales,
 } from "@/api/ownerDashboardThunk";
 import { logOut } from "@/api/authThunks";
 import {
@@ -38,6 +40,7 @@ import {
   SessionPaymentDetailsResponse,
   BillingPagination,
   UpdatePitchPhotoResponse,
+  OwnerMonthlyPassesResponse,
 } from "@/components/typings/apiResponse";
 import { createSlice } from "@reduxjs/toolkit";
 
@@ -62,7 +65,10 @@ interface State {
   locationTransactions: PaymentDateGroup[];
   locationTeamStatus: SessionPaymentDetailsResponse | null;
   billingPagination: BillingPagination | null;
+  monthlyPasses: OwnerMonthlyPassesResponse | null;
 
+  loadingMonthlyPasses: boolean;
+  loadingMonthlyPassSales: boolean;
   loadingLocationDashboard: boolean;
   loadingLocation: boolean;
   loadingVisitorCount: boolean;
@@ -100,6 +106,8 @@ interface State {
   errorPitchPhoto: string | null;
   errorLocationTransactions: string | null;
   errorLocationTeamStatus: string | null;
+  errorMonthlyPasses: string | null;
+  errorMonthlyPassSales: string | null;
 }
 
 const initialState: State = {
@@ -123,7 +131,10 @@ const initialState: State = {
   locationTransactions: [],
   locationTeamStatus: null,
   billingPagination: null,
+  monthlyPasses: null,
 
+  loadingMonthlyPasses: false,
+  loadingMonthlyPassSales: false,
   loadingLocationDashboard: false,
   loadingLocation: false,
   loadingVisitorCount: false,
@@ -161,6 +172,8 @@ const initialState: State = {
   errorPitchPhoto: null,
   errorLocationTransactions: null,
   errorLocationTeamStatus: null,
+  errorMonthlyPasses: null,
+  errorMonthlyPassSales: null,
 };
 
 export const ownerDashboardSlice = createSlice({
@@ -368,6 +381,38 @@ export const ownerDashboardSlice = createSlice({
       state.loadingPricingOptionData = false;
       state.errorPricingOptionData =
         action.error.message || "Failed to update pricing options";
+    });
+
+    // owner monthly passes (active count + pass income)
+    builder.addCase(getOwnerMonthlyPasses.pending, (state) => {
+      state.loadingMonthlyPasses = true;
+      state.errorMonthlyPasses = null;
+    });
+    builder.addCase(getOwnerMonthlyPasses.fulfilled, (state, { payload }) => {
+      state.monthlyPasses = payload;
+      state.loadingMonthlyPasses = false;
+    });
+    builder.addCase(getOwnerMonthlyPasses.rejected, (state, action) => {
+      state.loadingMonthlyPasses = false;
+      state.errorMonthlyPasses =
+        action.error.message || "Failed to load monthly passes";
+    });
+
+    // pause / resume monthly pass sales
+    builder.addCase(updateMonthlyPassSales.pending, (state) => {
+      state.loadingMonthlyPassSales = true;
+      state.errorMonthlyPassSales = null;
+    });
+    builder.addCase(updateMonthlyPassSales.fulfilled, (state, { payload }) => {
+      state.loadingMonthlyPassSales = false;
+      if (state.monthlyPasses) {
+        state.monthlyPasses.salesPaused = payload.monthlyPassSalesPaused;
+      }
+    });
+    builder.addCase(updateMonthlyPassSales.rejected, (state, action) => {
+      state.loadingMonthlyPassSales = false;
+      state.errorMonthlyPassSales =
+        action.error.message || "Failed to update pass sales";
     });
 
     // get sessions by date

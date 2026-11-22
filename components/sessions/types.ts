@@ -14,7 +14,7 @@ export type Match = {
   sessionId: string;
   locationId?: string;
 
-  captainName: string;
+  captainName: string | null;
   locationName: string;
   matchType: string;
 

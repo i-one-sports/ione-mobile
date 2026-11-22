@@ -95,7 +95,10 @@ export default function Live() {
   const staticSession = params.session ? JSON.parse(params.session) : null;
   const sessionId: string = params.sessionId ?? staticSession?._id ?? "";
 
-  const { user } = useAppSelector((state) => state.auth);
+  const { user, isAuthenticated } = useAppSelector((state) => state.auth);
+  // Guests watch the score only: no teams' players, referees or names
+  // (those routes need an account; the server sends guests team-only goals).
+  const isGuest = !isAuthenticated;
   const { activeSession, loadingActiveSession, sets } = useAppSelector(
     (state) => state.sessions,
   );
@@ -117,10 +120,11 @@ export default function Live() {
   useEffect(() => {
     if (!sessionId) return;
     dispatch(getSession(sessionId));
+    if (isGuest) return;
     dispatch(getSessionSets({ sessionId }));
     // Spectators can't read the referee list (403); the pill falls back.
     dispatch(getReferees(sessionId));
-  }, [sessionId, dispatch]);
+  }, [sessionId, dispatch, isGuest]);
 
   // Reload the games when the screen is in view, and every so often after.
   useFocusEffect(
@@ -136,11 +140,11 @@ export default function Live() {
     setRefreshing(true);
     await Promise.all([
       dispatch(getSession(sessionId)),
-      dispatch(getReferees(sessionId)),
+      isGuest ? null : dispatch(getReferees(sessionId)),
       loadGames(),
     ]);
     setRefreshing(false);
-  }, [dispatch, sessionId, loadGames]);
+  }, [dispatch, sessionId, loadGames, isGuest]);
 
   // Derive everything from the server response — no manual state flags
   const session = activeSession ?? staticSession;
@@ -283,7 +287,8 @@ export default function Live() {
       };
       tallies[id][field] += 1;
     };
-    openSet.goalScorers.forEach((g) => {
+    // Guests get team-only goals (no goalScorers), so no player tallies.
+    (openSet.goalScorers ?? []).forEach((g) => {
       add(idOf(g.player as any), "goals");
       add(idOf(g.assistedBy as any), "assists");
     });
@@ -480,38 +485,42 @@ export default function Live() {
                     />
                   </View>
 
-                  {/* Current referee */}
-                  <View
-                    style={{ backgroundColor: isDark ? "#0D1F17" : "#EDFFF8" }}
-                    className="mx-auto mt-[24px] flex flex-row items-center gap-[8px] rounded-full px-[18px] py-[10px]"
-                  >
-                    <MaterialCommunityIcons
-                      name="whistle-outline"
-                      size={18}
-                      color={theme.text}
-                    />
-                    <ThemedText
-                      lightColor={theme.text}
-                      darkColor={theme.text}
-                      className="text-[14px]"
+                  {/* Current referee (not sent to guests) */}
+                  {!isGuest && (
+                    <View
+                      style={{
+                        backgroundColor: isDark ? "#0D1F17" : "#EDFFF8",
+                      }}
+                      className="mx-auto mt-[24px] flex flex-row items-center gap-[8px] rounded-full px-[18px] py-[10px]"
                     >
-                      {currentGame.referee ? (
-                        <>
-                          Referee ·{" "}
-                          <ThemedText
-                            lightColor={theme.text}
-                            darkColor={theme.text}
-                            className="font-[600]"
-                          >
-                            {refereeName ?? "Assigned"}
-                          </ThemedText>
-                          {refereeTeam ? ` (${refereeTeam})` : ""}
-                        </>
-                      ) : (
-                        "No referee · this set is unofficial"
-                      )}
-                    </ThemedText>
-                  </View>
+                      <MaterialCommunityIcons
+                        name="whistle-outline"
+                        size={18}
+                        color={theme.text}
+                      />
+                      <ThemedText
+                        lightColor={theme.text}
+                        darkColor={theme.text}
+                        className="text-[14px]"
+                      >
+                        {currentGame.referee ? (
+                          <>
+                            Referee ·{" "}
+                            <ThemedText
+                              lightColor={theme.text}
+                              darkColor={theme.text}
+                              className="font-[600]"
+                            >
+                              {refereeName ?? "Assigned"}
+                            </ThemedText>
+                            {refereeTeam ? ` (${refereeTeam})` : ""}
+                          </>
+                        ) : (
+                          "No referee · this set is unofficial"
+                        )}
+                      </ThemedText>
+                    </View>
+                  )}
 
                   {/* You're the referee: straight to the whistle */}
                   {iAmReferee && (

@@ -26,6 +26,8 @@ import refereesReducer from "./reducers/referees";
 import recordingQueueReducer from "./reducers/recordingQueue";
 import statsReducer from "./reducers/stats";
 import badgesReducer from "./reducers/badges";
+import guestReducer from "./reducers/guest";
+import monthlyPassReducer from "./reducers/monthlyPass";
 
 const authPersistConfig = {
   key: "main",
@@ -66,6 +68,8 @@ const reducers = combineReducers({
   recordingQueue: persistedRecordingQueueReducer,
   stats: statsReducer,
   badges: badgesReducer,
+  guest: guestReducer,
+  monthlyPass: monthlyPassReducer,
 });
 
 const store = configureStore({

@@ -21,6 +21,7 @@ import { useAppDispatch, useAppSelector } from "@/redux/store";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { useRequireSignIn } from "@/components/guest/SignInPrompt";
 import {
   RefreshControl,
   ScrollView,
@@ -52,7 +53,25 @@ export default function SessionsScreen({
   const [refreshing, setRefreshing] = useState(false);
 
   const dispatch = useAppDispatch();
-  const { user } = useAppSelector((s) => s.auth);
+  const { user, isAuthenticated } = useAppSelector((s) => s.auth);
+  // Guests browse around Home's location (or Lagos). /sessions/my-current
+  // needs an account, so it's only loaded when signed in.
+  const isGuest = !isAuthenticated;
+  const guest = useAppSelector((s) => s.guest);
+  const requireSignIn = useRequireSignIn();
+  const loadSessions = useCallback(() => {
+    if (isGuest) {
+      return Promise.all([
+        dispatch(allSessions({ lat: guest.lat, lng: guest.lng })),
+      ]);
+    }
+    if (!user?.location?.coordinates) return Promise.resolve([]);
+    const [lat, lng] = user.location.coordinates;
+    return Promise.all([
+      dispatch(allSessions({ lat, lng })),
+      dispatch(getMyCurrentSession()),
+    ]);
+  }, [dispatch, isGuest, guest.lat, guest.lng, user]);
   const { all, loadingAll, errorAll } = useAppSelector((s) => s.sessions);
 
   const screenBg = isDark ? "#000" : "#FAFAFA";
@@ -60,11 +79,8 @@ export default function SessionsScreen({
   const primaryText = isDark ? "#FFF" : "#111";
 
   useEffect(() => {
-    if (!user?.location?.coordinates) return;
-    const [lat, lng] = user.location.coordinates;
-    dispatch(allSessions({ lat, lng }));
-    dispatch(getMyCurrentSession());
-  }, [dispatch, user]);
+    loadSessions();
+  }, [loadSessions]);
 
   useEffect(() => {
     const today = new Date();
@@ -86,11 +102,13 @@ export default function SessionsScreen({
   const formattedMatches: Match[] = useMemo(() => {
     if (!all || all.length === 0) return [];
     return all.map((session: any) => {
-      const captainName =
-        session.captain?.nickname ||
-        session.captain?.firstName ||
-        session.captain?.username ||
-        "Unknown";
+      // Guests get no people in responses (no captain or member list).
+      const captainName = session.captain
+        ? session.captain.nickname ||
+          session.captain.firstName ||
+          session.captain.username ||
+          "Unknown"
+        : null;
       const hasJoined =
         session.members?.some(
           (m: any) => m._id === user?._id || m.userId === user?._id,
@@ -114,7 +132,7 @@ export default function SessionsScreen({
         matchType: session.matchType || "friendly",
         time: startTime,
         minute,
-        playerCount: session.members?.length || 0,
+        playerCount: session.members?.length ?? session.memberCount ?? 0,
         maxPlayers: session.maxNumber || 0,
         paymentRequired: Boolean(session.paymentRequired),
         paymentStatus: session.paymentStatus,
@@ -180,17 +198,13 @@ export default function SessionsScreen({
   };
 
   const handleRefresh = useCallback(async () => {
-    if (!user?.location?.coordinates) return;
     setRefreshing(true);
-    const [lat, lng] = user.location.coordinates;
-    await Promise.all([
-      dispatch(allSessions({ lat, lng })),
-      dispatch(getMyCurrentSession()),
-    ]);
+    await loadSessions();
     setRefreshing(false);
-  }, [dispatch, user]);
+  }, [loadSessions]);
 
   const handleNewGame = () => {
+    if (!requireSignIn("start a game")) return;
     const route = TAB_ROUTE_MAP[activeTab];
     router.push(
       route
@@ -302,12 +316,7 @@ export default function SessionsScreen({
                 {errorAll}
               </Text>
               <TouchableOpacity
-                onPress={() => {
-                  if (user?.location?.coordinates) {
-                    const [lat, lng] = user.location.coordinates;
-                    dispatch(allSessions({ lat, lng }));
-                  }
-                }}
+                onPress={() => loadSessions()}
                 style={{
                   marginTop: 16,
                   backgroundColor: "#00FF94",

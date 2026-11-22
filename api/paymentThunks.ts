@@ -47,7 +47,7 @@ const checkoutInProgress = (err: any) =>
   err?.response?.status === 409 &&
   err?.response?.data?.code === "CHECKOUT_IN_PROGRESS";
 
-async function withCheckoutRetry(
+export async function withCheckoutRetry(
   send: () => Promise<any>,
   thunkAPI: any,
   // Turn an error into a normal result instead of a failure (e.g. 404).

@@ -22,8 +22,19 @@ import * as ImagePicker from "expo-image-picker";
 import React, { useMemo, useState } from "react";
 import { Alert, ScrollView, TouchableOpacity, View } from "react-native";
 import { buildProfileUpdatePayload } from "@/utils/profileUpdate";
+import { SettingsRow } from "@/components/admin/settings/SettingsRow";
+import { SettingsSection } from "@/components/admin/settings/SettingsSection";
+import { openWebPage, PRIVACY_URL, TERMS_URL } from "@/constants/legal";
+import { confirmDeleteAccount } from "@/utils/deleteAccountFlow";
+import GuestProfile from "@/components/guest/GuestProfile";
 
-export default function ProfileScreen() {
+// Guests (signed out) get the sign-in panel; everyone else their profile.
+export default function ProfileTab() {
+  const isAuthenticated = useAppSelector((state) => state.auth.isAuthenticated);
+  return isAuthenticated ? <ProfileScreen /> : <GuestProfile />;
+}
+
+function ProfileScreen() {
   const router = useRouter();
   const dispatch = useAppDispatch();
   const { colorScheme } = useColorScheme();
@@ -275,6 +286,26 @@ export default function ProfileScreen() {
               </ThemedText>
             </TouchableOpacity>
 
+            <TouchableOpacity
+              onPress={() => router.push("/my-passes")}
+              style={{
+                backgroundColor: `${accent}20`,
+                borderRadius: 20,
+                paddingHorizontal: 14,
+                paddingVertical: 7,
+                borderWidth: 1,
+                borderColor: `${accent}44`,
+              }}
+            >
+              <ThemedText
+                lightColor={accent}
+                darkColor={accent}
+                style={{ fontSize: 12, fontWeight: "600" }}
+              >
+                Passes
+              </ThemedText>
+            </TouchableOpacity>
+
             <View
               style={{ flexDirection: "row", alignItems: "center", gap: 8 }}
             >
@@ -418,6 +449,34 @@ export default function ProfileScreen() {
               )}
             </>
           )}
+
+          <View style={{ marginTop: 24 }}>
+            <SettingsSection title="Legal">
+              <SettingsRow
+                icon="description"
+                iconColor="#607D8B"
+                label="Terms and Conditions"
+                onPress={() => openWebPage(TERMS_URL)}
+              />
+              <SettingsRow
+                icon="privacy-tip"
+                iconColor="#607D8B"
+                label="Privacy Policy"
+                onPress={() => openWebPage(PRIVACY_URL)}
+              />
+            </SettingsSection>
+
+            <SettingsSection title="Account">
+              <SettingsRow
+                icon="delete-forever"
+                iconColor="#FF1744"
+                label="Delete Account"
+                labelColor="#FF1744"
+                onPress={() => confirmDeleteAccount(dispatch, setIsLoggingOut)}
+                showChevron={false}
+              />
+            </SettingsSection>
+          </View>
         </ScrollView>
       </SafeAreaScreen>
     </>

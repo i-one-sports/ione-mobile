@@ -7,6 +7,7 @@ import SafeAreaScreen from "@/components/SafeAreaScreen";
 import { ThemedText } from "@/components/ThemedText";
 import { Colors } from "@/constants/Colors";
 import { router, useLocalSearchParams } from "expo-router";
+import { useRequireSignIn } from "@/components/guest/SignInPrompt";
 import BracketDiagram from "@/components/BracketDiagram";
 import React, { useMemo, useState, useEffect } from "react";
 import {
@@ -45,6 +46,7 @@ const playerBasedRewards = [
 ];
 
 export default function TournamentDetailScreen() {
+  const requireSignIn = useRequireSignIn();
   const colorScheme = useColorScheme();
   const theme = Colors[colorScheme ?? "light"];
   const detailTextColor = colorScheme === "dark" ? "#FFFFFF" : "#000000";
@@ -337,6 +339,7 @@ export default function TournamentDetailScreen() {
         <View className="px-[32px] pt-5">
           <TouchableOpacity
             onPress={() =>
+              requireSignIn("create a team") &&
               router.push({
                 pathname: "/screens/create-new-team",
                 params: { tournamentId },

@@ -1,22 +1,16 @@
 import PitchDayTimeline from "@/components/PitchDayTimeline";
 import DayStrip, { type DayStatus } from "@/components/booking/DayStrip";
-import { getSessionsByLocation } from "@/api/sessions";
-import { useAppDispatch, useAppSelector } from "@/redux/store";
-import {
+import { getPitchDetails, getSessionsByLocation } from "@/api/sessions";
+import { useRequireSignIn } from "@/components/guest/SignInPrompt";
+import { formatKoboAsNaira } from "@/utils/currency";
+import { formatClock, toMinutes ,
   formatDayShort,
   freeGaps,
   locationDayKey,
   todayKey,
   upcomingDays,
 } from "@/utils/pitchSlots";
-import SafeAreaScreen from "@/components/SafeAreaScreen";
-import { ThemedText } from "@/components/ThemedText";
-import CustomButton from "@/components/ui/CustomButton";
-import { Colors } from "@/constants/Colors";
-import { Ionicons } from "@expo/vector-icons";
-import { router, useLocalSearchParams } from "expo-router";
-import React, { useEffect, useMemo, useState } from "react";
-import {
+import { Image ,
   RefreshControl,
   ScrollView,
   Text,
@@ -24,9 +18,20 @@ import {
   useColorScheme,
   View,
 } from "react-native";
+import { useAppDispatch, useAppSelector } from "@/redux/store";
+import SafeAreaScreen from "@/components/SafeAreaScreen";
+import { ThemedText } from "@/components/ThemedText";
+import CustomButton from "@/components/ui/CustomButton";
+import { Colors } from "@/constants/Colors";
+import { Ionicons } from "@expo/vector-icons";
+import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import MonthlyPassCard from "@/components/booking/MonthlyPassCard";
+import { getMyMonthlyPass } from "@/api/monthlyPassThunks";
 
-// Any player can check when a pitch is booked over the next 14 days (from
-// Home → a pitch → See bookings), then start a session on the chosen day.
+// A pitch's details (photo, address, hours, price) and when it's booked over
+// the next 14 days (Home → a pitch → See bookings). Open to guests; creating
+// a session asks them to sign in.
 export default function PitchBookings() {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
@@ -47,6 +52,65 @@ export default function PitchBookings() {
   const byDay = useAppSelector((state) => state.sessions.locationSessionsByDay);
   const [refreshKey, setRefreshKey] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
+  const requireSignIn = useRequireSignIn();
+
+  useEffect(() => {
+    if (params.pitchId) dispatch(getPitchDetails(params.pitchId));
+  }, [dispatch, params.pitchId, refreshKey]);
+  const pitch: any = useAppSelector((state) =>
+    params.pitchId ? state.sessions.pitchDetails[params.pitchId] : undefined,
+  );
+  const name = pitch?.name ?? params.pitchName ?? "Pitch";
+  const address = pitch?.address ?? params.pitchAddress;
+  const opening = pitch?.openingHour ?? params.pitchOpening;
+  const closing = pitch?.closingHour ?? params.pitchClosing;
+  const hourly = pitch
+    ? pitch.tier === "paid" && pitch.pricingOption === "hourly"
+    : params.pitchHourly === "1";
+  const pricePerHour = pitch?.pricePerHour ?? (Number(params.pitchPrice) || 0);
+  const price = !pitch
+    ? hourly && pricePerHour
+      ? `${formatKoboAsNaira(pricePerHour)}/hr`
+      : null
+    : pitch.tier !== "paid"
+      ? "Free"
+      : hourly
+        ? pricePerHour
+          ? `${formatKoboAsNaira(pricePerHour)}/hr`
+          : null
+        : pitch.paymentPerPersonMonthly
+          ? `${formatKoboAsNaira(pitch.paymentPerPersonMonthly)} per player / month`
+          : null;
+  const monthly = pitch?.tier === "paid" && pitch?.pricingOption === "monthly";
+
+  // Monthly pitch: the player's pass here (M03). Signed-in only; reloaded on
+  // focus so it shows a pass bought on the Monthly Pass screen.
+  const isAuthenticated = useAppSelector((s) => s.auth.isAuthenticated);
+  const { myPass, loadingMyPass } = useAppSelector((s) => s.monthlyPass);
+  const passInfo =
+    isAuthenticated && myPass?.locationId === params.pitchId ? myPass : null;
+  useFocusEffect(
+    useCallback(() => {
+      if (monthly && isAuthenticated && params.pitchId)
+        dispatch(getMyMonthlyPass({ locationId: params.pitchId }));
+    }, [dispatch, monthly, isAuthenticated, params.pitchId]),
+  );
+
+  const openBuyPass = () => {
+    if (!params.pitchId || !requireSignIn("buy a monthly pass")) return;
+    router.push({
+      pathname: "/payment-screens/monthly-pass",
+      params: {
+        locationId: params.pitchId,
+        locationName: address ? `${name}, ${address}` : name,
+      },
+    });
+  };
+
+  const hours =
+    opening && closing
+      ? `Open ${formatClock(toMinutes(opening)!)} – ${formatClock(toMinutes(closing)!)}`
+      : "Open all day";
 
   const mutedColor = isDark ? "#9BA1A6" : "#6D717F";
 
@@ -63,12 +127,9 @@ export default function PitchBookings() {
     for (const d of days) {
       const s = byDay[locationDayKey(params.pitchId, d)];
       if (s)
-        status[d] = freeGaps(
-          s,
-          d,
-          params.pitchOpening,
-          params.pitchClosing,
-        ).some((g) => g.end - g.start >= 60)
+        status[d] = freeGaps(s, d, opening, closing).some(
+          (g) => g.end - g.start >= 60,
+        )
           ? "free"
           : "full";
     }
@@ -76,6 +137,8 @@ export default function PitchBookings() {
   const onRefresh = () => {
     setRefreshing(true);
     setRefreshKey((k) => k + 1);
+    if (monthly && isAuthenticated && params.pitchId)
+      dispatch(getMyMonthlyPass({ locationId: params.pitchId }));
     // The timeline shows its own loading state; release the pull at once.
     setTimeout(() => setRefreshing(false), 400);
   };
@@ -111,25 +174,52 @@ export default function PitchBookings() {
                 darkColor={theme.text}
                 className="text-[20px] font-[600]"
               >
-                Bookings
+                Pitch
               </ThemedText>
               <View style={{ width: 22 }} />
             </View>
-            <View className="mt-[6px] items-center gap-[2px]">
+            {!!pitch?.pitchPhoto && (
+              <Image
+                source={{ uri: pitch.pitchPhoto }}
+                accessibilityLabel={`Photo of ${name}`}
+                style={{
+                  width: "100%",
+                  height: 170,
+                  borderRadius: 14,
+                  marginTop: 16,
+                  backgroundColor: isDark ? "#1a1a1a" : "#F1F1F1",
+                }}
+                resizeMode="cover"
+              />
+            )}
+            <View className="mt-[12px] gap-[4px]">
               <ThemedText
                 lightColor={theme.text}
                 darkColor={theme.text}
-                className="text-[15px] font-[700]"
+                className="text-[18px] font-[700]"
               >
-                {params.pitchName ?? "Pitch"}
+                {name}
               </ThemedText>
-              {!!params.pitchAddress && (
+              {!!address && (
                 <Text style={{ color: mutedColor, fontSize: 13 }}>
-                  {params.pitchAddress}
+                  {address}
                 </Text>
               )}
+              <Text style={{ color: mutedColor, fontSize: 13 }}>
+                {[hours, price].filter(Boolean).join(" · ")}
+              </Text>
             </View>
           </View>
+
+          {monthly && (
+            <MonthlyPassCard
+              pitchPrice={pitch?.paymentPerPersonMonthly}
+              passInfo={passInfo}
+              loading={loadingMyPass}
+              isDark={isDark}
+              onBuy={openBuyPass}
+            />
+          )}
 
           <DayStrip
             days={days}
@@ -151,8 +241,8 @@ export default function PitchBookings() {
               <PitchDayTimeline
                 locationId={params.pitchId}
                 date={day}
-                openingHour={params.pitchOpening}
-                closingHour={params.pitchClosing}
+                openingHour={opening}
+                closingHour={closing}
                 skipFetch
               />
             ) : (
@@ -165,25 +255,20 @@ export default function PitchBookings() {
               primary
               title="Create a session here"
               onPress={() =>
+                requireSignIn("create a session") &&
                 router.push({
                   pathname: "/screens/newsession",
                   params: {
                     pitchId: params.pitchId,
-                    pitchName: params.pitchName ?? "",
-                    pitchAddress: params.pitchAddress ?? "",
+                    pitchName: name,
+                    pitchAddress: address ?? "",
                     date: day,
-                    ...(params.pitchHourly
-                      ? { pitchHourly: params.pitchHourly }
+                    ...(hourly ? { pitchHourly: "1" } : {}),
+                    ...(pricePerHour
+                      ? { pitchPrice: String(pricePerHour) }
                       : {}),
-                    ...(params.pitchPrice
-                      ? { pitchPrice: params.pitchPrice }
-                      : {}),
-                    ...(params.pitchOpening
-                      ? { pitchOpening: params.pitchOpening }
-                      : {}),
-                    ...(params.pitchClosing
-                      ? { pitchClosing: params.pitchClosing }
-                      : {}),
+                    ...(opening ? { pitchOpening: opening } : {}),
+                    ...(closing ? { pitchClosing: closing } : {}),
                   },
                 })
               }

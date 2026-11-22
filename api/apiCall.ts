@@ -1,4 +1,8 @@
-import { ErrorResponse, RejectValue } from "@/components/typings/api";
+import {
+  ErrorDetails,
+  ErrorResponse,
+  RejectValue,
+} from "@/components/typings/api";
 import { AxiosResponse } from "axios";
 import * as SecureStore from "expo-secure-store";
 
@@ -9,6 +13,7 @@ interface ErrorPayload {
       message: string;
       token: string;
       user: null;
+      details?: ErrorDetails;
     };
     status: number;
   };
@@ -82,9 +87,17 @@ async function apiCall(
       responseData ||
       "An error occurred";
 
+    // Keep the server's `details` (e.g. details.code "PASS_REQUIRED") so
+    // screens can branch on the code instead of the message text.
+    const details =
+      responseData?.details && typeof responseData.details === "object"
+        ? responseData.details
+        : undefined;
+
     return thunkAPI.rejectWithValue({
       msg: errorMsg,
       status: error?.response?.status,
+      ...(details ? { details } : {}),
     } as ErrorResponse);
   }
 }

@@ -419,7 +419,7 @@ export default function ChooseReferee() {
                     ? "No one found."
                     : poolMode
                       ? "Every team has a player on the referee list."
-                      : "Everyone in this session is playing this set. Searching other i-One users is coming soon — use “On your phone” for now."}
+                      : "Everyone in this session is playing this set. Use “On your phone” to referee it yourself."}
                 </Text>
               ) : (
                 candidates.map((person) => {

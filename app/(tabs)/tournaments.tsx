@@ -40,7 +40,10 @@ export default function TournamentScreen({ title = "Tournaments" }) {
   const isDark = colorScheme === "dark";
 
   const dispatch = useAppDispatch();
-  const { user } = useAppSelector((state) => state.auth);
+  const { user, isAuthenticated } = useAppSelector((state) => state.auth);
+  // Guests browse tournaments at pitches around Home's location (or Lagos).
+  const isGuest = !isAuthenticated;
+  const guest = useAppSelector((state) => state.guest);
   const { pitches } = useAppSelector((state) => state.sessions);
   const {
     tournamentsByLocation,
@@ -53,12 +56,14 @@ export default function TournamentScreen({ title = "Tournaments" }) {
   const primaryText = isDark ? "#FFF" : "#111";
 
   useEffect(() => {
+    if (isGuest) {
+      dispatch(nearByLocation({ lat: guest.lat, lng: guest.lng }));
+      return;
+    }
     if (!user?.location?.coordinates) return;
 
-    const [lng, lat] = user.location.coordinates;
-
     dispatch(nearByLocation({ lat: 6.45306, lng: 3.42158 }));
-  }, [dispatch, user?.location?.coordinates]);
+  }, [dispatch, user?.location?.coordinates, isGuest, guest.lat, guest.lng]);
 
   useEffect(() => {
     if (!pitches?.length) return;
@@ -75,12 +80,15 @@ export default function TournamentScreen({ title = "Tournaments" }) {
   }, [dispatch, pitches]);
 
   const handleRefresh = useCallback(async () => {
-    if (!user?.location?.coordinates) return;
+    if (!isGuest && !user?.location?.coordinates) return;
     setRefreshing(true);
     try {
-      const [lng, lat] = user.location.coordinates;
       const result = await dispatch(
-        nearByLocation({ lat: 6.45306, lng: 3.42158 }),
+        nearByLocation(
+          isGuest
+            ? { lat: guest.lat, lng: guest.lng }
+            : { lat: 6.45306, lng: 3.42158 },
+        ),
       ).unwrap();
 
       const tournamentPitches = (result ?? []).filter(
@@ -97,7 +105,7 @@ export default function TournamentScreen({ title = "Tournaments" }) {
     } finally {
       setRefreshing(false);
     }
-  }, [dispatch, user]);
+  }, [dispatch, user, isGuest, guest.lat, guest.lng]);
 
   useEffect(() => {
     const today = new Date();

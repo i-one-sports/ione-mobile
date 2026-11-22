@@ -24,6 +24,8 @@ export type AsyncThunkConfig = {
 export interface RejectValue {
   msg: string;
   status: number;
+  /** The server's `details` block, e.g. `{ code: "PASS_REQUIRED", ... }`. */
+  details?: ErrorDetails;
 }
 
 export enum Status {
@@ -83,6 +85,13 @@ export interface ConfirmEmailOtpPayload {
 export interface ErrorResponse {
   msg: string;
   status: number;
+  /** The server's `details` block, e.g. `{ code: "PASS_REQUIRED", ... }`. */
+  details?: ErrorDetails;
+}
+
+export interface ErrorDetails {
+  code?: string;
+  [key: string]: unknown;
 }
 export interface sessionPayload {
   lat: number;

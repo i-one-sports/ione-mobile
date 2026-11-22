@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-/* eslint-disable import/extensions */
-/* eslint-disable import/order */
-/* eslint-disable react/no-array-index-key */
-/* eslint-disable no-nested-ternary */
-/* eslint-disable import/no-dynamic-require */
+ 
+ 
+ 
+ 
+ 
 import {
   Dimensions,
   View,
@@ -14,21 +14,21 @@ import {
   ScrollView,
   TouchableOpacity,
   Text,
-} from 'react-native';
-import React from 'react';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ThemedText } from '@/components/ThemedText';
-import CustomButton from '@/components/ui/CustomButton';
-import { useRouter } from 'expo-router';
-import SafeAreaScreen from '@/components/SafeAreaScreen';
-import { Colors } from '@/constants/Colors';
-import { Icon } from '@/components/ui/Icon';
+} from "react-native";
+import React from "react";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { ThemedText } from "@/components/ThemedText";
+import CustomButton from "@/components/ui/CustomButton";
+import { useRouter } from "expo-router";
+import SafeAreaScreen from "@/components/SafeAreaScreen";
+import { Colors } from "@/constants/Colors";
+import { Icon } from "@/components/ui/Icon";
 
-const { height, width } = Dimensions.get('screen');
+const { height, width } = Dimensions.get("screen");
 
 export default function SignUp() {
   const colorScheme = useColorScheme();
-  const theme = Colors[colorScheme ?? 'light'];
+  const theme = Colors[colorScheme ?? "light"];
   const { bottom } = useSafeAreaInsets();
   const router = useRouter();
 
@@ -48,7 +48,7 @@ export default function SignUp() {
           <Icon />
 
           <Image
-            source={require('@/assets/images/goal.png')}
+            source={require("@/assets/images/goal.png")}
             resizeMode="contain"
             className="w-[100%] mt-[3%]"
             style={{ height: height * 0.5 }}
@@ -59,8 +59,8 @@ export default function SignUp() {
             darkColor={theme.text}
             className="mt-[3%] text-center text-[17px] font-[300] px-[5%]"
           >
-            The easy way to organize teams, schedule games, track stats, 
-            and find local 5-a-side venues!
+            The easy way to organize teams, schedule games, track stats, and
+            find local 5-a-side venues!
           </ThemedText>
         </View>
 
@@ -69,14 +69,23 @@ export default function SignUp() {
           <CustomButton
             primary
             title="Create an Account"
-            onPress={() => router.push('/role')}
+            onPress={() => router.push("/role")}
           />
 
           <TouchableOpacity
-            onPress={() => router.push('/signin')}
+            onPress={() => router.push("/signin")}
             className="flex w-full items-center justify-center rounded-[6px] border border-[#0C4D2E] py-[18px]"
           >
             <Text className="text-primaryDark">Login</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={() => router.replace("/(tabs)")}
+            className="items-center py-[6px]"
+          >
+            <Text className="text-[#6C757D] underline">
+              Browse without an account
+            </Text>
           </TouchableOpacity>
         </View>
       </ScrollView>

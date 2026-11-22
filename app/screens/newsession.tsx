@@ -10,6 +10,7 @@ import {
   Modal,
   TouchableOpacity,
   ActivityIndicator,
+  Alert,
 } from "react-native";
 import { useFormik } from "formik";
 import * as Yup from "yup";
@@ -275,7 +276,40 @@ export default function NewSession() {
         params: { sessionId: response._id || startedSession.current! },
       });
     } catch (err: any) {
-      if (err?.status === 409 && pitchId) {
+      // Monthly pitch: the captain plays too, so they need a pass covering
+      // the start time (402 PASS_REQUIRED). The session stays started but not
+      // set up; after buying, "Create" again reuses the same session.
+      if (err?.details?.code === "PASS_REQUIRED" && pitchId) {
+        const pitchName = selectedPitch?.name ?? "This pitch";
+        // details.pass.price is null when the pitch isn't selling passes.
+        const onSale = Boolean(
+          (err.details.pass as { price?: unknown } | undefined)?.price,
+        );
+        Alert.alert(
+          "You need a monthly pass",
+          onSale
+            ? `${pitchName} is a monthly pitch, and you play in your own session. Buy a 30-day pass that covers this session, then create it again.`
+            : `${pitchName} is a monthly pitch, and you play in your own session, but passes aren't on sale here right now.`,
+          onSale
+            ? [
+                { text: "Not now", style: "cancel" },
+                {
+                  text: "Buy pass",
+                  onPress: () =>
+                    router.push({
+                      pathname: "/payment-screens/monthly-pass",
+                      params: {
+                        locationId: pitchId,
+                        locationName: selectedPitch?.name ?? "",
+                        // M04 checks a pass bought now would cover this.
+                        coverBy: startDate(slot.day, slot.start).toISOString(),
+                      },
+                    }),
+                },
+              ]
+            : [{ text: "OK" }],
+        );
+      } else if (err?.status === 409 && pitchId) {
         let fresh: SessionByDateResponse[] = sessionsOn(slot.day) ?? [];
         try {
           fresh = await dispatch(

@@ -32,12 +32,14 @@ export default function FixtureDetailsScreen() {
   const sessionId = (params.sessionId ?? params.id) as string | undefined;
 
   const { sets, loadingSets } = useAppSelector((state) => state.sessions);
+  // Team sets need an account (guests would get 401).
+  const isAuthenticated = useAppSelector((state) => state.auth.isAuthenticated);
 
   useEffect(() => {
-    if (sessionId) {
+    if (sessionId && isAuthenticated) {
       dispatch(getSessionSets({ sessionId }));
     }
-  }, [sessionId, dispatch]);
+  }, [sessionId, dispatch, isAuthenticated]);
 
   console.log(params, "fixtures params");
   console.log(sets, "fixture details");

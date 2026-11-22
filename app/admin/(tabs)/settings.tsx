@@ -26,6 +26,9 @@ import { getLocation, updatePitchPhoto } from "@/api/ownerDashboardThunk";
 import { buildProfileUpdatePayload } from "@/utils/profileUpdate";
 import CustomButton from "@/components/ui/CustomButton";
 import NotificationIcon from "@/assets/svg/NotificationIcon";
+import { openWebPage, PRIVACY_URL, TERMS_URL } from "@/constants/legal";
+import { confirmDeleteAccount } from "@/utils/deleteAccountFlow";
+import Loader from "@/components/loader";
 
 export default function AdminSettingsScreen() {
   const { colorScheme } = useColorScheme();
@@ -39,6 +42,7 @@ export default function AdminSettingsScreen() {
 
   const [isEditing, setIsEditing] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [uploadingPitchPhoto, setUploadingPitchPhoto] = useState(false);
   const [avatarUri, setAvatarUri] = useState<string | null>(
@@ -292,23 +296,14 @@ export default function AdminSettingsScreen() {
     );
   };
 
-  const handleDeleteAccount = () => {
-    Alert.alert(
-      "Delete Account",
-      "This is permanent and cannot be undone. Are you sure?",
-      [
-        { text: "Cancel", style: "cancel" },
-        { text: "Delete", style: "destructive", onPress: () => {} },
-      ],
-      { cancelable: false },
-    );
-  };
+  const handleDeleteAccount = () => confirmDeleteAccount(dispatch, setDeleting);
 
   const paddingTop = Platform.OS === "ios" ? insets.top + 12 : 52;
   const paddingBottom = insets.bottom + 100;
 
   return (
     <View style={{ flex: 1, backgroundColor: isDark ? "#000" : "#f5f5f5" }}>
+      <Loader visible={deleting} />
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{
@@ -469,6 +464,21 @@ export default function AdminSettingsScreen() {
             iconColor="#2196F3"
             label="Change Password"
             onPress={() => router.push("/admin/changepassword")}
+          />
+        </SettingsSection>
+
+        <SettingsSection title="Legal">
+          <SettingsRow
+            icon="description"
+            iconColor="#607D8B"
+            label="Terms and Conditions"
+            onPress={() => openWebPage(TERMS_URL)}
+          />
+          <SettingsRow
+            icon="privacy-tip"
+            iconColor="#607D8B"
+            label="Privacy Policy"
+            onPress={() => openWebPage(PRIVACY_URL)}
           />
         </SettingsSection>
 

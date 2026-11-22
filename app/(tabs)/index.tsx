@@ -26,12 +26,18 @@ import {
   useColorScheme,
 } from "react-native";
 import ActionBanner from "@/components/ActionBanner";
+import { locateGuest } from "@/api/guestThunks";
+import { useRequireSignIn } from "@/components/guest/SignInPrompt";
 
 export default function HomeScreen() {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
   const router = useRouter();
-  const { user } = useAppSelector((state) => state.auth);
+  const { user, isAuthenticated } = useAppSelector((state) => state.auth);
+  // Signed out: browse read-only around the phone's location (or Lagos).
+  const isGuest = !isAuthenticated;
+  const guest = useAppSelector((state) => state.guest);
+  const requireSignIn = useRequireSignIn();
   const {
     pitches,
     loadingPitches,
@@ -49,6 +55,7 @@ export default function HomeScreen() {
   // backing out leaves no empty session behind, and the form knows the pitch
   // to show its bookings.
   const handleStartSession = (pitch: PitchData) => {
+    if (!requireSignIn("create a session")) return;
     router.push({
       pathname: "/screens/newsession",
       params: {
@@ -83,6 +90,7 @@ export default function HomeScreen() {
   };
 
   const handleCreateTournaments = (locationId: string) => {
+    if (!requireSignIn("create a tournament")) return;
     router.push({
       pathname: "/screens/tournamentform",
       params: {
@@ -117,8 +125,21 @@ export default function HomeScreen() {
     searchQuery.trim().length > 0 &&
     (loadingRegisteredLocations || searchResults.length > 0);
 
+  // Guests: ask for the phone's location once, when Home (nearby pitches)
+  // opens. Refusing falls back to Lagos, not an error.
   useEffect(() => {
-    if (!user?.location?.coordinates) return;
+    if (isGuest && guest.source == null && !guest.locating)
+      dispatch(locateGuest());
+  }, [dispatch, isGuest, guest.source, guest.locating]);
+
+  useEffect(() => {
+    if (!isGuest || guest.source == null) return;
+    dispatch(nearBy({ lat: guest.lat, lng: guest.lng }));
+    dispatch(nearByLocation({ lat: guest.lat, lng: guest.lng }));
+  }, [dispatch, isGuest, guest.source, guest.lat, guest.lng]);
+
+  useEffect(() => {
+    if (isGuest || !user?.location?.coordinates) return;
     const [lat, lng] = user.location.coordinates;
     dispatch(nearBy({ lat, lng }));
     // dispatch(
@@ -129,12 +150,12 @@ export default function HomeScreen() {
     // );
     dispatch(nearByLocation({ lat, lng }));
     // dispatch(nearByLocation({ lat: 6.45306, lng: 3.42158 }));
-  }, [dispatch, user]);
+  }, [dispatch, user, isGuest]);
 
   // lng=6.41222&lat=4.094
   //   console.log("[HomeScreen] pitches:", pitches);
 
-  const showEmailVerificationBanner = !user?.emailVerified;
+  const showEmailVerificationBanner = !isGuest && !user?.emailVerified;
 
   const formattedPitches =
     pitches?.map((p: any) => ({
@@ -173,69 +194,93 @@ export default function HomeScreen() {
               darkColor="#aaa"
               style={{ fontSize: 13 }}
             >
-              Hey, {user?.firstName} 👋
+              {isGuest ? "Welcome 👋" : `Hey, ${user?.firstName ?? ""} 👋`}
             </ThemedText>
             <ThemedText style={{ fontSize: 22, fontWeight: "700" }}>
               {"It's Matchday!"}
             </ThemedText>
           </View>
 
-          <TouchableOpacity
-            style={{
-              width: 42,
-              height: 42,
-              borderRadius: 21,
-              backgroundColor: notifBg,
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <NotificationIcon color={isDark ? "#FFFFFF" : "#2D264B"} />
-          </TouchableOpacity>
-        </View>
-
-        {/* Search bar */}
-        <View
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            backgroundColor: searchBg,
-            borderRadius: 10,
-            paddingHorizontal: 14,
-            paddingVertical: 12,
-            borderWidth: 1,
-            borderColor: searchBorder,
-          }}
-        >
-          <MaterialIcons
-            name="search"
-            size={18}
-            color={isDark ? "#555" : "#999"}
-          />
-          <TextInput
-            placeholder="Search for pitches, sessions..."
-            placeholderTextColor={isDark ? "#555" : "#9CA3AF"}
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            style={{
-              flex: 1,
-              marginLeft: 8,
-              fontSize: 13,
-              color: isDark ? "#fff" : "#111",
-            }}
-          />
-          {searchQuery.length > 0 ? (
-            <TouchableOpacity onPress={() => setSearchQuery("")}>
-              <MaterialIcons
-                name="close"
-                size={18}
-                color={isDark ? "#555" : "#999"}
-              />
+          {isGuest ? (
+            <TouchableOpacity
+              onPress={() => router.push("/(onboarding)/signin")}
+              accessibilityRole="button"
+              style={{
+                paddingHorizontal: 14,
+                paddingVertical: 9,
+                borderRadius: 20,
+                borderWidth: 1.5,
+                borderColor: accent,
+              }}
+            >
+              <ThemedText
+                lightColor={accent}
+                darkColor={accent}
+                style={{ fontSize: 13, fontWeight: "700" }}
+              >
+                Sign in
+              </ThemedText>
             </TouchableOpacity>
           ) : (
-            <FilterSvg />
+            <TouchableOpacity
+              style={{
+                width: 42,
+                height: 42,
+                borderRadius: 21,
+                backgroundColor: notifBg,
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <NotificationIcon color={isDark ? "#FFFFFF" : "#2D264B"} />
+            </TouchableOpacity>
           )}
         </View>
+
+        {/* Search bar (pitch search needs an account) */}
+        {!isGuest && (
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              backgroundColor: searchBg,
+              borderRadius: 10,
+              paddingHorizontal: 14,
+              paddingVertical: 12,
+              borderWidth: 1,
+              borderColor: searchBorder,
+            }}
+          >
+            <MaterialIcons
+              name="search"
+              size={18}
+              color={isDark ? "#555" : "#999"}
+            />
+            <TextInput
+              placeholder="Search for pitches, sessions..."
+              placeholderTextColor={isDark ? "#555" : "#9CA3AF"}
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              style={{
+                flex: 1,
+                marginLeft: 8,
+                fontSize: 13,
+                color: isDark ? "#fff" : "#111",
+              }}
+            />
+            {searchQuery.length > 0 ? (
+              <TouchableOpacity onPress={() => setSearchQuery("")}>
+                <MaterialIcons
+                  name="close"
+                  size={18}
+                  color={isDark ? "#555" : "#999"}
+                />
+              </TouchableOpacity>
+            ) : (
+              <FilterSvg />
+            )}
+          </View>
+        )}
 
         {showSearchResults && (
           <View
@@ -337,7 +382,10 @@ export default function HomeScreen() {
               Nearby Pitches
             </ThemedText>
             <TouchableOpacity
-              onPress={() => router.push("/screens/newsession")}
+              onPress={() =>
+                requireSignIn("create a session") &&
+                router.push("/screens/newsession")
+              }
             >
               <ThemedText
                 lightColor={accent}
@@ -349,7 +397,38 @@ export default function HomeScreen() {
             </TouchableOpacity>
           </View>
 
-          {loadingPitches ? (
+          {isGuest && guest.source === "default" && (
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "space-between",
+                gap: 8,
+              }}
+            >
+              <ThemedText
+                lightColor="#666"
+                darkColor="#aaa"
+                style={{ fontSize: 12, flex: 1 }}
+              >
+                Showing pitches around Lagos.
+              </ThemedText>
+              <TouchableOpacity
+                onPress={() => dispatch(locateGuest())}
+                hitSlop={8}
+              >
+                <ThemedText
+                  lightColor={accent}
+                  darkColor={accent}
+                  style={{ fontSize: 12, fontWeight: "600" }}
+                >
+                  Use my location
+                </ThemedText>
+              </TouchableOpacity>
+            </View>
+          )}
+
+          {loadingPitches || (isGuest && guest.locating) ? (
             <ShimmerCarousel />
           ) : formattedPitches.length === 0 ? (
             <View
