@@ -34,3 +34,26 @@ export function consumePendingSession(): string | null {
 export function getPendingSession(): string | null {
   return _pendingSessionId;
 }
+
+// ── Return after sign-in ──────────────────────────────────────────────────
+// A guest who taps join/book/pay is sent to sign in; once they have, the
+// auth effect in _layout.tsx brings them back to the screen they were on.
+
+export interface ReturnRoute {
+  pathname: string;
+  params?: Record<string, string>;
+}
+
+let _returnRoute: ReturnRoute | null = null;
+
+/** Remember where to come back to after signing in. */
+export function setReturnRoute(route: ReturnRoute | null): void {
+  _returnRoute = route;
+}
+
+/** Read and clear the return route. */
+export function consumeReturnRoute(): ReturnRoute | null {
+  const route = _returnRoute;
+  _returnRoute = null;
+  return route;
+}

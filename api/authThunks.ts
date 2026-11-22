@@ -287,6 +287,45 @@ export const logOut = createAsyncThunk<logoutResponse, void, AsyncThunkConfig>(
   },
 );
 
+// DELETE /user/account — permanently deletes the signed-in player or pitch
+// owner. The server refuses (400) while they're in an active session or
+// tournament (and, for owners, anything else BE-AR-01/02 adds); its message
+// says what to do, so callers show err.msg.
+//
+// On success this does the same clean-up as logOut and then dispatches
+// logOut.fulfilled, so every slice resets exactly as it does on logout
+// (calling the logout endpoint itself would fail: the account is gone).
+export const deleteAccount = createAsyncThunk<
+  { message: string },
+  void,
+  AsyncThunkConfig
+>("/users/deleteAccount", async (_, thunkAPI) => {
+  const result = await apiCall(
+    axiosInstance.delete("/i-one/user/account"),
+    thunkAPI,
+  );
+  // apiCall returns rejectWithValue(...) on failure instead of throwing:
+  // keep the user signed in and let the caller show the server's reason.
+  const failed =
+    !!result &&
+    typeof result === "object" &&
+    "payload" in result &&
+    "meta" in result;
+  if (failed) return result;
+  await deletePushToken();
+  await Promise.all([
+    SecureStore.deleteItemAsync("i-one"),
+    SecureStore.deleteItemAsync("user-data"),
+  ]).catch(() => {});
+  thunkAPI.dispatch(
+    logOut.fulfilled(
+      { success: true, message: "Account deleted" },
+      thunkAPI.requestId,
+    ),
+  );
+  return result;
+});
+
 // PATCH /user/device-token — idempotent, overwrites the stored FCM token
 export const registerDeviceToken = createAsyncThunk<
   { message: string },

@@ -10,6 +10,7 @@ import {
   getSession,
   getSessionSets,
   getSessionsByLocation,
+  getPitchDetails,
   joinSession,
   leaveSession,
   nearBy,
@@ -18,6 +19,7 @@ import {
   searchRegisteredLocation,
 } from "@/api/sessions";
 import {
+  LocationResponse,
   SessionByDateResponse,
   SessionByIdResponse,
   SessionSet,
@@ -124,6 +126,9 @@ interface State {
   locationSessionsByDay: Record<string, SessionByDateResponse[]>;
   loadingLocationDays: Record<string, boolean>;
 
+  // One pitch's details by id (GET /location/:id; guest view when signed out)
+  pitchDetails: Record<string, LocationResponse>;
+
   // Sets state
   sets: SessionSet[];
   loadingSets: boolean;
@@ -168,6 +173,7 @@ const initialState: State = {
 
   locationSessionsByDay: {},
   loadingLocationDays: {},
+  pitchDetails: {},
 
   sets: [],
   loadingSets: false,
@@ -325,6 +331,10 @@ export const sessionSlice = createSlice({
         const key = locationDayKey(meta.arg.locationId, meta.arg.date);
         state.loadingLocationDays[key] = false;
       });
+
+    builder.addCase(getPitchDetails.fulfilled, (state, { payload, meta }) => {
+      if (payload) state.pitchDetails[meta.arg] = payload;
+    });
 
     // Join session — response has { message, session }; re-use activeSession
     builder

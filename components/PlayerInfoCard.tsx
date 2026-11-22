@@ -8,6 +8,7 @@ type PaymentStatus =
   | "REFUNDED"
   | "REFUND_PENDING"
   | "COVERED"
+  | "PASS"
   | "NOT_REQUIRED";
 
 const STATUS_COLOR: Record<PaymentStatus, string> = {
@@ -17,6 +18,8 @@ const STATUS_COLOR: Record<PaymentStatus, string> = {
   REFUNDED: "#888",
   REFUND_PENDING: "#8888FF",
   COVERED: "#00C8A0",
+  // Joined with a monthly pass (monthly-pitch session).
+  PASS: "#0E9F5A",
   NOT_REQUIRED: "#888",
 };
 
@@ -27,6 +30,7 @@ const STATUS_LABEL: Record<PaymentStatus, string> = {
   REFUNDED: "Refunded",
   REFUND_PENDING: "Refunding",
   COVERED: "Covered",
+  PASS: "Pass",
   NOT_REQUIRED: "Free",
 };
 

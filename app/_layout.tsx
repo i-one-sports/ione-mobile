@@ -11,7 +11,9 @@ import { setupAxiosInterceptors } from "@/utils/SetUpAxiosInterceptors";
 import {
   setPendingSession,
   consumePendingSession,
+  consumeReturnRoute,
 } from "@/utils/pendingDeepLink";
+import { SignInPromptProvider } from "@/components/guest/SignInPrompt";
 import {
   extractNotificationTarget,
   extractSessionIdFromMessage,
@@ -105,17 +107,15 @@ function AppNavigator() {
     openSession(sessionId);
   };
 
-  /** Navigate to a session now, or hold it until the user is signed in. */
+  /**
+   * Open a session now, or hold it until the navigator is ready. Guests
+   * get the read-only session view; joining asks them to sign in.
+   */
   const openSession = (sessionId: string) => {
-    const currentlyAuthenticated = store.getState().auth.isAuthenticated;
-
-    if (navigatorReady.current && currentlyAuthenticated) {
+    if (navigatorReady.current) {
       router.push({ pathname: "/joinsession", params: { sessionId } });
     } else {
       setPendingSession(sessionId);
-      if (navigatorReady.current && !currentlyAuthenticated) {
-        router.replace("/(onboarding)/signin");
-      }
     }
   };
 
@@ -221,10 +221,34 @@ function AppNavigator() {
   // Auth-driven navigation — the single source of truth for routing.
   // Deferred via setTimeout(0) so the Stack is fully mounted before
   // any router.replace() fires.
+  const firstAuthCheck = useRef(true);
   useEffect(() => {
+    const isFirstCheck = firstAuthCheck.current;
+    firstAuthCheck.current = false;
+
     const navigate = () => {
       if (!isAuthenticated) {
-        router.replace(isRegistered ? "/(onboarding)/signin" : "/(onboarding)");
+        // Signed out at launch: show onboarding (or sign-in for returning
+        // users). Both have "Browse without an account", which is what
+        // App Store 5.1.1(v) needs. A shared session link opens straight
+        // to that session as a guest instead. Later sign-outs navigate
+        // themselves (logout → sign-in, account deleted → onboarding).
+        if (isFirstCheck) {
+          const pending = consumePendingSession();
+          if (pending) {
+            router.replace("/(tabs)");
+            setTimeout(() => {
+              router.push({
+                pathname: "/joinsession",
+                params: { sessionId: pending },
+              });
+            }, 300);
+          } else {
+            router.replace(
+              isRegistered ? "/(onboarding)/signin" : "/(onboarding)",
+            );
+          }
+        }
         hideSplash();
         navigatorReady.current = true;
         return;
@@ -256,13 +280,26 @@ function AppNavigator() {
         })
         .catch((err) => console.log("FCM token registration failed", err));
 
-      // Consume any pending deep-link session stored before login.
+      // Consume any pending deep-link session stored before login, or go
+      // back to the screen a guest was on when asked to sign in.
       const pending = consumePendingSession();
+      const returnTo = consumeReturnRoute();
       if (pending) {
         setTimeout(() => {
           router.push({
             pathname: "/joinsession",
             params: { sessionId: pending },
+          });
+        }, 300);
+      } else if (
+        returnTo &&
+        storedRole === Role.USER &&
+        returnTo.pathname !== "/"
+      ) {
+        setTimeout(() => {
+          router.navigate({
+            pathname: returnTo.pathname as any,
+            params: returnTo.params,
           });
         }, 300);
       }
@@ -326,7 +363,9 @@ export default function RootLayout() {
             <ThemeProvider
               value={colorScheme === "dark" ? DarkTheme : DefaultTheme}
             >
-              <AppNavigator />
+              <SignInPromptProvider>
+                <AppNavigator />
+              </SignInPromptProvider>
               <StatusBar style="auto" />
               <Toast
                 config={toastConfig}

@@ -187,7 +187,7 @@ export default function SignIn() {
                       darkColor="#9BA1A6"
                       style={{ fontSize: 14 }}
                     >
-                      &apos;Don&apos;t have an account?{" "}
+                      Don&apos;t have an account?{" "}
                     </ThemedText>
                     <ThemedText
                       lightColor="#46BB1C"
@@ -197,6 +197,19 @@ export default function SignIn() {
                       Sign Up
                     </ThemedText>
                   </View>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => router.replace("/(tabs)")}
+                  hitSlop={8}
+                  style={{ marginTop: 18 }}
+                >
+                  <ThemedText
+                    lightColor="#6C757D"
+                    darkColor="#9BA1A6"
+                    style={{ fontSize: 14, textDecorationLine: "underline" }}
+                  >
+                    Browse without an account
+                  </ThemedText>
                 </TouchableOpacity>
               </View>
             </ScrollView>

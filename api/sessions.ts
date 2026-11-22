@@ -13,6 +13,7 @@ import {
   SessionByIdResponse,
   SessionSet,
   RegisteredLocationResponse,
+  LocationResponse,
 } from "@/components/typings/apiResponse";
 import axiosInstance from "./axios";
 
@@ -83,6 +84,16 @@ export const getSessionMembers = createAsyncThunk<
   AsyncThunkConfig
 >("sessions/members", async (sessionId, thunkAPI) =>
   apiCall(axiosInstance.get(`/i-one/sessions/members/${sessionId}`), thunkAPI),
+);
+
+// GET /location/:locationId — one pitch (photo, address, hours, prices in
+// kobo). Open to guests, who get the smaller guest pitch view.
+export const getPitchDetails = createAsyncThunk<
+  LocationResponse,
+  string,
+  AsyncThunkConfig
+>("location/details", async (locationId, thunkAPI) =>
+  apiCall(axiosInstance.get(`/i-one/location/${locationId}`), thunkAPI),
 );
 
 // GET /sessions/by-location/:locationId?date=YYYY-MM-DD

@@ -417,6 +417,102 @@ export type PricingOptionPayload =
 export interface UpdatePricingOptionsResponse {
   message: string;
   location: LocationResponse;
+  passSessionsChanged?: number;
+}
+
+export type MonthlyPassState =
+  | "PENDING"
+  | "QUEUED"
+  | "ACTIVE"
+  | "EXPIRED"
+  | "REFUND_PENDING"
+  | "REFUNDED"
+  | "REFUND_FAILED"
+  | "CANCELLED";
+
+/** Monthly pass object. Money fields are kobo. */
+export interface MonthlyPass {
+  _id: string;
+  locationId: string;
+  pitch: {
+    _id: string;
+    name: string;
+    address: string;
+    pitchPhoto: string | null;
+  } | null;
+  state: MonthlyPassState;
+  startsAt: string;
+  endsAt: string;
+  daysLeft: number | null;
+  amount: number;
+  baseAmount: number;
+  commissionAmount: number;
+  processingFee: number;
+  paidAt: string | null;
+}
+
+export interface OwnerMonthlyPass extends MonthlyPass {
+  player: {
+    _id: string;
+    firstName: string;
+    lastName: string;
+    nickname: string;
+    avatar: string | null;
+    position: string;
+  };
+}
+
+/** GET /location/:locationId/monthly-passes (owner). `revenue` is all-time, kobo. */
+export interface OwnerMonthlyPassesResponse {
+  locationId: string;
+  activeCount: number;
+  queuedCount: number;
+  revenue: number;
+  salesPaused: boolean;
+  passes: OwnerMonthlyPass[];
+}
+
+/** Pass price breakdown, kobo. `amount` is what the player pays. */
+export interface MonthlyPassPrice {
+  baseAmount: number;
+  commissionPercentage: number;
+  commissionAmount: number;
+  processingFee: number;
+  amount: number;
+}
+
+/** GET /location/:locationId/monthly-pass/me */
+export interface MyMonthlyPassResponse {
+  locationId: string;
+  isMonthlyPitch: boolean;
+  salesPaused: boolean;
+  /** null when the pitch isn't selling passes (not monthly, or paused). */
+  price: MonthlyPassPrice | null;
+  current: MonthlyPass | null;
+  queued: MonthlyPass[];
+}
+
+/** POST /location/:locationId/monthly-pass/checkout */
+export type MonthlyPassCheckoutResponse =
+  | {
+      alreadyPaid?: false;
+      passId: string;
+      authorizationUrl: string;
+      accessCode: string;
+      reference: string;
+      amount: number;
+      baseAmount: number;
+      commissionAmount: number;
+      processingFee: number;
+      expiresAt: string;
+    }
+  | { alreadyPaid: true; status: "confirmed"; pass: MonthlyPass };
+
+export interface UpdateMonthlyPassSalesResponse {
+  message: string;
+  monthlyPassSalesPaused: boolean;
+  activePasses: number;
+  lastPassEndsAt: string | null;
 }
 
 export interface SessionByDatePayload {
@@ -489,6 +585,9 @@ export interface SessionByIdResponse {
     nickname?: string;
   };
   location?: { _id: string; name: string; address: string };
+  /** Monthly pitch: no bill; members need a monthly pass covering startTime. */
+  requiresPass?: boolean;
+  passHolders?: { userId: string; passId: string }[];
   startTime?: string;
   stopTime?: string;
   matchType?: string;

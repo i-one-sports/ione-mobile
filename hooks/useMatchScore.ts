@@ -136,6 +136,17 @@ const useMatchScore = (options: UseMatchScoreOptions) => {
     });
 
     eventSource.addEventListener("error", (error) => {
+      // Guests share a server-wide viewer cap: 429 means it's full. Stop
+      // retrying and say so (signing in gets a regular connection).
+      if ((error as any)?.xhrStatus === 429) {
+        eventSource.close();
+        setScoreData((prev) => ({
+          ...prev,
+          connected: false,
+          error: "Too many viewers right now — sign in or try again shortly",
+        }));
+        return;
+      }
       const errorData = (error as any)?.data ?? "";
       const isFatal =
         typeof errorData === "string" &&

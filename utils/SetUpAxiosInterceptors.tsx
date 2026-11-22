@@ -2,6 +2,7 @@ import axiosInstance, { uploadAxios } from "@/api/axios";
 import { logOut } from "@/api/authThunks";
 import store from "@/redux/store";
 import * as SecureStore from "expo-secure-store";
+import { router } from "expo-router";
 
 export const setupAxiosInterceptors = () => {
   // The native cookie jar drops session cookies when the app is killed, so
@@ -31,7 +32,10 @@ export const setupAxiosInterceptors = () => {
         // Only force logout if the user is currently authenticated
         // to avoid dispatching logOut() multiple times or after already logged out
         if (isAuthenticated) {
+          // The login expired: sign out and ask to sign in again. (Guests
+          // never get here — they aren't authenticated.)
           store.dispatch(logOut());
+          router.replace("/(onboarding)/signin");
         }
       }
       // 403 = authenticated but forbidden (e.g. unverified account) — do NOT logout

@@ -20,6 +20,7 @@ import { getSessionVote } from "@/api/votesThunk";
 import { clearVoteState } from "@/redux/reducers/votes";
 import { formatShort } from "@/utils/vote";
 import { useAppDispatch, useAppSelector } from "@/redux/store";
+import { useRequireSignIn } from "@/components/guest/SignInPrompt";
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
 import React, { useCallback, useEffect, useState } from "react";
 import {
@@ -40,6 +41,8 @@ import { Ionicons } from "@expo/vector-icons";
 import { Toast } from "toastify-react-native";
 import PlayerInfoCard from "@/components/PlayerInfoCard";
 import PoolSummaryCard from "@/components/payment/PoolSummaryCard";
+import PassRequiredPanel from "@/components/sessions/PassRequiredPanel";
+import { getMyMonthlyPass } from "@/api/monthlyPassThunks";
 import { openPlayerStats } from "@/utils/openPlayerStats";
 import { formatTime } from "@/utils/formatTime";
 import { Role } from "@/components/typings/apiResponse";
@@ -158,7 +161,11 @@ export default function JoinSession() {
   const staticSession = params.session ? JSON.parse(params.session) : null;
   const sessionId: string = params.sessionId ?? staticSession?._id ?? "";
 
-  const { user } = useAppSelector((state) => state.auth);
+  const { user, isAuthenticated } = useAppSelector((state) => state.auth);
+  // Guests see the read-only session: counts, not people (the server sends
+  // no member list to guests). Joining asks them to sign in.
+  const isGuest = !isAuthenticated;
+  const requireSignIn = useRequireSignIn();
   const {
     activeSession,
     loadingActiveSession,
@@ -216,7 +223,8 @@ export default function JoinSession() {
   const session = activeSession ?? staticSession;
   const members = activeSession?.members ?? staticSession?.members ?? [];
 
-  const isMember = members.some((m: any) => m._id === user?._id);
+  const isMember = !isGuest && members.some((m: any) => m._id === user?._id);
+  const joinedCount: number = members.length || session?.memberCount || 0;
   const myMemberData = members.find((m: any) => m._id === user?._id);
   const paymentRequired = activeSession?.paymentRequired ?? false;
   const isPool = activeSession?.paymentMode === "POOL";
@@ -247,13 +255,16 @@ export default function JoinSession() {
       : (member?.paymentStatus ?? null);
   const myPaymentStatus = paymentOf(myMemberData);
 
+  // Monthly-pitch session: no bill; every member joined with a monthly pass
+  // (recorded in passHolders), so each one shows a "Pass" badge.
+  const requiresPass = Boolean(activeSession?.requiresPass);
+
   // Per docs: payment records are ONLY initialized when the session fills up.
   // Only show Pay button when the backend has created a record (PENDING or FAILED).
   // null = no record yet (session not full), PAID = done, NOT_REQUIRED = free.
   // POOL: anyone can chip in (or top up) while the pot is open and not full.
-  // PER_PERSON session the server marks fully paid: everyone is settled, e.g.
-  // monthly pricing skips members who paid at this pitch in the last 30 days.
-  // Members can still show PENDING then, so trust the session, not the badge.
+  // PER_PERSON (sessions from before pooling) the server marks fully paid:
+  // everyone is settled, so trust the session over a member's PENDING badge.
   // With the live stream, COVERED is exact per member; without it, fall back
   // to the session being marked fully paid.
   const sessionCovered =
@@ -308,6 +319,37 @@ export default function JoinSession() {
     }, [dispatch, sessionId, isOverMember]),
   );
 
+  // Monthly pitch, no pass covering this game: the join came back 402
+  // PASS_REQUIRED, so offer "Buy pass & join" (M06).
+  const [needsPass, setNeedsPass] = useState(false);
+  const locationId = session?.location?._id;
+  const { myPass, loadingMyPass } = useAppSelector((s) => s.monthlyPass);
+  const passInfo = myPass?.locationId === locationId ? myPass : null;
+
+  // Back from buying a pass: the server adds the player once the payment is
+  // confirmed, so reload the session to pick that up.
+  useFocusEffect(
+    useCallback(() => {
+      if (sessionId && needsPass) dispatch(getSession(sessionId));
+    }, [dispatch, sessionId, needsPass]),
+  );
+
+  useEffect(() => {
+    if (isMember) setNeedsPass(false);
+  }, [isMember]);
+
+  const handleBuyPassAndJoin = () => {
+    if (!locationId) return;
+    router.push({
+      pathname: "/payment-screens/monthly-pass",
+      params: {
+        locationId,
+        locationName: session?.location?.name ?? "",
+        holdSessionId: sessionId,
+      },
+    });
+  };
+
   // Ignore vote data left over from another session.
   const vote = sessionVote?.sessionId === sessionId ? sessionVote : null;
 
@@ -359,6 +401,7 @@ export default function JoinSession() {
 
   const handleJoinSession = () => {
     if (!sessionId) return;
+    if (!requireSignIn("join this session")) return;
     dispatch(joinSession({ sessionId }))
       .unwrap()
       .then(() => {
@@ -371,6 +414,12 @@ export default function JoinSession() {
         }
       })
       .catch((err) => {
+        // Monthly pitch and no pass covering this game.
+        if (err?.details?.code === "PASS_REQUIRED") {
+          setNeedsPass(true);
+          if (locationId) dispatch(getMyMonthlyPass({ locationId }));
+          return;
+        }
         Toast.show({ type: "error", text1: "Error", text2: err?.msg });
       });
   };
@@ -582,7 +631,7 @@ export default function JoinSession() {
                 </View>
 
                 <Text className="text-[11px] text-[#6D717F]">
-                  {members.length} / {session?.maxNumber || 0} players joined
+                  {joinedCount} / {session?.maxNumber || 0} players joined
                 </Text>
 
                 {sessionScore.error && (
@@ -662,6 +711,18 @@ export default function JoinSession() {
                 </View>
               )}
 
+              {needsPass && !isMember && (
+                <PassRequiredPanel
+                  locationName={session?.location?.name}
+                  startTime={session?.startTime}
+                  passInfo={passInfo}
+                  loading={loadingMyPass}
+                  isDark={isDark}
+                  onBuy={handleBuyPassAndJoin}
+                  onNotNow={() => setNeedsPass(false)}
+                />
+              )}
+
               {/* Action buttons — derived purely from server data */}
               <View className="mx-auto mt-[40px]">
                 {loadingActiveSession &&
@@ -672,9 +733,18 @@ export default function JoinSession() {
                     </Text>
                   </View>
                 ) : session?.inProgress && !isMember ? (
-                  <View className="flex w-[150px] items-center justify-center rounded-[10px] bg-yellow-400 h-[42px]">
-                    <Text className="text-[13px] font-[600]">In Progress</Text>
-                  </View>
+                  // Anyone can watch the score of a session being played.
+                  <TouchableOpacity
+                    className="flex w-[170px] items-center justify-center rounded-[10px] bg-primary h-14"
+                    onPress={() =>
+                      router.push({
+                        pathname: "/match/live",
+                        params: { sessionId, session: JSON.stringify(session) },
+                      })
+                    }
+                  >
+                    <Text className="text-[13px] font-[600]">Watch live</Text>
+                  </TouchableOpacity>
                 ) : session?.finished && !isMember ? (
                   <View className="flex w-[150px] items-center justify-center rounded-[10px] bg-gray-600 h-[42px]">
                     <Text className="text-[13px] font-[600] text-white">
@@ -683,6 +753,28 @@ export default function JoinSession() {
                   </View>
                 ) : isMember ? (
                   <View className="flex flex-col items-center gap-[12px]">
+                    {requiresPass && (
+                      <View
+                        style={{
+                          flexDirection: "row",
+                          alignItems: "center",
+                          gap: 4,
+                        }}
+                      >
+                        <View
+                          style={{
+                            width: 6,
+                            height: 6,
+                            borderRadius: 3,
+                            backgroundColor: "#00FF94",
+                          }}
+                        />
+                        <Text style={{ fontSize: 13, color: "#00FF94" }}>
+                          Monthly pass
+                        </Text>
+                      </View>
+                    )}
+
                     {/* Payment status badge */}
                     {/* In a pool, PENDING only means "hasn't contributed" — not a debt */}
                     {paymentRequired &&
@@ -931,7 +1023,7 @@ export default function JoinSession() {
                         </TouchableOpacity>
                       )}
                   </View>
-                ) : (
+                ) : needsPass ? null : (
                   <TouchableOpacity
                     className="flex w-[150px] items-center justify-center rounded-[10px] bg-primary h-14"
                     onPress={handleJoinSession}
@@ -1095,6 +1187,19 @@ export default function JoinSession() {
             <View style={{ alignItems: "center", paddingVertical: 20 }}>
               <ActivityIndicator color="#00FF94" />
             </View>
+          ) : isGuest ? (
+            <View style={{ alignItems: "center", paddingVertical: 40, gap: 6 }}>
+              <Text style={{ color: "#9BA1A6", fontSize: 14 }}>
+                {joinedCount}{" "}
+                {joinedCount === 1 ? "player has" : "players have"} joined
+                {session?.spotsLeft != null
+                  ? ` · ${session.spotsLeft} spot${session.spotsLeft === 1 ? "" : "s"} left`
+                  : ""}
+              </Text>
+              <Text style={{ color: "#9BA1A6", fontSize: 12 }}>
+                Sign in to see who&apos;s playing.
+              </Text>
+            </View>
           ) : members.length > 0 ? (
             members.map((member: any, index: number) => (
               <PlayerInfoCard
@@ -1104,12 +1209,15 @@ export default function JoinSession() {
                   member.nickname || member.firstName || `Player ${index + 1}`
                 }
                 paymentStatus={
-                  // Pool: only show who has contributed; PENDING isn't a debt
-                  paymentRequired && (!isPool || paymentOf(member) === "PAID")
-                    ? !live && sessionCovered
-                      ? "PAID"
-                      : (paymentOf(member) ?? undefined)
-                    : undefined
+                  requiresPass
+                    ? "PASS"
+                    : // Pool: only show who has contributed; PENDING isn't a debt
+                      paymentRequired &&
+                        (!isPool || paymentOf(member) === "PAID")
+                      ? !live && sessionCovered
+                        ? "PAID"
+                        : (paymentOf(member) ?? undefined)
+                      : undefined
                 }
               />
             ))

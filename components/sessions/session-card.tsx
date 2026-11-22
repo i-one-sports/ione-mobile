@@ -159,19 +159,21 @@ export function SessionCard({ match, sessionData }: SessionCardProps) {
           >
             {match.locationName}
           </Text>
-          <View
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              gap: 4,
-              marginTop: 3,
-            }}
-          >
-            <Ionicons name="person-outline" size={11} color={mutedText} />
-            <Text style={{ fontSize: 12, color: mutedText }}>
-              {match.captainName}
-            </Text>
-          </View>
+          {!!match.captainName && (
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 4,
+                marginTop: 3,
+              }}
+            >
+              <Ionicons name="person-outline" size={11} color={mutedText} />
+              <Text style={{ fontSize: 12, color: mutedText }}>
+                {match.captainName}
+              </Text>
+            </View>
+          )}
         </View>
 
         {/* Status badge */}

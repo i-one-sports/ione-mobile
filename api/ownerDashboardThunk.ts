@@ -20,6 +20,8 @@ import {
   PaymentHistoryResponse,
   SessionPaymentDetailsResponse,
   UpdatePitchPhotoResponse,
+  OwnerMonthlyPassesResponse,
+  UpdateMonthlyPassSalesResponse,
 } from "@/components/typings/apiResponse";
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import { Platform } from "react-native";
@@ -211,6 +213,30 @@ export const updatePricingOptions = createAsyncThunk<
       `/i-one/location/${locationId}/pricing-options`,
       payload,
     ),
+    thunkAPI,
+  );
+});
+
+export const getOwnerMonthlyPasses = createAsyncThunk<
+  OwnerMonthlyPassesResponse,
+  { locationId: string },
+  AsyncThunkConfig
+>("/location/monthly-passes", async ({ locationId }, thunkAPI) => {
+  return apiCall(
+    axiosInstance.get(`/i-one/location/${locationId}/monthly-passes`),
+    thunkAPI,
+  );
+});
+
+export const updateMonthlyPassSales = createAsyncThunk<
+  UpdateMonthlyPassSalesResponse,
+  { locationId: string; paused: boolean },
+  AsyncThunkConfig
+>("/location/monthly-pass-sales", async ({ locationId, paused }, thunkAPI) => {
+  return apiCall(
+    axiosInstance.patch(`/i-one/location/${locationId}/monthly-pass-sales`, {
+      paused,
+    }),
     thunkAPI,
   );
 });
