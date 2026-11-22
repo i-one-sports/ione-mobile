@@ -208,7 +208,7 @@ export default function SignIn() {
                     darkColor="#9BA1A6"
                     style={{ fontSize: 14, textDecorationLine: "underline" }}
                   >
-                    Browse without an account
+                    Guest mode
                   </ThemedText>
                 </TouchableOpacity>
               </View>

@@ -229,7 +229,7 @@ function AppNavigator() {
     const navigate = () => {
       if (!isAuthenticated) {
         // Signed out at launch: show onboarding (or sign-in for returning
-        // users). Both have "Browse without an account", which is what
+        // users). Both have "Guest mode", which is what
         // App Store 5.1.1(v) needs. A shared session link opens straight
         // to that session as a guest instead. Later sign-outs navigate
         // themselves (logout → sign-in, account deleted → onboarding).
