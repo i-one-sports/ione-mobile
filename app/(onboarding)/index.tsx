@@ -1,9 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
- 
- 
- 
- 
- 
+
 import {
   Dimensions,
   View,
@@ -83,9 +79,7 @@ export default function SignUp() {
             onPress={() => router.replace("/(tabs)")}
             className="items-center py-[6px]"
           >
-            <Text className="text-[#6C757D] underline">
-              Browse without an account
-            </Text>
+            <Text className="text-[#6C757D] underline">Guest mode</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
