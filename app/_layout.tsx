@@ -1,5 +1,5 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-import { registerDeviceToken } from "@/api/authThunks";
+import { getUser, registerDeviceToken } from "@/api/authThunks";
 import { flushRecordingQueue } from "@/api/recordingQueueThunk";
 import { getMyBadges } from "@/api/badgesThunk";
 import BadgeUnlockWatcher from "@/components/match/BadgeUnlockWatcher";
@@ -70,11 +70,17 @@ function AppNavigator() {
   const splashHidden = useRef(false);
   // Referee taps saved on the phone but not yet sent (bad network, app
   // closed mid-match): send them on launch and whenever the app comes back.
+  // Also check the login is still valid: an expired one gets the guest view
+  // from read routes instead of a 401, so ask /user/profile, whose 401 signs
+  // the user out and opens sign-in (see SetUpAxiosInterceptors).
   useEffect(() => {
     if (!isAuthenticated) return;
     store.dispatch(flushRecordingQueue());
+    store.dispatch(getUser());
     const sub = AppState.addEventListener("change", (state) => {
-      if (state === "active") store.dispatch(flushRecordingQueue());
+      if (state !== "active") return;
+      store.dispatch(flushRecordingQueue());
+      store.dispatch(getUser());
     });
     return () => sub.remove();
   }, [isAuthenticated]);

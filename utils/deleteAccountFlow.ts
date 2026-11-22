@@ -10,6 +10,7 @@ import { persistor, type AppDispatch } from "@/redux/store";
 export function confirmDeleteAccount(
   dispatch: AppDispatch,
   setBusy: (busy: boolean) => void,
+  isOwner = false,
 ) {
   Alert.alert(
     "Delete account",
@@ -36,7 +37,25 @@ export function confirmDeleteAccount(
                 ? err.msg
                 : err?.msg?.message ||
                   "We couldn't delete your account. Please try again.";
-            Alert.alert("Account not deleted", reason);
+            // Money still in the wallet: offer a shortcut there. Only owners
+            // have a wallet screen; players just see the message.
+            const code = err?.details?.code;
+            const toWallet =
+              isOwner &&
+              (code === "WALLET_BALANCE" || code === "WITHDRAWAL_PENDING");
+            Alert.alert(
+              "Account not deleted",
+              reason,
+              toWallet
+                ? [
+                    { text: "OK", style: "cancel" },
+                    {
+                      text: "Go to wallet",
+                      onPress: () => router.navigate("/admin/wallets"),
+                    },
+                  ]
+                : undefined,
+            );
           }
         },
       },

@@ -3,14 +3,17 @@ import DayStrip, { type DayStatus } from "@/components/booking/DayStrip";
 import { getPitchDetails, getSessionsByLocation } from "@/api/sessions";
 import { useRequireSignIn } from "@/components/guest/SignInPrompt";
 import { formatKoboAsNaira } from "@/utils/currency";
-import { formatClock, toMinutes ,
+import {
+  formatClock,
+  toMinutes,
   formatDayShort,
   freeGaps,
   locationDayKey,
   todayKey,
   upcomingDays,
 } from "@/utils/pitchSlots";
-import { Image ,
+import {
+  Image,
   RefreshControl,
   ScrollView,
   Text,
@@ -79,7 +82,7 @@ export default function PitchBookings() {
           ? `${formatKoboAsNaira(pricePerHour)}/hr`
           : null
         : pitch.paymentPerPersonMonthly
-          ? `${formatKoboAsNaira(pitch.paymentPerPersonMonthly)} per player / month`
+          ? `${formatKoboAsNaira(pitch.paymentPerPersonMonthly)} per 30 days`
           : null;
   const monthly = pitch?.tier === "paid" && pitch?.pricingOption === "monthly";
 

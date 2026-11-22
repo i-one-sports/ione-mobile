@@ -194,7 +194,7 @@ export default function HomeScreen() {
               darkColor="#aaa"
               style={{ fontSize: 13 }}
             >
-              {isGuest ? "Welcome 👋" : `Hey, ${user?.firstName ?? ""} 👋`}
+              {isGuest ? "Hey there 👋" : `Hey, ${user?.firstName ?? ""} 👋`}
             </ThemedText>
             <ThemedText style={{ fontSize: 22, fontWeight: "700" }}>
               {"It's Matchday!"}

@@ -32,10 +32,20 @@ export const setupAxiosInterceptors = () => {
         // Only force logout if the user is currently authenticated
         // to avoid dispatching logOut() multiple times or after already logged out
         if (isAuthenticated) {
-          // The login expired: sign out and ask to sign in again. (Guests
-          // never get here — they aren't authenticated.)
+          // The login expired: sign out and ask to sign in again.
           store.dispatch(logOut());
           router.replace("/(onboarding)/signin");
+        } else if (error.response) {
+          // Guest mode: this route needs an account. Screens show the
+          // rejection's message, so make it "Sign in to continue" instead
+          // of the server's "Unauthorized".
+          error.response.data = {
+            ...(typeof error.response.data === "object"
+              ? error.response.data
+              : {}),
+            error: undefined,
+            message: "Sign in to continue",
+          };
         }
       }
       // 403 = authenticated but forbidden (e.g. unverified account) — do NOT logout

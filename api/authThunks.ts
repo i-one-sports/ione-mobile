@@ -305,7 +305,11 @@ export const deleteAccount = createAsyncThunk<
     typeof result === "object" &&
     "payload" in result &&
     "meta" in result;
-  if (failed) return result;
+  // 404 = the account is already deleted: sign out locally as if it worked.
+  const alreadyDeleted =
+    failed &&
+    (result as { payload?: { status?: number } }).payload?.status === 404;
+  if (failed && !alreadyDeleted) return result;
   await deletePushToken();
   await Promise.all([
     SecureStore.deleteItemAsync("i-one"),
