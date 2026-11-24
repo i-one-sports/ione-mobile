@@ -6,7 +6,9 @@ import {
   leaveSession,
   deleteSession,
   getSessionSets,
+  getMyCurrentSession,
 } from "@/api/sessions";
+import { confirmCancelSession } from "@/utils/cancelSessionFlow";
 import OpenIcon from "@/assets/svg/OpenIcon";
 import PitchIcon from "@/assets/svg/PitchSvg";
 import pitch from "@/assets/images/greenpitch.png";
@@ -156,6 +158,8 @@ export default function JoinSession() {
   const params = useLocalSearchParams<{
     sessionId?: string;
     session?: string;
+    /** "1" from the SESSION_AT_RISK push: open the pay screen once loaded. */
+    pay?: string;
   }>();
 
   // Support both a plain sessionId param and the legacy full-session JSON param
@@ -305,13 +309,82 @@ export default function JoinSession() {
       },
     });
 
+  // Cancelled by the captain/owner, or by the server (cancelReason). Members
+  // stay in it; nothing can be joined, left or paid any more.
+  const isCancelled =
+    activeSession?.status === "CANCELLED" ||
+    activeSession?.status === "REFUNDED";
+  const cancelledText = (() => {
+    if (activeSession?.status === "REFUNDED")
+      return "This session was cancelled and every payment has been refunded.";
+    if (activeSession?.cancelReason === "NOT_READY")
+      return paymentRequired && myPaymentStatus && myPaymentStatus !== "PENDING"
+        ? "This session was cancelled because it wasn't fully paid by kick-off. Your payment is being refunded and should reach you within a few working days."
+        : "This session was cancelled because it wasn't fully paid by kick-off.";
+    if (activeSession?.cancelReason === "NEVER_CONFIGURED")
+      return "This session was cancelled because it was never given a date and time.";
+    return paymentRequired
+      ? "This session was cancelled. Any money paid is being refunded."
+      : "This session was cancelled.";
+  })();
+
+  // A session the user started but never gave a date (setup failed or was
+  // abandoned). They're its captain but not yet a member, so the member
+  // buttons don't show; let them delete it instead of waiting 24 hours.
+  const isMyDraft =
+    !isGuest &&
+    !isCancelled &&
+    Boolean(activeSession) &&
+    !activeSession?.startTime &&
+    session?.captain === user?._id;
+
+  // Captain actions before kick-off: Delete while alone in it (nothing to
+  // tell anyone), Cancel once others have joined (POST /sessions/cancel
+  // refunds everyone who paid and keeps the session as "Cancelled").
+  const isCaptain = !isGuest && session?.captain === user?._id;
+  const captainAlone = members.length <= 1;
+  const beforeKickOff =
+    Boolean(activeSession?.startTime) &&
+    new Date(activeSession!.startTime!).getTime() > Date.now();
+  const canCancel =
+    isCaptain &&
+    !captainAlone &&
+    !isCancelled &&
+    beforeKickOff &&
+    !session?.inProgress &&
+    !session?.finished;
+
+  const handleDeleteDraft = () => {
+    if (!sessionId) return;
+    dispatch(deleteSession(sessionId))
+      .unwrap()
+      .then(() => {
+        Toast.show({ type: "success", text1: "Session deleted" });
+        handleBack();
+      })
+      .catch((err) => {
+        Toast.show({ type: "error", text1: "Error", text2: err?.msg });
+      });
+  };
+
   const showPayButton =
+    !isCancelled &&
     isMember &&
     paymentRequired &&
     (isPool
       ? activeSession?.paymentStatus === "PENDING"
       : !sessionCovered &&
         (myPaymentStatus === "PENDING" || myPaymentStatus === "FAILED"));
+
+  // Opened from the "about to be cancelled" push: go straight to paying,
+  // once, if there's still something to pay. Otherwise just show the session.
+  const autoPayDone = React.useRef(false);
+  useEffect(() => {
+    if (params.pay !== "1" || autoPayDone.current || !activeSession) return;
+    autoPayDone.current = true;
+    if (showPayButton) openPaymentScreen();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [params.pay, activeSession, showPayButton]);
 
   // The sets button follows the session's stage: the live screen while
   // playing, the team list before kick-off and after the session. Voting gets
@@ -625,13 +698,17 @@ export default function JoinSession() {
                     darkColor="#9BA1A6"
                     className="text-[14px] font-[600] leading-[24px]"
                   >
-                    {session?.inProgress
-                      ? "Match In Progress"
-                      : session?.finished
-                        ? "Match Finished"
-                        : session?.isFull
-                          ? "No Spots Left"
-                          : "Waiting For Players"}
+                    {isCancelled
+                      ? "Session Cancelled"
+                      : isMyDraft
+                        ? "Setup Not Finished"
+                        : session?.inProgress
+                          ? "Match In Progress"
+                          : session?.finished
+                            ? "Match Finished"
+                            : session?.isFull
+                              ? "No Spots Left"
+                              : "Waiting For Players"}
                   </ThemedText>
 
                   <View className="flex flex-row items-center gap-1">
@@ -739,8 +816,68 @@ export default function JoinSession() {
 
               {/* Action buttons — derived purely from server data */}
               <View className="mx-auto mt-[40px]">
-                {loadingActiveSession &&
-                !activeSession ? null : session?.isFull && !isMember ? (
+                {loadingActiveSession && !activeSession ? null : isCancelled ? (
+                  <View
+                    style={{
+                      maxWidth: 320,
+                      alignItems: "center",
+                      gap: 8,
+                      padding: 16,
+                      borderRadius: 12,
+                      borderWidth: 1,
+                      borderColor: "#FF444455",
+                      backgroundColor: "#FF44440F",
+                    }}
+                  >
+                    <Ionicons
+                      name="close-circle-outline"
+                      size={28}
+                      color="#FF4444"
+                    />
+                    <ThemedText style={{ fontSize: 15, fontWeight: "700" }}>
+                      Session cancelled
+                    </ThemedText>
+                    <ThemedText
+                      lightColor="#6C757D"
+                      darkColor="#9BA1A6"
+                      style={{ fontSize: 13, textAlign: "center" }}
+                    >
+                      {cancelledText}
+                    </ThemedText>
+                  </View>
+                ) : isMyDraft ? (
+                  <View
+                    style={{ maxWidth: 320, alignItems: "center", gap: 12 }}
+                  >
+                    <ThemedText
+                      lightColor="#6C757D"
+                      darkColor="#9BA1A6"
+                      style={{ fontSize: 13, textAlign: "center" }}
+                    >
+                      You started this session but never gave it a date. Delete
+                      it, or it will be cancelled automatically after 24 hours.
+                    </ThemedText>
+                    <TouchableOpacity
+                      className="flex w-[200px] items-center justify-center rounded-[10px] border border-[#FF4444] h-14"
+                      onPress={handleDeleteDraft}
+                      disabled={loadingDelete}
+                    >
+                      {loadingDelete ? (
+                        <ActivityIndicator size="small" color="#FF4444" />
+                      ) : (
+                        <Text
+                          style={{
+                            fontSize: 13,
+                            color: "#FF4444",
+                            fontWeight: "600",
+                          }}
+                        >
+                          Delete Session
+                        </Text>
+                      )}
+                    </TouchableOpacity>
+                  </View>
+                ) : session?.isFull && !isMember ? (
                   <View className="flex w-[140px] items-center justify-center rounded-[10px] bg-gray-400 h-[42px]">
                     <Text className="text-[13px] font-[600]">
                       Session is full
@@ -1012,8 +1149,44 @@ export default function JoinSession() {
                       </TouchableOpacity>
                     )}
 
-                    {/* Delete session — only the session captain, and the location owner before match starts/ends */}
-                    {session?.captain === user?._id &&
+                    {/* Cancel session — the captain, before kick-off, once other
+                        players are in: they're told and refunded, and the
+                        session stays as "Cancelled". */}
+                    {canCancel && (
+                      <TouchableOpacity
+                        className="flex items-center justify-center rounded-[10px] w-full h-14 border-[#FF4444] border"
+                        onPress={() =>
+                          confirmCancelSession(dispatch, {
+                            sessionId,
+                            paid: paymentRequired,
+                            onCancelled: () => {
+                              dispatch(getSession(sessionId));
+                              dispatch(getMyCurrentSession());
+                            },
+                          })
+                        }
+                        disabled={loadingAction}
+                      >
+                        {loadingAction ? (
+                          <ActivityIndicator size="small" color="#FF4444" />
+                        ) : (
+                          <Text
+                            style={{
+                              fontSize: 13,
+                              color: "#FF4444",
+                              fontWeight: "600",
+                            }}
+                          >
+                            Cancel Session
+                          </Text>
+                        )}
+                      </TouchableOpacity>
+                    )}
+
+                    {/* Delete session — the captain, before kick-off, while
+                        they're the only player (otherwise Cancel instead) */}
+                    {isCaptain &&
+                      captainAlone &&
                       !session?.inProgress &&
                       !session?.finished && (
                         <TouchableOpacity

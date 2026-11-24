@@ -34,6 +34,8 @@ export type Match = {
 
   inProgress: boolean;
   finished: boolean;
+  /** status CANCELLED or REFUNDED (manual or automatic cancel). */
+  cancelled?: boolean;
   isFull: boolean;
   joined: boolean;
 

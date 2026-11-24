@@ -18,7 +18,8 @@ import {
   SegmentedTab,
 } from "@/components/ui/SegmentedControl";
 import { useAppDispatch, useAppSelector } from "@/redux/store";
-import { router } from "expo-router";
+import { router, useFocusEffect } from "expo-router";
+import CurrentSessionCard from "@/components/sessions/CurrentSessionCard";
 import { Ionicons } from "@expo/vector-icons";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useRequireSignIn } from "@/components/guest/SignInPrompt";
@@ -67,12 +68,19 @@ export default function SessionsScreen({
     }
     if (!user?.location?.coordinates) return Promise.resolve([]);
     const [lat, lng] = user.location.coordinates;
-    return Promise.all([
-      dispatch(allSessions({ lat, lng })),
-      dispatch(getMyCurrentSession()),
-    ]);
+    return Promise.all([dispatch(allSessions({ lat, lng }))]);
   }, [dispatch, isGuest, guest.lat, guest.lng, user]);
-  const { all, loadingAll, errorAll } = useAppSelector((s) => s.sessions);
+  const { all, loadingAll, errorAll, myCurrentSession } = useAppSelector(
+    (s) => s.sessions,
+  );
+
+  // Coming back from a session (joined, left, deleted, paid): refresh the
+  // pinned "current session" card.
+  useFocusEffect(
+    useCallback(() => {
+      if (!isGuest) dispatch(getMyCurrentSession());
+    }, [dispatch, isGuest]),
+  );
 
   const screenBg = isDark ? "#000" : "#FAFAFA";
   const mutedText = isDark ? "#555" : "#999";
@@ -142,6 +150,8 @@ export default function SessionsScreen({
         allPaymentsCompleted: Boolean(session.allPaymentsCompleted),
         inProgress: Boolean(session.inProgress),
         finished: Boolean(session.finished),
+        cancelled:
+          session.status === "CANCELLED" || session.status === "REFUNDED",
         isFull: Boolean(session.isFull),
         joined: hasJoined,
         sessionData: session,
@@ -199,9 +209,12 @@ export default function SessionsScreen({
 
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
-    await loadSessions();
+    await Promise.all([
+      loadSessions(),
+      isGuest ? null : dispatch(getMyCurrentSession()),
+    ]);
     setRefreshing(false);
-  }, [loadSessions]);
+  }, [loadSessions, isGuest, dispatch]);
 
   const handleNewGame = () => {
     if (!requireSignIn("start a game")) return;
@@ -248,6 +261,19 @@ export default function SessionsScreen({
             setSelectedDate(d);
           }}
         />
+
+        {!isGuest && myCurrentSession && (
+          <CurrentSessionCard
+            session={myCurrentSession}
+            isDark={isDark}
+            onPress={() =>
+              router.push({
+                pathname: "/joinsession",
+                params: { sessionId: myCurrentSession._id },
+              })
+            }
+          />
+        )}
 
         <View style={{ marginBottom: 20 }}>
           <DateStrip
