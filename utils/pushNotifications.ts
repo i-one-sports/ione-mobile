@@ -107,6 +107,10 @@ export function extractNotificationTarget(
       pathname: "/match/result-review";
       params: { sessionId: string; matchId: string };
     }
+  | {
+      pathname: "/joinsession";
+      params: { sessionId: string; pay: "1" };
+    }
   | null {
   const raw = message?.data?.payload;
   let payload: any = null;
@@ -127,6 +131,14 @@ export function extractNotificationTarget(
     return {
       pathname: "/match/referee-invite",
       params: { sessionId: payload.sessionId, refereeId: payload.refereeId },
+    };
+  }
+  // "Your game will be cancelled in 3 minutes … Pay now to keep it": open
+  // the session and go straight to its pay screen (joinsession's `pay`).
+  if (type === "SESSION_AT_RISK" && typeof payload?.sessionId === "string") {
+    return {
+      pathname: "/joinsession",
+      params: { sessionId: payload.sessionId, pay: "1" },
     };
   }
   // Not sent by the backend yet — requested so a referee who's handed the

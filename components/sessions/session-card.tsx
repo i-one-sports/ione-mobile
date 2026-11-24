@@ -26,8 +26,10 @@ export function SessionCard({ match, sessionData }: SessionCardProps) {
   const maxPlayers = match.maxPlayers ?? 0;
   const fillPct = maxPlayers > 0 ? Math.min(playerCount / maxPlayers, 1) : 0;
 
-  const isLive = match.inProgress;
-  const isFinished = match.finished;
+  // A cancelled session can't be joined or paid; it reads like a finished one.
+  const isCancelled = Boolean(match.cancelled);
+  const isLive = match.inProgress && !isCancelled;
+  const isFinished = match.finished || isCancelled;
   const isFull = match.isFull;
   // Pooled (hourly) sessions have one total; paymentAmount is 0 for them.
   const isPool = match.paymentMode === "POOL";
@@ -48,6 +50,13 @@ export function SessionCard({ match, sessionData }: SessionCardProps) {
   const divider = isDark ? "#1E1E1E" : "#F0F0F0";
 
   const statusConfig = (() => {
+    if (isCancelled)
+      return {
+        label: "Cancelled",
+        color: "#FF4444",
+        bg: isDark ? "#2A1010" : "#FFECEC",
+        dot: false,
+      };
     if (isFinished)
       return {
         label: "Finished",
@@ -101,6 +110,7 @@ export function SessionCard({ match, sessionData }: SessionCardProps) {
   const spotsLeft = maxPlayers - playerCount;
 
   const footerNote = (() => {
+    if (isCancelled) return "Session cancelled";
     if (isFinished) return "Session ended";
     if (isLive) return `Match in progress · ${match.minute}`;
     if (isPaymentStage)

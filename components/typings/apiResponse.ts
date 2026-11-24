@@ -603,6 +603,8 @@ export interface SessionByIdResponse {
   setNumber?: number;
   /** Lifecycle status; absent on sessions created before it existed. */
   status?: "OPEN" | "CANCELLED" | "COMPLETED" | "REFUNDED";
+  /** Set when the server cancelled it automatically; unset for a manual cancel. */
+  cancelReason?: "NOT_READY" | "NEVER_CONFIGURED";
   createdAt?: string;
   updatedAt?: string;
 }

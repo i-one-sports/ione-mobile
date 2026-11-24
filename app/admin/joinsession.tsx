@@ -9,7 +9,9 @@ import { Members } from "@/components/typings/apiResponse";
 import { useAppDispatch, useAppSelector } from "@/redux/store";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
+import { confirmCancelSession } from "@/utils/cancelSessionFlow";
 import {
+  ActivityIndicator,
   ScrollView,
   Text,
   TouchableOpacity,
@@ -52,6 +54,27 @@ export default function JoinSession() {
       dispatch(getSessionById(sessionId as string));
     }
   }, [sessionId]);
+
+  // The pitch owner can cancel a booking before kick-off: members are told
+  // and everyone who paid is refunded (POST /sessions/cancel/:id).
+  const { loadingAction } = useAppSelector((state) => state.sessions);
+  const isCancelled =
+    sessionById?.status === "CANCELLED" || sessionById?.status === "REFUNDED";
+  const startTime = sessionById?.startTime ?? preview?.startTime;
+  const canCancel =
+    Boolean(sessionById) &&
+    !isCancelled &&
+    !sessionById?.finished &&
+    Boolean(startTime) &&
+    new Date(startTime).getTime() > Date.now();
+  const cancelledNote =
+    sessionById?.cancelReason === "NOT_READY"
+      ? "Cancelled automatically: it wasn't fully paid by kick-off."
+      : sessionById?.cancelReason === "NEVER_CONFIGURED"
+        ? "Cancelled automatically: it was never given a date."
+        : sessionById?.status === "REFUNDED"
+          ? "Cancelled. Every payment has been refunded."
+          : "Cancelled. Any money paid is being refunded.";
 
   const players =
     sessionById?.members?.map((member: Members, index: number) => ({
@@ -193,6 +216,39 @@ export default function JoinSession() {
                   Join Session
                 </Text>
               </TouchableOpacity>
+              {canCancel && (
+                <TouchableOpacity
+                  onPress={() =>
+                    confirmCancelSession(dispatch, {
+                      sessionId: sessionId as string,
+                      paid: Boolean(sessionById?.paymentRequired),
+                      onCancelled: () =>
+                        dispatch(getSessionById(sessionId as string)),
+                    })
+                  }
+                  disabled={loadingAction}
+                  className="border border-[#FF4444] rounded-[5px] px-2 py-[10px]"
+                >
+                  {loadingAction ? (
+                    <ActivityIndicator size="small" color="#FF4444" />
+                  ) : (
+                    <Text
+                      style={{ fontFamily: "Poppins_400Regular" }}
+                      className="text-[#FF4444] text-xs"
+                    >
+                      Cancel Session
+                    </Text>
+                  )}
+                </TouchableOpacity>
+              )}
+              {isCancelled && (
+                <Text
+                  style={{ fontFamily: "Poppins_400Regular" }}
+                  className="text-[#FF4444] text-xs text-center"
+                >
+                  {cancelledNote}
+                </Text>
+              )}
             </View>
           )}
 

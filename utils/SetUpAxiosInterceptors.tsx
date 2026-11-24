@@ -35,14 +35,17 @@ export const setupAxiosInterceptors = () => {
           // The login expired: sign out and ask to sign in again.
           store.dispatch(logOut());
           router.replace("/(onboarding)/signin");
-        } else if (error.response) {
+        } else if (
+          // Only the "you need an account" errors. Other signed-out 401s
+          // ("Incorrect password", "Invalid or expired OTP") keep their text.
+          ["Unauthorized", "User authentication required"].includes(
+            error.response.data?.message,
+          )
+        ) {
           // Guest mode: this route needs an account. Screens show the
-          // rejection's message, so make it "Sign in to continue" instead
-          // of the server's "Unauthorized".
+          // rejection's message, so make it "Sign in to continue".
           error.response.data = {
-            ...(typeof error.response.data === "object"
-              ? error.response.data
-              : {}),
+            ...error.response.data,
             error: undefined,
             message: "Sign in to continue",
           };
